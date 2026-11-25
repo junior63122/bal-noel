@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
-import { EVENT, ZONES, TABLES, zoneOf, prixTable, euros } from './config.js';
+import { EVENT, ZONES, TABLES, ROWS, zoneOf, prixTable, euros } from './config.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -150,7 +150,7 @@ controls.target.copy(HOME.target);
 controls.enableDamping = true;
 controls.dampingFactor = .08;
 controls.zoomToCursor = true;
-controls.minDistance = 7;
+controls.minDistance = 3.5;
 controls.maxDistance = 90;
 controls.maxPolarAngle = 1.32;
 controls.screenSpacePanning = false;
@@ -348,33 +348,44 @@ const bulbs = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 6, 6), new THR
 const tmpColor = new THREE.Color();
 let frameNo = 0;
 
-// tables : canapés + tables basses
+// tables : une banquette continue par rangée, et une petite table par emplacement
+// (repère local : -z = côté banquette / dos, la table est à l'origine)
 const TABLE_OBJ = new Map();
-const sofaGeo = new THREE.BoxGeometry(1.45, .42, .75);
-const backGeo = new THREE.BoxGeometry(1.45, .5, .18);
-const lowGeo = new THREE.CylinderGeometry(.22, .22, .38, 16);
+const segGeo = new THREE.BoxGeometry(.94, .4, .55);
+const segBackGeo = new THREE.BoxGeometry(.94, .45, .14);
+const lowGeo = new THREE.BoxGeometry(.4, .36, .4);
+const lowTopGeo = new THREE.BoxGeometry(.44, .04, .44);
+const LOW_MAT = new THREE.MeshStandardMaterial({ color: '#efe8dc', roughness: .5 });
+function banquette(g, mat) {
+  const s = new THREE.Mesh(segGeo, mat); s.position.set(0, .2, -.55); g.add(s);
+  const bk = new THREE.Mesh(segBackGeo, mat); bk.position.set(0, .55, -.86); g.add(bk);
+}
 TABLES.forEach((t) => {
   const g = new THREE.Group();
-  const mats = [];
-  for (let i = 0; i < t.n; i++) {
-    const x = (i - (t.n - 1) / 2) * 1.55;
-    const mat = mats[0] || (mats.push(M.sofa.clone()), mats[0]);
-    const s = new THREE.Mesh(sofaGeo, mat); s.position.set(x, .21, -.3); g.add(s);
-    const b = new THREE.Mesh(backGeo, mat); b.position.set(x, .55, -.6); g.add(b);
-    const lt = new THREE.Mesh(lowGeo, M.table); lt.position.set(x, .19, .45); g.add(lt);
-  }
+  const mat = M.sofa.clone(), mats = [mat];
+  banquette(g, mat);
+  const low = new THREE.Mesh(lowGeo, LOW_MAT); low.position.y = .18; g.add(low);
+  const top = new THREE.Mesh(lowTopGeo, M.gold); top.position.y = .38; g.add(top);
   const h = heightAt(t.x, t.y);
   g.position.copy(V(t.x, t.y, h));
-  // canapés dos au mur, face à la piste (VIP fond) ou dos à l'entrée (scène)
-  const onStage = !t.zone.startsWith('fond') && t.zone !== 'ailes';
-  g.rotation.y = (onStage ? Math.PI : 0) + THREE.MathUtils.degToRad(-t.a);
-  // dalle lumineuse sous la table (couleur de la zone, grise si réservée)
-  const plate = new THREE.Mesh(new THREE.PlaneGeometry(t.n * 1.6 + .3, 1.9),
-    new THREE.MeshStandardMaterial({ color: zoneOf(t).couleurs.at(-1), emissive: zoneOf(t).couleurs.at(-1), emissiveIntensity: .25, transparent: true, opacity: .55, roughness: .6 }));
-  plate.rotation.x = -Math.PI / 2; plate.position.set(0, .012, 0); g.add(plate);
+  g.rotation.y = THREE.MathUtils.degToRad(t.rot);
+  // dalle de couleur sous l'emplacement (couleur de la zone, grise si réservée)
+  const zc = zoneOf(t).couleurs.at(-1);
+  const plate = new THREE.Mesh(new THREE.PlaneGeometry(.9, 1.45), new THREE.MeshStandardMaterial({ color: zc, emissive: zc, emissiveIntensity: .3, transparent: true, opacity: .6, roughness: .6 }));
+  plate.rotation.x = -Math.PI / 2; plate.position.set(0, .012, -.35); g.add(plate);
   g.traverse((o) => { if (o.isMesh) o.userData.tableId = t.id; });
   scene.add(g);
-  TABLE_OBJ.set(t.id, { group: g, mats, plate, anchor: V(t.x, t.y, h + 1.25), base: V(t.x, t.y, h) });
+  TABLE_OBJ.set(t.id, { group: g, mats, plate, anchor: V(t.x, t.y, h + .95), base: V(t.x, t.y, h) });
+});
+// bouts de banquette (non réservables) aux extrémités de chaque rangée, comme sur le plan
+ROWS.forEach((r) => {
+  const [p0, p1] = [r.pts[0], r.pts.at(-1)];
+  const n = r.pts.length;
+  const step = n > 1 ? [(p1[0] - p0[0]) / (n - 1), (p1[1] - p0[1]) / (n - 1)] : [16, 0];
+  [[p0[0] - step[0], p0[1] - step[1]], [p1[0] + step[0], p1[1] + step[1]]].forEach(([x, y]) => {
+    const g = new THREE.Group(); banquette(g, M.sofa);
+    g.position.copy(V(x, y, heightAt(r.pts[0][0], r.pts[0][1]))); g.rotation.y = THREE.MathUtils.degToRad(r.rot); scene.add(g);
+  });
 });
 
 // neige dans la salle
@@ -406,6 +417,7 @@ function highlight(id, on) {
 const tmp = new THREE.Vector3();
 function placeLabels() {
   const w = stage.clientWidth, h = stage.clientHeight;
+  labels.classList.toggle('compact', camera.position.distanceTo(controls.target) > 26);
   for (const [id, b] of LABEL) {
     tmp.copy(TABLE_OBJ.get(id).anchor).project(camera);
     const off = tmp.z > 1 || Math.abs(tmp.x) > 1.2 || Math.abs(tmp.y) > 1.2;
@@ -433,18 +445,19 @@ function flyZone(zoneId) {
 // zoom cinématographique sur une table : la caméra se place derrière la table, en hauteur, regard vers la piste
 function flyTable(t) {
   const o = TABLE_OBJ.get(t.id);
-  const target = o.base.clone().setY(o.base.y + .4);
+  const target = o.base.clone().setY(o.base.y + .3);
   const out = o.base.clone().setY(0).sub(new THREE.Vector3(0, 0, 0)).normalize(); // du centre vers la table
   if (out.lengthSq() < .01) out.set(0, 0, 1);
   const stageSide = !t.zone.startsWith('fond') && t.zone !== 'ailes'; // scène : murs bas derrière, on arrive par l'arrière
-  const pos = target.clone().addScaledVector(out, stageSide ? 7 : -5.5).add(new THREE.Vector3(0, stageSide ? 9 : 11, 0));
+  const pos = target.clone().addScaledVector(out, stageSide ? 4.6 : -3.8).add(new THREE.Vector3(0, stageSide ? 5.8 : 6.8, 0));
   // on garde un peu l'angle courant pour une trajectoire naturelle
   flyTo(pos, target, 1500);
 }
 let pov = false;
 function enterPov(t) {
   const o = TABLE_OBJ.get(t.id);
-  const eye = o.base.clone().setY(o.base.y + 1.15);
+  const onStageT = !t.zone.startsWith('fond') && t.zone !== 'ailes';
+  const eye = o.base.clone().setY(o.base.y + (onStageT ? 2.5 : 1.15)); // scène : on regarde par-dessus la cabine du DJ
   const look = V(CX, CY, .8).lerp(V(627, 566, 1.5), t.zone === 'fond1' || t.zone === 'fond2' || t.zone === 'ailes' ? .15 : 0);
   // regard depuis la table vers la piste ; on recule à peine pour voir ses propres canapés
   const dir = look.clone().sub(eye).setY(0).normalize();
@@ -474,11 +487,11 @@ controls.addEventListener('start', () => (fly = null));
 // anneau de sélection doré
 const ring = new THREE.Group();
 {
-  const m1 = new THREE.Mesh(new THREE.RingGeometry(1.9, 2.02, 64), new THREE.MeshBasicMaterial({ color: '#f6ead0', transparent: true, opacity: .95, side: THREE.DoubleSide, depthWrite: false }));
-  const m2 = new THREE.Mesh(new THREE.RingGeometry(2.2, 2.26, 64), new THREE.MeshBasicMaterial({ color: '#c9a45c', transparent: true, opacity: .6, side: THREE.DoubleSide, depthWrite: false }));
+  const m1 = new THREE.Mesh(new THREE.RingGeometry(.62, .68, 48), new THREE.MeshBasicMaterial({ color: '#f6ead0', transparent: true, opacity: .95, side: THREE.DoubleSide, depthWrite: false }));
+  const m2 = new THREE.Mesh(new THREE.RingGeometry(.78, .81, 48), new THREE.MeshBasicMaterial({ color: '#c9a45c', transparent: true, opacity: .6, side: THREE.DoubleSide, depthWrite: false }));
   [m1, m2].forEach((m) => { m.rotation.x = -Math.PI / 2; ring.add(m); });
-  const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 1.9, 5, 48, 1, true), new THREE.MeshBasicMaterial({ color: '#e9d3a0', transparent: true, opacity: .07, side: THREE.DoubleSide, depthWrite: false }));
-  beam.position.y = 2.5; ring.add(beam);
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(.62, .62, 3.5, 32, 1, true), new THREE.MeshBasicMaterial({ color: '#e9d3a0', transparent: true, opacity: .07, side: THREE.DoubleSide, depthWrite: false }));
+  beam.position.y = 1.75; ring.add(beam);
   ring.visible = false; scene.add(ring);
 }
 

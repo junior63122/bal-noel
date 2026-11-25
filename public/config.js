@@ -29,32 +29,37 @@ export const ZONES = [
   { id: 'ailes',   desc: 'sur le côté, vue en diagonale sur la piste', nom: 'VIP Fond · ailes',       prix: 1200,         capacite: 10, couleurs: ['#93bccf'] },
 ];
 
-// Tables : coordonnées relevées sur le plan (pixels du plan 1280 × 834),
-// a = orientation (degrés) des canapés, n = nombre de canapés.
-// La piste tournante est au centre (627, 389). 17 px ≈ 1 m.
-const T = (num, zone, x, y, a = 0, n = 2, prix) => ({ id: String(num).padStart(2, '0'), zone, x, y, a, n, prix });
-
-export const TABLES = [
-  // VIP Fond centre — rang 2 (rangée du fond)
-  T(1, 'fond2', 540, 185, 0, 2), T(2, 'fond2', 592, 185, 0, 2),
-  T(3, 'fond2', 662, 185, 0, 2), T(4, 'fond2', 714, 185, 0, 2),
-  // VIP Fond centre — rang 1 (côté piste)
-  T(5, 'fond1', 478, 228, 0, 2), T(6, 'fond1', 522, 228, 0, 2), T(7, 'fond1', 566, 228, 0, 2),
-  T(8, 'fond1', 688, 228, 0, 2), T(9, 'fond1', 732, 228, 0, 2), T(10, 'fond1', 776, 228, 0, 2),
-  // Aile gauche (2 rangées en diagonale)
-  T(11, 'ailes', 325, 312, -35, 2), T(12, 'ailes', 360, 287, -35, 2), T(13, 'ailes', 396, 262, -35, 2),
-  T(14, 'ailes', 360, 345, -35, 2), T(15, 'ailes', 396, 320, -35, 2), T(16, 'ailes', 432, 295, -35, 2),
+// Tables : une table = un petit carré blanc devant la banquette sur le plan.
+// Chaque rangée : zone, orientation de la banquette (degrés, 0 = banquette au nord / au fond),
+// et le centre de chaque table relevé sur le plan (pixels du plan 1280 × 834, 17 px ≈ 1 m).
+// La piste tournante est au centre (627, 389). Les tables sont numérotées dans l'ordre des rangées.
+export const ROWS = [
+  // VIP Fond — rang du fond (gauche puis droite)
+  { zone: 'fond2', rot: 0, pts: [[539, 197], [555, 197], [571, 197], [588, 197]] },
+  { zone: 'fond2', rot: 0, pts: [[664, 197], [680, 197], [697, 197], [713, 197]] },
+  // VIP Fond — rang côté piste
+  { zone: 'fond1', rot: 0, pts: [[479, 240], [496, 240], [512, 240], [528, 240], [545, 240], [561, 240]] },
+  { zone: 'fond1', rot: 0, pts: [[690, 240], [707, 240], [723, 240], [739, 240], [756, 240], [772, 240]] },
+  // Aile gauche (rangée contre la vitre, puis rangée intérieure)
+  { zone: 'ailes', rot: 35.6, pts: [[332, 322.5], [345.5, 313], [358.8, 303.3], [372, 294], [385, 284.3], [398.8, 275]] },
+  { zone: 'ailes', rot: 35.6, pts: [[366.3, 350], [379.5, 340.8], [393, 331.3], [406.3, 321.8], [419.5, 312.5], [433, 303.3]] },
   // Aile droite
-  T(17, 'ailes', 858, 262, 35, 2), T(18, 'ailes', 894, 287, 35, 2), T(19, 'ailes', 929, 312, 35, 2),
-  T(20, 'ailes', 822, 295, 35, 2), T(21, 'ailes', 858, 320, 35, 2), T(22, 'ailes', 894, 345, 35, 2),
+  { zone: 'ailes', rot: -35.6, pts: [[854, 274.5], [867, 284.3], [880.5, 294], [893.8, 303.8], [907, 313.3], [920.5, 322.5]] },
+  { zone: 'ailes', rot: -35.6, pts: [[819.5, 302.5], [832.5, 312], [845.8, 321.3], [859.3, 330.5], [872.5, 340.5], [886, 350]] },
   // Scène — balcons +0,60 de part et d'autre du DJ
-  T(23, 'balcon', 505, 578, 0, 2), T(24, 'balcon', 749, 578, 0, 2),
-  // Scène — front DJ (arc central)
-  T(25, 'front', 585, 612, 0, 2), T(26, 'front', 627, 612, 0, 2), T(27, 'front', 669, 612, 0, 2),
-  // Scène — diagonales (2 500 € pour les plus proches du DJ)
-  T(28, 'diag', 532, 640, 38, 2, 2000), T(29, 'diag', 560, 662, 38, 2, 2500), T(30, 'diag', 590, 684, 38, 2, 2500),
-  T(31, 'diag', 664, 684, -38, 2, 2500), T(32, 'diag', 694, 662, -38, 2, 2500), T(33, 'diag', 722, 640, -38, 2, 2000),
+  { zone: 'balcon', rot: 180, pts: [[492.3, 575], [508.3, 575]] },
+  { zone: 'balcon', rot: 180, pts: [[750, 575], [766, 575]] },
+  // Scène — face au DJ
+  { zone: 'front', rot: 180, pts: [[588.3, 609], [604.3, 609], [620.3, 609], [637.3, 609], [653.3, 609], [669.7, 609]] },
+  // Scène — diagonales (les 2 plus proches du DJ à 2 500 €)
+  { zone: 'diag', rot: 145.2, pts: [[540, 626.7], [554.3, 635], [568, 644], [581.7, 653.3], [595.3, 662]], prix: [2500, 2500, 2000, 2000, 2000] },
+  { zone: 'diag', rot: -145.2, pts: [[662.7, 662], [676, 653.3], [690, 644], [704, 635], [717.7, 626.7]], prix: [2000, 2000, 2000, 2500, 2500] },
 ];
+
+export const TABLES = [];
+ROWS.forEach((r, ri) => r.pts.forEach(([x, y], k) => {
+  TABLES.push({ id: String(TABLES.length + 1).padStart(2, '0'), zone: r.zone, x, y, rot: r.rot, row: ri, prix: r.prix ? r.prix[k] : undefined });
+}));
 
 export const zoneOf = (t) => ZONES.find((z) => z.id === t.zone);
 export const prixTable = (t) => t.prix ?? (Array.isArray(zoneOf(t).prix) ? zoneOf(t).prix[0] : zoneOf(t).prix);

@@ -522,3 +522,8 @@ body.entering #reserver { animation: planIn .9s cubic-bezier(.2,.75,.2,1) both; 
 }
 @media (prefers-reduced-motion: reduce) { .intro { display: none; } .in { opacity: 1; animation: none; } }
 #d-ok-view { padding-top: 24px; } #d-ok-view h3 { font-size: clamp(32px, 8vw, 44px); } .ok-bunny { width: 90px; }
+/* étiquettes plus discrètes en vue d'ensemble (64 tables) */
+.labels.compact .tlabel { min-width: 0; width: 11px; height: 11px; padding: 0; font-size: 0; border-radius: 50%; background: var(--zc); border: 1.5px solid rgba(10,19,40,.9); box-shadow: 0 0 8px color-mix(in srgb, var(--zc) 70%, transparent); }
+.labels.compact .tlabel:hover { transform: scale(1.5); }
+.labels.compact .tlabel.taken { background: #4b5670; box-shadow: none; text-decoration: none; }
+.labels.compact .tlabel.sel { width: auto; min-width: 28px; height: 22px; padding: 0 6px; font-size: 11px; border-radius: 3px; background: var(--gold2); color: #2a1503; }
