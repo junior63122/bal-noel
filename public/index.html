@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Le Bal des Fous · Nuit de Noël — Réservation de tables</title>
+  <meta name="description" content="Réservez votre table VIP pour la Nuit de Noël du Bal des Fous.">
+  <meta name="theme-color" content="#6e0a18">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎄</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&family=Cinzel+Decorative:wght@700;900&family=DM+Serif+Display&family=Great+Vibes&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">{ "imports": { "three": "./vendor/three.module.js" } }</script>
+</head>
+<body>
+<canvas class="snow-all" id="snow" aria-hidden="true"></canvas>
+
+<!-- ============================== ACCUEIL ============================== -->
+<section class="hero" id="accueil">
+  <div class="bokeh" aria-hidden="true"></div>
+
+  <!-- guirlande lumineuse -->
+  <svg class="lights" viewBox="0 0 1200 120" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 10 Q150 95 300 30 T600 30 T900 30 T1200 10" fill="none" stroke="#2b5f37" stroke-width="5"/>
+    <g id="bulbs"></g>
+  </svg>
+
+  <!-- boules de Noël suspendues -->
+  <div class="baubles" aria-hidden="true">
+    <span style="--x:6%;--l:120px;--c:#d4142a;--d:0s"></span>
+    <span style="--x:14%;--l:200px;--c:#e8c46a;--d:-1.2s"></span>
+    <span style="--x:22%;--l:90px;--c:#f5f5f5;--d:-.6s"></span>
+    <span style="--x:78%;--l:110px;--c:#e8c46a;--d:-.9s"></span>
+    <span style="--x:86%;--l:210px;--c:#d4142a;--d:-.3s"></span>
+    <span style="--x:94%;--l:140px;--c:#f5f5f5;--d:-1.5s"></span>
+  </div>
+
+  <div class="hero-inner">
+    <svg class="star" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 4 61 38 97 38 68 59 79 94 50 72 21 94 32 59 3 38 39 38Z"/></svg>
+    <div class="logo big" data-marque>Le Bal des Fous</div>
+    <p class="presents">fête</p>
+    <h1 class="theme-title"><span class="t1" data-theme>Nuit de Noël</span></h1>
+    <p class="t2"><span>❄</span> <span data-soustheme>Flocons &amp; Merveilles</span> <span>❄</span></p>
+    <p class="script date" data-datelongue>Samedi 19 Décembre</p>
+    <p class="script lieu" data-lieu>Le Palais</p>
+    <div class="countdown" id="countdown" aria-label="Compte à rebours"></div>
+    <a class="cta" href="#reserver"><span class="gift">🎁</span> Choisir ma table <span>→</span></a>
+    <p class="hero-foot"><span data-datecourte></span> · <span data-horaires></span></p>
+  </div>
+
+  <!-- paysage enneigé -->
+  <svg class="drift" viewBox="0 0 1440 260" preserveAspectRatio="none" aria-hidden="true">
+    <defs>
+      <linearGradient id="snowg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dfe9f5"/></linearGradient>
+      <g id="pine"><path d="M0-120 34-60H18L46-10H24L56 40H-56L-24-10H-46L-18-60H-34Z" fill="#1d5a34"/><path d="M0-120 14-95 0-90-14-95Z M-34-60-18-60-8-52-22-50Z M34-60 18-60 8-52 22-50Z M-46-10-24-10-12-2-30 0Z M46-10 24-10 12-2 30 0Z" fill="#fff"/><rect x="-8" y="40" width="16" height="18" fill="#5a3418"/><path d="M0-132 4-124 13-124 6-118 9-110 0-115-9-110-6-118-13-124-4-124Z" fill="#ffd35a"/></g>
+      <g id="gift"><rect x="-22" y="-30" width="44" height="30" style="fill:var(--gc)"/><rect x="-25" y="-38" width="50" height="10" style="fill:var(--gc)"/><rect x="-4" y="-38" width="8" height="38" fill="#e8c46a"/><path d="M0-38C-14-52-22-40-4-38M0-38C14-52 22-40 4-38" stroke="#e8c46a" stroke-width="4" fill="none"/></g>
+    </defs>
+    <use href="#pine" x="120" y="150" transform="scale(1)" />
+    <use href="#pine" x="230" y="175" transform="translate(-30 30) scale(.8)" />
+    <use href="#pine" x="1320" y="150" />
+    <use href="#pine" x="1520" y="205" transform="scale(.8)" />
+    <path d="M0 200 Q180 140 360 190 T720 185 T1080 190 T1440 170 V260 H0Z" fill="url(#snowg)"/>
+    <use href="#gift" x="300" y="215" style="--gc:#d4142a"/>
+    <use href="#gift" x="350" y="222" style="--gc:#1d5a34" transform="translate(0 0)"/>
+    <use href="#gift" x="1110" y="212" style="--gc:#e8c46a;--x:0"/>
+    <use href="#gift" x="1160" y="220" style="--gc:#d4142a"/>
+    <path d="M0 230 Q240 200 480 228 T960 222 T1440 215 V260 H0Z" fill="#fff"/>
+  </svg>
+</section>
+
+<!-- ============================ RÉSERVATION ============================ -->
+<section id="reserver" class="booking">
+  <header class="topbar">
+    <a class="logo small" href="#accueil" data-marque>Le Bal des Fous</a>
+    <div class="topbar-center">
+      <span class="kicker" data-lieu-up></span>
+      <strong data-datecourte></strong>
+    </div>
+    <span class="kicker right" data-tagline></span>
+  </header>
+
+  <div class="layout">
+    <main class="plan-col">
+      <div class="plan-head">
+        <div>
+          <p class="eyebrow" data-soustheme-up></p>
+          <h2>Votre table au Bal des Fous</h2>
+        </div>
+        <p class="meta" id="meta-count"></p>
+      </div>
+
+      <div class="stage" id="stage">
+        <canvas id="scene"></canvas>
+        <div class="labels" id="labels"></div>
+        <button class="btn-gold overview" id="btn-overview" type="button">Vue d’ensemble</button>
+        <div class="zoom">
+          <button type="button" id="zoom-in" aria-label="Zoomer">+</button>
+          <button type="button" id="zoom-out" aria-label="Dézoomer">−</button>
+        </div>
+        <p class="hint">Glissez pour tourner · Zoomez vers le curseur · Choisissez une table</p>
+        <div class="loading" id="loading">Chargement de la salle…</div>
+      </div>
+
+      <div class="legend">
+        <span><i class="dot free"></i>Disponible</span>
+        <span><i class="dot taken"></i>Réservée</span>
+        <label class="only"><input type="checkbox" id="only-free"> Disponibles uniquement</label>
+      </div>
+    </main>
+
+    <aside class="side" id="side">
+      <div class="side-head">
+        <h3>Zones &amp; tarifs</h3>
+        <button type="button" class="collapse" id="collapse" aria-label="Replier">−</button>
+      </div>
+      <div class="side-body">
+        <p class="side-sub">Prix par table · <span data-personnes></span> selon la zone</p>
+        <ul class="zones" id="zones"></ul>
+        <div class="info">
+          <h4>Une demande, puis un échange.</h4>
+          <p>L’organisation vous contactera par SMS ou WhatsApp, selon votre choix, dans les heures qui suivent.
+            Acompte de <span data-acompte></span> % après validation.</p>
+        </div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<footer class="footer">
+  <p class="logo small" data-marque>Le Bal des Fous</p>
+  <p><span data-theme></span> · <span data-datecourte></span> · <span data-lieu></span></p>
+  <p class="fine">Réservation soumise à validation par l’organisation. Acompte de <span data-acompte></span> % à régler après validation,
+    solde sur place. Toute table non confirmée dans les délais indiqués peut être remise en vente. Entrée réservée aux personnes majeures.
+    L’abus d’alcool est dangereux pour la santé, à consommer avec modération.</p>
+</footer>
+
+<!-- =========================== FICHE TABLE =========================== -->
+<div class="drawer-back" id="drawer-back" hidden></div>
+<aside class="drawer" id="drawer" aria-hidden="true" role="dialog" aria-labelledby="d-title">
+  <button class="drawer-close" id="drawer-close" type="button" aria-label="Fermer">×</button>
+
+  <div id="d-form-view">
+    <p class="eyebrow" id="d-zone"></p>
+    <h3 id="d-title">Table 01</h3>
+    <div class="d-facts">
+      <div><span>Prix de la table</span><strong id="d-price"></strong></div>
+      <div><span>Capacité</span><strong id="d-cap"></strong></div>
+      <div><span>Acompte</span><strong id="d-dep"></strong></div>
+    </div>
+    <p class="d-taken" id="d-taken" hidden>Cette table est déjà réservée. Choisissez une autre table disponible.</p>
+
+    <form id="form" novalidate>
+      <div class="row2">
+        <label>Prénom<input name="prenom" autocomplete="given-name" required></label>
+        <label>Nom<input name="nom" autocomplete="family-name" required></label>
+      </div>
+      <label>Téléphone<input name="tel" type="tel" autocomplete="tel" placeholder="06 12 34 56 78" required></label>
+      <label><span>E-mail <em>(facultatif)</em></span><input name="email" type="email" autocomplete="email"></label>
+      <label>Nombre de personnes<select name="personnes" id="d-pers"></select></label>
+      <fieldset>
+        <legend>Être recontacté par</legend>
+        <label class="pill"><input type="radio" name="contact" value="whatsapp" checked> WhatsApp</label>
+        <label class="pill"><input type="radio" name="contact" value="sms"> SMS</label>
+      </fieldset>
+      <label><span>Message <em>(facultatif)</em></span><textarea name="message" rows="2" placeholder="Anniversaire, bouteilles souhaitées, heure d’arrivée…"></textarea></label>
+      <input name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <label class="check"><input type="checkbox" name="cgv" required> <span>J’ai compris qu’un acompte de <span data-acompte></span> % me sera demandé après validation de ma demande.</span></label>
+      <p class="error" id="d-error" hidden></p>
+      <button class="btn-red" type="submit" id="d-submit">Envoyer ma demande <span>→</span></button>
+      <p class="fine">Aucun paiement maintenant. L’organisation vous recontacte pour confirmer.</p>
+    </form>
+  </div>
+
+  <div id="d-ok-view" hidden>
+    <div class="ok-star">🎅</div>
+    <h3>Demande envoyée !</h3>
+    <p id="d-ok-text"></p>
+    <button class="btn-gold" type="button" id="d-ok-close">Revenir au plan</button>
+  </div>
+</aside>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

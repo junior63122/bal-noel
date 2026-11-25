@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Administration — Bal de Noël</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg:#3d0610; --panel:#5a0816; --line:rgba(217,184,120,.25); --gold:#d9b878; --ink:#f4ecdc; --muted:#a9b3a6; }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: Manrope, system-ui, sans-serif; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1px solid var(--line); gap: 12px; flex-wrap: wrap; }
+    h1 { font-family: 'DM Serif Display', serif; font-weight: 400; margin: 0; font-size: 30px; }
+    h2 { font-family: 'DM Serif Display', serif; font-weight: 400; font-size: 26px; margin: 0 0 14px; }
+    main { padding: 24px; display: grid; gap: 30px; max-width: 1300px; margin: auto; }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 8px 12px; }
+    button.gold { background: var(--gold); color: #1d1608; border: 0; font-weight: 700; }
+    .login { max-width: 360px; margin: 14vh auto; display: grid; gap: 12px; padding: 24px; }
+    input { padding: 12px; border-radius: 6px; border: 1px solid var(--line); background: #0a1f17; color: var(--ink); }
+    .stats { display: flex; gap: 12px; flex-wrap: wrap; }
+    .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 18px; min-width: 150px; }
+    .stat b { display: block; font-size: 26px; color: var(--gold); }
+    .stat span { color: var(--muted); font-size: 13px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+    .t { background: var(--panel); border: 1px solid rgba(255,255,255,.12); border-left: 4px solid var(--zc); border-radius: 6px; padding: 10px; text-align: left; }
+    .t b { font-size: 18px; } .t small { display: block; color: var(--muted); font-size: 12px; margin: 2px 0 6px; }
+    .t.res { opacity: .75; background: #2a1518; }
+    .t .st { font-size: 12px; font-weight: 700; } .t.res .st { color: #ff8f9c; } .t:not(.res) .st { color: #7be0a0; }
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .filters button.on { border-color: var(--gold); color: var(--gold); }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,.08); vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+    td .act { display: flex; gap: 6px; flex-wrap: wrap; }
+    a.wa { background: #1f8f4e; color: #fff; text-decoration: none; padding: 8px 10px; border-radius: 6px; font-weight: 600; }
+    a.sms { background: #2f5d9a; color: #fff; text-decoration: none; padding: 8px 10px; border-radius: 6px; font-weight: 600; }
+    .badge { padding: 3px 8px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+    .b-nouvelle { background: #5a4a12; color: #ffd76b; } .b-contactee { background: #173a5c; color: #8fc6ff; }
+    .b-validee { background: #154a2c; color: #7be0a0; } .b-refusee { background: #4a1a20; color: #ff8f9c; }
+    .wrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; }
+    .muted { color: var(--muted); }
+  </style>
+</head>
+<body>
+<form class="login" id="login">
+  <h1>Administration</h1>
+  <p class="muted">Bal des Fous · Nuit de Noël</p>
+  <input type="password" id="pw" placeholder="Mot de passe" autocomplete="current-password" required>
+  <button class="gold">Entrer</button>
+  <p id="lerr" style="color:#ff8f9c" hidden></p>
+</form>
+
+<div id="app" hidden>
+  <header>
+    <h1>Réservations · Nuit de Noël</h1>
+    <div><button id="refresh">Actualiser</button> <button id="csv">Exporter CSV</button> <button id="logout">Déconnexion</button></div>
+  </header>
+  <main>
+    <div class="stats" id="stats"></div>
+    <section>
+      <h2>Demandes</h2>
+      <div class="filters" id="filters"></div>
+      <div class="wrap"><table><thead><tr><th>Date</th><th>Table</th><th>Client</th><th>Pers.</th><th>Message</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="rows"></tbody></table></div>
+    </section>
+    <section>
+      <h2>Plan des tables</h2>
+      <p class="muted">Cliquez sur une table pour la passer en « réservée » ou « disponible ». Une demande validée réserve automatiquement sa table.</p>
+      <div class="grid" id="tables"></div>
+    </section>
+  </main>
+</div>
+
+<script type="module">
+import { EVENT, ZONES, TABLES, zoneOf, prixTable, euros } from './config.js';
+const $ = (s) => document.querySelector(s);
+let pw = sessionStorage.getItem('adm') || '';
+let db = { reserved: [], demandes: [] };
+let filter = 'toutes';
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
+async function call(path, body) {
+  const r = await fetch('api/admin/' + path, { method: body ? 'POST' : 'GET', headers: { 'x-admin-password': pw, 'Content-Type': 'application/json' }, body: body && JSON.stringify(body) });
+  if (r.status === 401) { logout(); throw new Error('Mot de passe incorrect.'); }
+  const j = await r.json(); if (!r.ok) throw new Error(j.error); return j;
+}
+function logout() { pw = ''; sessionStorage.removeItem('adm'); $('#app').hidden = true; $('#login').hidden = false; }
+$('#logout').onclick = logout;
+$('#login').onsubmit = async (e) => {
+  e.preventDefault(); pw = $('#pw').value;
+  try { db = await call('data'); sessionStorage.setItem('adm', pw); show(); } catch (x) { $('#lerr').textContent = x.message; $('#lerr').hidden = false; }
+};
+$('#refresh').onclick = async () => { db = await call('data'); render(); };
+
+function phoneIntl(tel) {
+  let d = tel.replace(/\D/g, '');
+  if (d.startsWith('00')) d = d.slice(2); else if (d.startsWith('0')) d = '33' + d.slice(1);
+  return d;
+}
+function msg(d) {
+  const t = TABLES.find((x) => x.id === d.table); const p = prixTable(t);
+  return `Bonjour ${d.prenom}, ici l’organisation du ${EVENT.marque} — ${EVENT.theme} (${EVENT.dateCourte.toLowerCase()}, ${EVENT.lieu}). ` +
+    `Nous avons bien reçu votre demande pour la table ${d.table} (${zoneOf(t).nom}, ${euros(p)}, ${d.personnes} pers.). ` +
+    `Pour la confirmer, un acompte de ${EVENT.acomptePct} % soit ${euros(Math.round(p * EVENT.acomptePct / 100))} est demandé.`;
+}
+
+function render() {
+  const res = new Set(db.reserved);
+  const ca = TABLES.filter((t) => res.has(t.id)).reduce((s, t) => s + prixTable(t), 0);
+  const nb = (s) => db.demandes.filter((d) => d.statut === s).length;
+  $('#stats').innerHTML = [
+    [`${res.size} / ${TABLES.length}`, 'tables réservées'], [euros(ca), 'chiffre d’affaires tables'],
+    [euros(Math.round(ca * EVENT.acomptePct / 100)), `acomptes (${EVENT.acomptePct} %)`], [nb('nouvelle'), 'nouvelles demandes'], [db.demandes.length, 'demandes au total'],
+  ].map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join('');
+
+  const F = ['toutes', 'nouvelle', 'contactee', 'validee', 'refusee'];
+  $('#filters').innerHTML = F.map((f) => `<button class="${f === filter ? 'on' : ''}" data-f="${f}">${f === 'toutes' ? 'Toutes' : f[0].toUpperCase() + f.slice(1).replace('ee', 'ée')} (${f === 'toutes' ? db.demandes.length : nb(f)})</button>`).join('');
+  $('#filters').querySelectorAll('button').forEach((b) => (b.onclick = () => { filter = b.dataset.f; render(); }));
+
+  const list = db.demandes.filter((d) => filter === 'toutes' || d.statut === filter);
+  $('#rows').innerHTML = list.length ? list.map((d) => {
+    const t = TABLES.find((x) => x.id === d.table);
+    const text = encodeURIComponent(msg(d));
+    return `<tr>
+      <td>${new Date(d.date).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}</td>
+      <td><b>${d.table}</b><br><span class="muted">${esc(zoneOf(t).nom)}<br>${euros(prixTable(t))}</span>${res.has(d.table) ? '<br><span class="badge b-refusee">table prise</span>' : ''}</td>
+      <td><b>${esc(d.prenom)} ${esc(d.nom)}</b><br>${esc(d.tel)}<br><span class="muted">${esc(d.email)}</span><br><span class="muted">préfère : ${d.contact === 'sms' ? 'SMS' : 'WhatsApp'}</span></td>
+      <td>${d.personnes}</td>
+      <td style="max-width:240px">${esc(d.message)}</td>
+      <td><span class="badge b-${d.statut}">${d.statut.replace('ee', 'ée')}</span></td>
+      <td><div class="act">
+        <a class="wa" target="_blank" rel="noopener" href="https://wa.me/${phoneIntl(d.tel)}?text=${text}">WhatsApp</a>
+        <a class="sms" href="sms:${esc(d.tel)}?&body=${text}">SMS</a>
+        <button data-id="${d.id}" data-s="contactee">Contactée</button>
+        <button data-id="${d.id}" data-s="validee">Valider</button>
+        <button data-id="${d.id}" data-s="refusee">Refuser</button>
+        <button data-id="${d.id}" data-s="supprimer" title="Supprimer">🗑</button>
+      </div></td></tr>`;
+  }).join('') : '<tr><td colspan="7" class="muted">Aucune demande.</td></tr>';
+  $('#rows').querySelectorAll('button[data-id]').forEach((b) => (b.onclick = async () => {
+    if (b.dataset.s === 'supprimer' && !confirm('Supprimer cette demande ?')) return;
+    db = await call('demande', { id: b.dataset.id, statut: b.dataset.s }); render();
+  }));
+
+  $('#tables').innerHTML = TABLES.map((t) => {
+    const z = zoneOf(t), r = res.has(t.id), n = db.demandes.filter((d) => d.table === t.id && d.statut !== 'refusee').length;
+    return `<button class="t ${r ? 'res' : ''}" style="--zc:${z.couleurs.at(-1)}" data-t="${t.id}"><b>${t.id}</b><small>${esc(z.nom)} · ${euros(prixTable(t))}</small>
+      <span class="st">${r ? 'Réservée' : 'Disponible'}</span>${n ? ` <span class="muted" style="font-size:12px">· ${n} demande${n > 1 ? 's' : ''}</span>` : ''}</button>`;
+  }).join('');
+  $('#tables').querySelectorAll('[data-t]').forEach((b) => (b.onclick = async () => {
+    db = await call('table', { id: b.dataset.t, reserved: !res.has(b.dataset.t) }); render();
+  }));
+}
+$('#csv').onclick = () => {
+  const head = ['date', 'table', 'zone', 'prix', 'prenom', 'nom', 'tel', 'email', 'personnes', 'contact', 'statut', 'message'];
+  const rows = db.demandes.map((d) => { const t = TABLES.find((x) => x.id === d.table); return [d.date, d.table, zoneOf(t).nom, prixTable(t), d.prenom, d.nom, d.tel, d.email, d.personnes, d.contact, d.statut, d.message]; });
+  const csv = [head, ...rows].map((r) => r.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')).join('\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv' })); a.download = 'demandes-bal-noel.csv'; a.click();
+};
+function show() { $('#login').hidden = true; $('#app').hidden = false; render(); }
+if (pw) call('data').then((d) => { db = d; show(); }).catch(() => {});
+setInterval(async () => { if (pw && !document.hidden) { db = await call('data'); render(); } }, 30000);
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "bal-noel-reservation",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Réservation de tables VIP — Le Bal des Fous, édition Noël",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
