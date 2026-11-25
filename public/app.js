@@ -294,12 +294,79 @@ const floaters = [];
   floaters.push({ ball, h, k });
 });
 
-// DJ
+// Régie DJ du Bal des Fous : comptoir blanc au logo tourné vers la piste, platines,
+// structure en treillis (truss) et enceintes. Repère local : -z = côté piste.
 {
   const dj = new THREE.Group();
-  const booth = new THREE.Mesh(new THREE.BoxGeometry(4.4, 1.2, 2.2), M.dark); booth.position.y = .6; dj.add(booth);
-  const front = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 1), new THREE.MeshStandardMaterial({ color: '#000', emissive: '#ff3355', emissiveIntensity: 1.2 }));
-  front.position.set(0, .6, -1.11); front.rotation.y = Math.PI; dj.add(front);
+  const white = new THREE.MeshStandardMaterial({ color: '#f1ece2', roughness: .55 });
+  const black = new THREE.MeshStandardMaterial({ color: '#1b1c22', roughness: .45, metalness: .3 });
+  const steel = new THREE.MeshStandardMaterial({ color: '#3d4048', roughness: .35, metalness: .85 });
+  // comptoir
+  const W = 4.2, D = 1.1, HT = 1.15;
+  const desk = new THREE.Mesh(new THREE.BoxGeometry(W, HT, D), white); desk.position.set(0, HT / 2, 0); dj.add(desk);
+  const top = new THREE.Mesh(new THREE.BoxGeometry(W + .1, .05, D + .1), black); top.position.y = HT + .025; dj.add(top);
+  // façade avec le logo, côté piste
+  const logoTex = new THREE.TextureLoader().load('assets/logo-sombre.webp'); logoTex.colorSpace = THREE.SRGBColorSpace; logoTex.anisotropy = 4;
+  const facade = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 1.35), new THREE.MeshStandardMaterial({ map: logoTex, transparent: true, roughness: .6 }));
+  facade.position.set(0, HT / 2 + .02, -D / 2 - .006); facade.rotation.y = Math.PI; dj.add(facade);
+  const glowStrip = new THREE.Mesh(new THREE.BoxGeometry(W, .04, .04), new THREE.MeshBasicMaterial({ color: '#ffd98a', toneMapped: false }));
+  glowStrip.position.set(0, .04, -D / 2 - .03); dj.add(glowStrip);
+  // matériel : 4 platines, table de mixage, ordinateur
+  const yTop = HT + .05;
+  [-1.35, -.8, .8, 1.35].forEach((x) => {
+    const cdj = new THREE.Mesh(new THREE.BoxGeometry(.42, .1, .5), black); cdj.position.set(x, yTop + .05, .05); dj.add(cdj);
+    const jog = new THREE.Mesh(new THREE.CylinderGeometry(.14, .14, .03, 24), steel); jog.position.set(x, yTop + .115, .1); dj.add(jog);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(.14, .012, 6, 32), new THREE.MeshBasicMaterial({ color: '#9fd0ff', toneMapped: false }));
+    ring.rotation.x = Math.PI / 2; ring.position.set(x, yTop + .13, .1); dj.add(ring);
+  });
+  const mixer = new THREE.Mesh(new THREE.BoxGeometry(.55, .1, .5), black); mixer.position.set(0, yTop + .05, .05); dj.add(mixer);
+  for (let i = 0; i < 4; i++) { const f = new THREE.Mesh(new THREE.BoxGeometry(.03, .02, .12), new THREE.MeshBasicMaterial({ color: '#ffd98a', toneMapped: false })); f.position.set(-.18 + i * .12, yTop + .11, .12); dj.add(f); }
+  const lap = new THREE.Mesh(new THREE.BoxGeometry(.4, .02, .28), steel); lap.position.set(-1.9, yTop + .01, .2); dj.add(lap);
+  const scr = new THREE.Mesh(new THREE.PlaneGeometry(.38, .24), new THREE.MeshBasicMaterial({ color: '#5c7fb8', toneMapped: false })); scr.position.set(-1.9, yTop + .13, .34); scr.rotation.x = -.25; dj.add(scr);
+
+  // treillis : toutes les barres en un seul InstancedMesh
+  const bars = [];
+  const bar = (a, b) => bars.push([a, b]);
+  const v = (x, y, z) => new THREE.Vector3(x, y, z);
+  function truss(a, b, size = .3, step = .45) { // poutre carrée : 4 membrures + diagonales en zigzag
+    const dir = b.clone().sub(a), len = dir.length(); dir.normalize();
+    const up = Math.abs(dir.y) > .9 ? v(1, 0, 0) : v(0, 1, 0);
+    const u = new THREE.Vector3().crossVectors(dir, up).normalize().multiplyScalar(size / 2);
+    const w = new THREE.Vector3().crossVectors(dir, u).normalize().multiplyScalar(size / 2);
+    const corners = [u.clone().add(w), u.clone().sub(w), u.clone().negate().sub(w), u.clone().negate().add(w)];
+    corners.forEach((c) => bar(a.clone().add(c), b.clone().add(c)));
+    const n = Math.max(1, Math.round(len / step));
+    for (let i = 0; i < n; i++) {
+      const p0 = a.clone().addScaledVector(dir, len * i / n), p1 = a.clone().addScaledVector(dir, len * (i + 1) / n);
+      for (let k = 0; k < 4; k++) {
+        const c0 = corners[k], c1 = corners[(k + 1) % 4];
+        i % 2 ? bar(p0.clone().add(c0), p1.clone().add(c1)) : bar(p0.clone().add(c1), p1.clone().add(c0));
+      }
+    }
+  }
+  const X = 2.9, Z0 = -.9, Z1 = 1.2, HH = 3.6;
+  [[-X, Z0], [X, Z0], [-X, Z1], [X, Z1]].forEach(([x, z]) => truss(v(x, 0, z), v(x, HH, z)));
+  truss(v(-X, HH, Z0), v(X, HH, Z0)); truss(v(-X, HH, Z1), v(X, HH, Z1));
+  truss(v(-X, HH, Z0), v(-X, HH, Z1)); truss(v(X, HH, Z0), v(X, HH, Z1));
+  const barGeo = new THREE.CylinderGeometry(.018, .018, 1, 5);
+  const im = new THREE.InstancedMesh(barGeo, steel, bars.length);
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), yAxis = v(0, 1, 0), sc = v(1, 1, 1), mid = v(0, 0, 0);
+  bars.forEach(([a, b], i) => {
+    const d = b.clone().sub(a); q.setFromUnitVectors(yAxis, d.clone().normalize());
+    m4.compose(mid.copy(a).add(b).multiplyScalar(.5), q, sc.set(1, d.length(), 1)); im.setMatrixAt(i, m4);
+  });
+  dj.add(im);
+  // projecteurs accrochés au treillis, orientés vers la piste
+  [-2.2, -1.1, 0, 1.1, 2.2].forEach((x) => {
+    const head = new THREE.Mesh(new THREE.CylinderGeometry(.12, .16, .3, 12), black); head.position.set(x, HH - .3, Z0); head.rotation.x = .9; dj.add(head);
+    const lens = new THREE.Mesh(new THREE.CircleGeometry(.11, 16), new THREE.MeshBasicMaterial({ color: '#fff1d6', toneMapped: false }));
+    lens.position.set(x, HH - .42, Z0 - .12); lens.rotation.x = Math.PI - .9 + Math.PI / 2; dj.add(lens);
+  });
+  // enceintes de part et d'autre
+  [-3.5, 3.5].forEach((x) => {
+    const sp = new THREE.Mesh(new THREE.BoxGeometry(.7, 1.6, .7), black); sp.position.set(x, .8, 0); dj.add(sp);
+    [.35, 1.0, 1.35].forEach((y, k) => { const cone = new THREE.Mesh(new THREE.CircleGeometry(k ? .12 : .24, 20), steel); cone.position.set(x, y + (k ? .05 : 0), -.352); cone.rotation.y = Math.PI; dj.add(cone); });
+  });
   dj.position.copy(V(627, 566, H)); scene.add(dj);
 }
 
