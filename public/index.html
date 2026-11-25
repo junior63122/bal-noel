@@ -6,7 +6,8 @@
   <title>Le Bal des Fous · Le Bal de Noël — Réservation de tables · Cannes</title>
   <meta name="description" content="Réservez votre table pour le Bal de Noël du Bal des Fous, dimanche 27 décembre sur les terrasses du Palais des Festivals de Cannes.">
   <meta name="theme-color" content="#0c0809">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='%23c9a45c' d='M50 4 58 42 96 50 58 58 50 96 42 58 4 50 42 42Z'/></svg>">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="preload" as="image" href="assets/traineau.webp">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Great+Vibes&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -19,32 +20,29 @@
 <!-- ============================== ACCUEIL ============================== -->
 <section class="hero" id="accueil">
   <div class="glow" aria-hidden="true"></div>
-  <div class="sleigh" aria-hidden="true"><img src="assets/traineau.webp" width="1000" height="651" alt=""></div>
+  <canvas class="dust" id="dust" aria-hidden="true"></canvas>
+  <div class="sleigh" id="sleigh" aria-hidden="true"><img src="assets/traineau.webp" width="1000" height="651" alt=""></div>
   <img class="bunny" src="assets/lapin.webp" width="600" height="870" alt="La mascotte du Bal des Fous en Père Noël">
   <div class="frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
 
   <div class="hero-inner">
-    <div class="hero-visual">
-      <img class="lettering cannes" src="assets/cannes.webp" width="1400" height="667" alt="Cannes" fetchpriority="high">
-      <img class="lettering date" src="assets/date.webp" width="1200" height="801" alt="Dimanche 27 décembre">
+    <div class="hero-visual" id="hero-visual">
+      <div class="lw cannes-w reveal" style="--i:1"><img class="lettering cannes" src="assets/cannes.webp" width="1400" height="667" alt="Cannes" fetchpriority="high"><i class="lantern" style="left:8.5%;top:80%"></i><i class="lantern" style="left:91.5%;top:80%"></i></div>
+      <div class="lw date-w reveal" style="--i:2"><img class="lettering date" src="assets/date.webp" width="1200" height="801" alt="Dimanche 27 décembre"><i class="lantern" style="left:17%;top:47%"></i><i class="lantern" style="left:82%;top:47%"></i></div>
     </div>
     <div class="hero-text">
-      <p class="over"><span data-lieu-up></span></p>
-      <div class="logo big" data-marque>Le Bal des Fous</div>
-      <svg class="ornament" viewBox="0 0 320 40" aria-hidden="true">
-        <line x1="0" y1="20" x2="128" y2="20"/><line x1="192" y1="20" x2="320" y2="20"/>
-        <path d="M160 2 L163.5 16.5 L178 20 L163.5 23.5 L160 38 L156.5 23.5 L142 20 L156.5 16.5Z"/>
-        <circle cx="136" cy="20" r="2"/><circle cx="184" cy="20" r="2"/>
-      </svg>
-      <h1 class="theme-title" data-theme>Le Bal de Noël</h1>
-      <p class="subtitle">Une soirée de gala sur les terrasses du Palais</p>
-      <ul class="facts">
+      <p class="over reveal" style="--i:3"><span data-lieu-up></span></p>
+      <img class="brand-logo reveal" style="--i:4" src="assets/logo-clair.webp" width="900" height="530" alt="Le Bal des Fous">
+      <div class="ornament reveal" style="--i:5" aria-hidden="true"><span></span><img src="assets/croix.png" alt=""><span></span></div>
+      <h1 class="theme-title reveal" style="--i:6"><span class="shine" data-theme>Le Bal de Noël</span></h1>
+      <p class="subtitle reveal" style="--i:7">Une soirée de gala sur les terrasses du Palais</p>
+      <ul class="facts reveal" style="--i:8">
         <li><small>Horaires</small><span data-horaires-fr></span></li>
         <li><small>Lieu</small><span data-lieudetail></span></li>
       </ul>
-      <div class="countdown" id="countdown" aria-label="Compte à rebours"></div>
-      <div class="ctas">
-        <a class="cta" href="#reserver">Réserver une table</a>
+      <div class="countdown reveal" style="--i:9" id="countdown" aria-label="Compte à rebours"></div>
+      <div class="ctas reveal" style="--i:10">
+        <a class="cta loading" id="cta-main" href="#reserver"><span class="cta-txt">La salle se prépare…</span></a>
         <a class="cta-ghost" href="#reserver">Voir le plan de salle</a>
       </div>
     </div>
@@ -55,7 +53,7 @@
 <!-- ============================ RÉSERVATION ============================ -->
 <section id="reserver" class="booking">
   <header class="topbar">
-    <a class="logo small" href="#accueil" data-marque>Le Bal des Fous</a>
+    <a class="brand-small" href="#accueil"><img src="assets/logo-ligne.webp" width="700" height="103" alt="Le Bal des Fous"></a>
     <div class="topbar-center">
       <span class="kicker" data-lieu-up></span>
       <strong data-datecourte></strong>
@@ -77,12 +75,19 @@
         <canvas id="scene"></canvas>
         <div class="labels" id="labels"></div>
         <button class="btn-gold overview" id="btn-overview" type="button">Vue d’ensemble</button>
+        <div class="stage-badge" id="badge" hidden></div>
+        <div class="pov-bar" id="pov-bar" hidden><span id="pov-txt"></span><button type="button" id="pov-exit">Revenir au plan</button></div>
         <div class="zoom">
           <button type="button" id="zoom-in" aria-label="Zoomer">+</button>
           <button type="button" id="zoom-out" aria-label="Dézoomer">−</button>
         </div>
         <p class="hint">Glissez pour tourner · Zoomez vers le curseur · Choisissez une table</p>
         <div class="loading" id="loading">Chargement de la salle…</div>
+      </div>
+
+      <div class="zone-strip" id="zone-strip" hidden>
+        <div class="zs-head"><strong id="zs-name"></strong><span id="zs-meta"></span></div>
+        <div class="zs-list" id="zs-list"></div>
       </div>
 
       <div class="legend">
@@ -100,6 +105,18 @@
       <div class="side-body">
         <p class="side-sub">Prix par table · <span data-personnes></span> selon la zone</p>
         <ul class="zones" id="zones"></ul>
+      </div>
+      <div class="table-panel" id="tpanel" hidden>
+        <div class="tp-head"><p class="eyebrow">Votre table</p><button type="button" class="tp-close" id="tp-close" aria-label="Fermer">×</button></div>
+        <h3 id="tp-title">Table</h3>
+        <p class="tp-zone" id="tp-zone"></p>
+        <p class="tp-price" id="tp-price"></p>
+        <p class="tp-sub" id="tp-sub"></p>
+        <div class="tp-status" id="tp-status"></div>
+        <button type="button" class="tp-btn ghost" id="tp-pov">Voir depuis cette table <span>↗</span></button>
+        <button type="button" class="tp-btn gold" id="tp-ask">Demander cette table <span>→</span></button>
+      </div>
+      <div class="side-info">
         <div class="info">
           <h4>Une demande, puis un échange.</h4>
           <p>L’organisation vous contactera par SMS ou WhatsApp, selon votre choix, dans les heures qui suivent.
@@ -112,7 +129,7 @@
 
 <footer class="footer">
   <img class="footer-sleigh" src="assets/traineau-dos.webp" width="900" height="562" alt="" loading="lazy">
-  <p class="logo small" data-marque>Le Bal des Fous</p>
+  <img class="footer-logo" src="assets/logo-ligne.webp" width="700" height="103" alt="Le Bal des Fous" loading="lazy">
   <p><span data-theme></span> · <span data-datecourte></span> · <span data-lieu></span></p>
   <p class="fine">Réservation soumise à validation par l’organisation. Acompte de <span data-acompte></span> % à régler après validation,
     solde sur place. Toute table non confirmée dans les délais indiqués peut être remise en vente. Entrée réservée aux personnes majeures.

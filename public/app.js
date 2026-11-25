@@ -86,6 +86,75 @@ function countdown() {
 }
 countdown(); setInterval(countdown, 1000);
 
+/* ================================================================ traîneau du Père Noël */
+// Trajectoire en courbe de Bézier : le traîneau arrive de loin (petit), grossit, s'incline
+// selon la pente du vol, galope (léger rebond) et sème une poussière d'étoiles dorée.
+(function sleighFlight() {
+  const hero = $('#accueil'), el = $('#sleigh'), cv = $('#dust');
+  if (!el || !cv) return;
+  const ctx = cv.getContext('2d');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let W, H, dpr;
+  const size = () => { dpr = Math.min(devicePixelRatio, 2); W = hero.clientWidth; H = hero.clientHeight; cv.width = W * dpr; cv.height = H * dpr; };
+  size(); addEventListener('resize', size);
+  const bez = (p0, p1, p2, p3, t) => { const u = 1 - t; return u * u * u * p0 + 3 * u * u * t * p1 + 3 * u * t * t * p2 + t * t * t * p3; };
+  const dbez = (p0, p1, p2, p3, t) => { const u = 1 - t; return 3 * u * u * (p1 - p0) + 6 * u * t * (p2 - p1) + 3 * t * t * (p3 - p2); };
+  let flight = null, nextAt = performance.now() + 1200, parts = [];
+  function newFlight(now) {
+    const left = Math.random() < .5; // alterne aléatoirement le sens d'arrivée en hauteur
+    // vol dans la bande haute de l'écran, au-dessus des textes
+    const top = innerWidth < 1000 ? 10 : 22;
+    flight = { start: now, dur: innerWidth < 640 ? 7000 : 9500,
+      x: [W + 80, W * .72, W * .3, -W * .35], y: [top + (left ? 40 : 20), top - 25, top + 70, top + (left ? 5 : 30)] };
+  }
+  function frame(now) {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+    if (!flight && now > nextAt && !document.hidden) newFlight(now);
+    if (flight) {
+      const k = (now - flight.start) / flight.dur;
+      if (k >= 1) { flight = null; nextAt = now + 7000 + Math.random() * 5000; el.style.opacity = 0; }
+      else {
+        const t = k, x = bez(...flight.x, t), y = bez(...flight.y, t);
+        const dx = dbez(...flight.x, t), dy = dbez(...flight.y, t);
+        const ang = Math.atan2(dy, dx) + Math.PI;          // le traîneau regarde vers la gauche
+        const tilt = THREE.MathUtils.clamp(ang > Math.PI ? ang - 2 * Math.PI : ang, -.35, .35) * .8;
+        const sc = .62 + .5 * Math.sin(Math.min(1, t * 1.15) * Math.PI / 2); // approche : de loin vers près
+        const gallop = Math.sin(now / 95) ;                  // cadence du galop
+        const w = el.offsetWidth;
+        el.style.opacity = Math.min(1, k * 8, (1 - k) * 8);
+        el.style.transform = `translate(${x - w / 2}px, ${y + gallop * 3}px) rotate(${tilt + gallop * .012}rad) scale(${sc}) skewX(${gallop * 1.2}deg)`;
+        // poussière d'étoiles depuis l'arrière du traîneau
+        if (!reduce) for (let i = 0; i < 3; i++) {
+          const bx = x + w * .38 * sc, by = y + w * .62 * .5 * sc;
+          parts.push({ x: bx + (Math.random() - .5) * 18, y: by + (Math.random() - .5) * 14, vx: 30 + Math.random() * 50, vy: (Math.random() - .3) * 22, life: 0, max: 1.1 + Math.random() * 1.2, r: Math.random() * 1.8 + .5, star: Math.random() < .12 });
+        }
+      }
+    }
+    const dt = 1 / 60;
+    parts = parts.filter((p) => (p.life += dt) < p.max);
+    for (const p of parts) {
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 8 * dt; p.vx *= .985;
+      const a = (1 - p.life / p.max) * (.6 + .4 * Math.sin(p.life * 22));
+      ctx.globalAlpha = Math.max(0, a);
+      if (p.star) { ctx.fillStyle = '#fff6dc'; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.life * 3); ctx.fillRect(-p.r * 2.4, -.5, p.r * 4.8, 1); ctx.fillRect(-.5, -p.r * 2.4, 1, p.r * 4.8); ctx.restore(); }
+      else { ctx.fillStyle = p.life < .25 ? '#fff4d6' : '#e2c487'; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fill(); }
+    }
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(frame);
+  }
+  el.style.opacity = 0;
+  if (!reduce) requestAnimationFrame(frame);
+})();
+
+// léger effet de profondeur sur les lettrages quand la souris bouge
+(function parallax() {
+  const v = $('#hero-visual'); if (!v || matchMedia('(pointer: coarse)').matches) return;
+  $('#accueil').addEventListener('pointermove', (e) => {
+    const x = e.clientX / innerWidth - .5, y = e.clientY / innerHeight - .5;
+    v.style.setProperty('--px', x.toFixed(3)); v.style.setProperty('--py', y.toFixed(3));
+  });
+})();
+
 /* ================================================================ scène 3D */
 const PX = 17;               // pixels du plan par mètre
 const CX = 627, CY = 389;    // centre de la piste tournante
@@ -236,8 +305,8 @@ PLATFORMS.forEach((pts) => {
 // piste tournante Ø 7,30 m
 const piste = new THREE.Mesh(new THREE.CylinderGeometry(3.65, 3.65, .14, 64), [new THREE.MeshStandardMaterial({ color: '#c9a25a', metalness: .8, roughness: .3 }), new THREE.MeshStandardMaterial({ map: pisteTex, roughness: .35, metalness: .3 }), M.dark]);
 piste.position.copy(V(CX, CY, .07)); scene.add(piste);
-const ring = new THREE.Mesh(new THREE.TorusGeometry(3.75, .06, 8, 96), new THREE.MeshBasicMaterial({ color: '#ffd27a' }));
-ring.rotation.x = Math.PI / 2; ring.position.copy(V(CX, CY, .15)); scene.add(ring);
+const pisteRing = new THREE.Mesh(new THREE.TorusGeometry(3.75, .06, 8, 96), new THREE.MeshBasicMaterial({ color: '#ffd27a' }));
+pisteRing.rotation.x = Math.PI / 2; pisteRing.position.copy(V(CX, CY, .15)); scene.add(pisteRing);
 
 // grande étoile et boules de Noël suspendues au-dessus de la salle
 const bigStar = new THREE.Group();
@@ -324,8 +393,13 @@ TABLES.forEach((t) => {
   // canapés dos au mur, face à la piste (VIP fond) ou dos à l'entrée (scène)
   const onStage = !t.zone.startsWith('fond') && t.zone !== 'ailes';
   g.rotation.y = (onStage ? Math.PI : 0) + THREE.MathUtils.degToRad(-t.a);
+  // dalle lumineuse sous la table (couleur de la zone, grise si réservée)
+  const plate = new THREE.Mesh(new THREE.PlaneGeometry(t.n * 1.6 + .3, 1.9),
+    new THREE.MeshStandardMaterial({ color: zoneOf(t).couleurs.at(-1), emissive: zoneOf(t).couleurs.at(-1), emissiveIntensity: .25, transparent: true, opacity: .55, roughness: .6 }));
+  plate.rotation.x = -Math.PI / 2; plate.position.set(0, .012, 0); g.add(plate);
+  g.traverse((o) => { if (o.isMesh) o.userData.tableId = t.id; });
   scene.add(g);
-  TABLE_OBJ.set(t.id, { group: g, mats, anchor: V(t.x, t.y, h + 1.25) });
+  TABLE_OBJ.set(t.id, { group: g, mats, plate, anchor: V(t.x, t.y, h + 1.25), base: V(t.x, t.y, h) });
 });
 
 // neige dans la salle
@@ -345,7 +419,7 @@ TABLES.forEach((t) => {
   b.type = 'button'; b.className = 'tlabel'; b.textContent = t.id;
   b.style.setProperty('--zc', zoneOf(t).couleurs.at(-1));
   b.title = `Table ${t.id} · ${zoneOf(t).nom} · ${euros(prixTable(t))}`;
-  b.addEventListener('click', () => openDrawer(t));
+  b.addEventListener('click', () => selectTable(t));
   b.addEventListener('pointerenter', () => highlight(t.id, true));
   b.addEventListener('pointerleave', () => highlight(t.id, false));
   labels.appendChild(b); LABEL.set(t.id, b);
@@ -368,28 +442,100 @@ function placeLabels() {
 
 /* ================================================================ caméra */
 let fly = null;
-function flyTo(pos, target, ms = 900) {
-  fly = { p0: camera.position.clone(), t0: controls.target.clone(), p1: pos, t1: target, start: performance.now(), ms };
+const easeIO = (t) => (t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+function flyTo(pos, target, ms = 1300, done) {
+  fly = { p0: camera.position.clone(), t0: controls.target.clone(), p1: pos, t1: target, start: performance.now(), ms, done };
 }
-function flyHome() { flyTo(HOME.pos.clone(), HOME.target.clone()); }
+function flyHome() { flyTo(HOME.pos.clone(), HOME.target.clone(), 1500); }
 function flyZone(zoneId) {
   const ts = TABLES.filter((t) => t.zone === zoneId);
   const box = new THREE.Box3(); ts.forEach((t) => box.expandByPoint(TABLE_OBJ.get(t.id).anchor));
   const c = box.getCenter(new THREE.Vector3()); const size = box.getSize(new THREE.Vector3()).length();
   const dist = Math.max(15, size * 1.5);
   const pos = c.clone().add(new THREE.Vector3(0, dist * .85, dist * .75));
-  flyTo(pos, c);
+  flyTo(pos, c, 1400);
+}
+// zoom cinématographique sur une table : la caméra se place derrière la table, en hauteur, regard vers la piste
+function flyTable(t) {
+  const o = TABLE_OBJ.get(t.id);
+  const target = o.base.clone().setY(o.base.y + .4);
+  const out = o.base.clone().setY(0).sub(new THREE.Vector3(0, 0, 0)).normalize(); // du centre vers la table
+  if (out.lengthSq() < .01) out.set(0, 0, 1);
+  const pos = target.clone().addScaledVector(out, 8.5).add(new THREE.Vector3(0, 10, 0));
+  // on garde un peu l'angle courant pour une trajectoire naturelle
+  flyTo(pos, target, 1500);
+}
+let pov = false;
+function enterPov(t) {
+  const o = TABLE_OBJ.get(t.id);
+  const eye = o.base.clone().setY(o.base.y + 1.15);
+  const look = V(CX, CY, .8).lerp(V(627, 566, 1.5), t.zone === 'fond1' || t.zone === 'fond2' || t.zone === 'ailes' ? .15 : 0);
+  // regard depuis la table vers la piste ; on recule à peine pour voir ses propres canapés
+  const dir = look.clone().sub(eye).setY(0).normalize();
+  eye.addScaledVector(dir, -.9);
+  pov = true; ring.visible = false;
+  controls.enabled = false;
+  flyTo(eye, look, 1800);
+  $('#pov-txt').textContent = `Vue depuis la table ${t.id}`;
+  $('#pov-bar').hidden = false; stage.classList.add('pov');
+}
+function exitPov(goHome = false) {
+  if (!pov) return;
+  pov = false; controls.enabled = true; $('#pov-bar').hidden = true; stage.classList.remove('pov');
+  if (current && !goHome) { ring.visible = true; flyTable(current); } else flyHome();
 }
 function zoomBy(f) {
   const d = camera.position.clone().sub(controls.target);
   const len = THREE.MathUtils.clamp(d.length() * f, controls.minDistance, controls.maxDistance);
-  flyTo(controls.target.clone().add(d.setLength(len)), controls.target.clone(), 350);
+  flyTo(controls.target.clone().add(d.setLength(len)), controls.target.clone(), 450);
 }
-$('#zoom-in').onclick = () => zoomBy(.75);
-$('#zoom-out').onclick = () => zoomBy(1.33);
-$('#btn-overview').onclick = () => selectZone(null);
+$('#zoom-in').onclick = () => zoomBy(.72);
+$('#zoom-out').onclick = () => zoomBy(1.38);
+$('#btn-overview').onclick = () => { exitPov(true); deselectTable(); selectZone(null); };
+$('#pov-exit').onclick = () => exitPov();
 controls.addEventListener('start', () => (fly = null));
-const ease = (t) => 1 - Math.pow(1 - t, 3);
+
+// anneau de sélection doré
+const ring = new THREE.Group();
+{
+  const m1 = new THREE.Mesh(new THREE.RingGeometry(1.9, 2.02, 64), new THREE.MeshBasicMaterial({ color: '#f6ead0', transparent: true, opacity: .95, side: THREE.DoubleSide, depthWrite: false }));
+  const m2 = new THREE.Mesh(new THREE.RingGeometry(2.2, 2.26, 64), new THREE.MeshBasicMaterial({ color: '#c9a45c', transparent: true, opacity: .6, side: THREE.DoubleSide, depthWrite: false }));
+  [m1, m2].forEach((m) => { m.rotation.x = -Math.PI / 2; ring.add(m); });
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 1.9, 5, 48, 1, true), new THREE.MeshBasicMaterial({ color: '#e9d3a0', transparent: true, opacity: .07, side: THREE.DoubleSide, depthWrite: false }));
+  beam.position.y = 2.5; ring.add(beam);
+  ring.visible = false; scene.add(ring);
+}
+
+// clic et survol directement sur les tables 3D
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+const pickables = []; TABLE_OBJ.forEach((o) => o.group.traverse((m) => m.isMesh && pickables.push(m)));
+function pick(e) {
+  const r = canvas.getBoundingClientRect();
+  ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const hit = ray.intersectObjects(pickables, false)[0];
+  return hit ? TABLES.find((t) => t.id === hit.object.userData.tableId) : null;
+}
+let down = null, hovered = null;
+canvas.addEventListener('pointerdown', (e) => (down = { x: e.clientX, y: e.clientY }));
+canvas.addEventListener('pointerup', (e) => {
+  if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6 || pov) return;
+  const t = pick(e); if (t) selectTable(t);
+});
+canvas.addEventListener('pointermove', (e) => {
+  if (e.buttons || pov) return;
+  const t = pick(e);
+  if (hovered && hovered !== t) highlight(hovered.id, false);
+  if (t) highlight(t.id, true);
+  hovered = t; canvas.style.cursor = t ? 'pointer' : '';
+});
+
+// arrivée dans la salle : survol de la caméra la première fois que le plan est visible
+const INTRO = new THREE.Vector3(-34, 46, -38);
+camera.position.copy(INTRO);
+new IntersectionObserver((en, obs) => {
+  if (en[0].isIntersecting) { flyTo(HOME.pos.clone(), HOME.target.clone(), 2600); obs.disconnect(); }
+}, { threshold: .35 }).observe(stage);
 
 /* ================================================================ boucle */
 function resize() {
@@ -410,18 +556,24 @@ renderer.setAnimationLoop(() => {
   for (let i = 0; i < SNOW_N; i++) { let y = p.getY(i) - dt * (.6 + (i % 5) * .15); if (y < 0) y = 18; p.setY(i, y); p.setX(i, p.getX(i) + Math.sin(t + i) * .003); }
   p.needsUpdate = true;
   if (fly) {
-    const k = Math.min(1, (performance.now() - fly.start) / fly.ms), e = ease(k);
+    const k = Math.min(1, (performance.now() - fly.start) / fly.ms), e = easeIO(k);
     camera.position.lerpVectors(fly.p0, fly.p1, e); controls.target.lerpVectors(fly.t0, fly.t1, e);
-    if (k === 1) fly = null;
+    // petite courbe en hauteur pendant le trajet : mouvement plus « caméra de cinéma »
+    camera.position.y += Math.sin(e * Math.PI) * fly.p0.distanceTo(fly.p1) * .08;
+    if (k === 1) { const d = fly.done; fly = null; d && d(); }
   }
-  controls.update();
+  if (ring.visible) { const s = 1 + Math.sin(t * 3) * .05; ring.scale.set(s, 1, s); ring.rotation.y += dt * .4; }
+  if (pov) camera.lookAt(controls.target); else controls.update();
   renderer.render(scene, camera);
   placeLabels();
 });
 $('#loading').remove();
+// le bouton de l'accueil devient actif quand la salle est prête
+requestAnimationFrame(() => { const c = $('#cta-main'); c.classList.remove('loading'); c.querySelector('.cta-txt').textContent = 'Choisir ma table'; c.insertAdjacentHTML('beforeend', '<span class="arrow">→</span>'); });
 
 /* ================================================================ zones */
 let activeZone = null;
+let current = null;
 const zonesEl = $('#zones');
 function renderZones() {
   const free = (z) => TABLES.filter((t) => t.zone === z.id && !reserved.has(t.id)).length;
@@ -443,7 +595,8 @@ function renderZones() {
 }
 function selectZone(id) {
   activeZone = id;
-  renderZones(); refreshLabels();
+  if (current && current.zone !== id) deselectTable();
+  renderZones(); refreshLabels(); renderStrip();
   id ? flyZone(id) : flyHome();
   if (id && innerWidth <= 1100) stage.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
@@ -454,15 +607,69 @@ function refreshLabels() {
     b.classList.toggle('taken', taken);
     b.classList.toggle('hide', only && taken);
     b.classList.toggle('dim', !!activeZone && t.zone !== activeZone);
-    TABLE_OBJ.get(t.id).mats.forEach((m) => m.color.set(taken ? '#3a3234' : '#e6dccb'));
+    const o = TABLE_OBJ.get(t.id);
+    o.mats.forEach((m) => m.color.set(taken ? '#3a3234' : '#e6dccb'));
+    o.plate.material.color.set(taken ? '#3a3234' : zoneOf(t).couleurs.at(-1));
+    o.plate.material.emissiveIntensity = taken ? 0 : .25;
   }
+  renderStrip();
 }
+
+/* ================================================================ sélection d'une table */
+function selectTable(t) {
+  exitPov(true);
+  current = t;
+  activeZone = t.zone;
+  LABEL.forEach((b) => b.classList.remove('sel')); LABEL.get(t.id).classList.add('sel');
+  const o = TABLE_OBJ.get(t.id);
+  ring.position.copy(o.base).setY(o.base.y + .03);
+  ring.scale.set(.2, 1, .2); ring.visible = true;
+  const z = zoneOf(t), prix = prixTable(t), taken = reserved.has(t.id);
+  const badge = $('#badge'); badge.textContent = `Table ${t.id} · ${euros(prix)}`; badge.hidden = false;
+  badge.classList.remove('pop'); void badge.offsetWidth; badge.classList.add('pop');
+  $('#tp-title').textContent = `Table ${t.id}`;
+  $('#tp-zone').textContent = `${z.nom} · ${z.desc}`;
+  $('#tp-price').textContent = euros(prix);
+  $('#tp-sub').textContent = `Prix total de la table · jusqu’à ${z.capacite} personnes · acompte ${EVENT.acomptePct} % : ${euros(Math.round(prix * EVENT.acomptePct / 100))}`;
+  $('#tp-status').className = 'tp-status ' + (taken ? 'taken' : 'free');
+  $('#tp-status').innerHTML = taken ? '<strong>Réservée</strong>Choisissez une autre table sur le plan ou dans la liste.' : '<strong>Disponible</strong>Envoyez votre demande : l’organisation vous recontacte rapidement.';
+  $('#tp-ask').disabled = taken;
+  const side = $('#side'); side.classList.add('closed', 'has-table'); $('#collapse').textContent = '+';
+  const panel = $('#tpanel'); panel.hidden = false; panel.classList.remove('in'); void panel.offsetWidth; panel.classList.add('in');
+  renderZones(); refreshLabels();
+  flyTable(t);
+  if (innerWidth <= 1100) stage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function deselectTable() {
+  current = null; ring.visible = false; $('#badge').hidden = true; $('#tpanel').hidden = true;
+  const side = $('#side'); side.classList.remove('closed', 'has-table'); $('#collapse').textContent = '−';
+  LABEL.forEach((b) => b.classList.remove('sel'));
+}
+function renderStrip() {
+  const el = $('#zone-strip');
+  if (!activeZone) { el.hidden = true; return; }
+  const z = ZONES.find((x) => x.id === activeZone), ts = TABLES.filter((t) => t.zone === activeZone);
+  const fmt = (p) => (Array.isArray(p) ? `${euros(p[0])} – ${euros(p[1])}` : euros(p));
+  $('#zs-name').textContent = z.nom;
+  $('#zs-meta').textContent = `${ts.length} tables · ${fmt(z.prix)}`;
+  $('#zs-list').innerHTML = ts.map((t) => {
+    const taken = reserved.has(t.id);
+    return `<button type="button" class="zs-card ${taken ? 'taken' : ''} ${current && current.id === t.id ? 'sel' : ''}" data-id="${t.id}" style="--zc:${z.couleurs.at(-1)}">
+      <b>Table ${t.id}</b><span>${euros(prixTable(t))}</span><small>${taken ? 'Réservée' : 'Disponible'}</small></button>`;
+  }).join('');
+  $('#zs-list').querySelectorAll('button').forEach((b) => (b.onclick = () => selectTable(TABLES.find((t) => t.id === b.dataset.id))));
+  el.hidden = false;
+}
+$('#tp-close').onclick = () => { exitPov(true); deselectTable(); selectZone(activeZone); };
+$('#tp-pov').onclick = () => current && enterPov(current);
+$('#tp-ask').onclick = () => current && openDrawer(current);
 $('#only-free').onchange = refreshLabels;
-$('#collapse').onclick = (e) => { const c = $('#side').classList.toggle('closed'); e.currentTarget.textContent = c ? '+' : '−'; };
+const toggleZones = () => { const c = $('#side').classList.toggle('closed'); $('#collapse').textContent = c ? '+' : '−'; };
+$('#collapse').onclick = (e) => { e.stopPropagation(); toggleZones(); };
+$('.side-head').onclick = toggleZones;
 
 /* ================================================================ fiche table + formulaire */
 const drawer = $('#drawer'), back = $('#drawer-back'), form = $('#form');
-let current = null;
 function openDrawer(t) {
   current = t;
   const z = zoneOf(t), prix = prixTable(t), taken = reserved.has(t.id);
@@ -481,10 +688,9 @@ function openDrawer(t) {
 }
 function closeDrawer() {
   drawer.classList.remove('open'); drawer.setAttribute('aria-hidden', 'true'); back.hidden = true;
-  LABEL.forEach((b) => b.classList.remove('sel'));
 }
 $('#drawer-close').onclick = closeDrawer; back.onclick = closeDrawer; $('#d-ok-close').onclick = closeDrawer;
-addEventListener('keydown', (e) => e.key === 'Escape' && closeDrawer());
+addEventListener('keydown', (e) => { if (e.key !== 'Escape') return; if (drawer.classList.contains('open')) closeDrawer(); else if (pov) exitPov(); });
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();

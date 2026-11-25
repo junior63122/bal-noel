@@ -21,12 +21,12 @@ export const EVENT = {
 
 // Zones : nom, prix (nombre ou [min, max]), capacité, couleur de la pastille
 export const ZONES = [
-  { id: 'front',   nom: 'Scène · Front DJ',       prix: 3500,         capacite: 15, couleurs: ['#e9d3a0'] },
-  { id: 'diag',    nom: 'Scène · Diagonales',     prix: [2000, 2500], capacite: 10, couleurs: ['#c9a45c', '#9fbf98'] },
-  { id: 'balcon',  nom: 'Scène · Balcons +0,60',  prix: 1800,         capacite: 10, couleurs: ['#b8a3d9'] },
-  { id: 'fond1',   nom: 'VIP Fond · rang 1',      prix: 2000,         capacite: 15, couleurs: ['#e0997a'] },
-  { id: 'fond2',   nom: 'VIP Fond · rang 2',      prix: 1500,         capacite: 10, couleurs: ['#d0829a'] },
-  { id: 'ailes',   nom: 'VIP Fond · ailes',       prix: 1200,         capacite: 10, couleurs: ['#93bccf'] },
+  { id: 'front',   desc: 'face au DJ, au cœur de la scène', nom: 'Scène · Front DJ',       prix: 3500,         capacite: 15, couleurs: ['#e9d3a0'] },
+  { id: 'diag',    desc: 'en arc autour du DJ, sur la scène', nom: 'Scène · Diagonales',     prix: [2000, 2500], capacite: 10, couleurs: ['#c9a45c', '#9fbf98'] },
+  { id: 'balcon',  desc: 'surélevée, juste à côté du DJ', nom: 'Scène · Balcons +0,60',  prix: 1800,         capacite: 10, couleurs: ['#b8a3d9'] },
+  { id: 'fond1',   desc: 'premier rang, vue directe sur la piste', nom: 'VIP Fond · rang 1',      prix: 2000,         capacite: 15, couleurs: ['#e0997a'] },
+  { id: 'fond2',   desc: 'second rang, en surplomb de la salle', nom: 'VIP Fond · rang 2',      prix: 1500,         capacite: 10, couleurs: ['#d0829a'] },
+  { id: 'ailes',   desc: 'sur le côté, vue en diagonale sur la piste', nom: 'VIP Fond · ailes',       prix: 1200,         capacite: 10, couleurs: ['#93bccf'] },
 ];
 
 // Tables : coordonnées relevées sur le plan (pixels du plan 1280 × 834),
