@@ -142,7 +142,8 @@ async function parcours(browser, p) {
   } catch (e) {
     const shot = path.join(__dirname, 'echecs', `p${p.id}.png`); fs.mkdirSync(path.dirname(shot), { recursive: true });
     await page.screenshot({ path: shot }).catch(() => {});
-    return { ok: false, erreur: e.message.split('\n')[0], attendu, table, duree: Date.now() - t0, log, steps, consoleErr, tel, capture: path.relative(ROOT, shot) };
+    const detail = e.message.split('\n').filter((l) => /intercepts|not visible|not stable|outside of the viewport|waiting for locator|waiting for selector/.test(l)).slice(-2).join(' / ');
+    return { ok: false, erreur: e.message.split('\n')[0] + (detail ? ' — ' + detail.trim() : ''), attendu, table, duree: Date.now() - t0, log, steps, consoleErr, tel, capture: path.relative(ROOT, shot) };
   } finally { await ctx.close(); }
 }
 
@@ -151,10 +152,12 @@ async function parcours(browser, p) {
   for (let i = 0; i < 50; i++) { try { await fetch(BASE + '/api/health'); break; } catch { await new Promise((r) => setTimeout(r, 100)); } }
   for (const id of RESERVEES) await fetch(BASE + '/api/admin/table', { method: 'POST', headers: { 'x-admin-password': PW, 'Content-Type': 'application/json' }, body: JSON.stringify({ id, reserved: true }) });
   const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist'] });
-  const list = profils(N), res = new Array(N); let next = 0, done = 0; const T = Date.now();
+  // IDS=3,17,42 : rejouer uniquement certains profils (même appareil/réseau/comportement)
+  let list = profils(N); if (process.env.IDS) { const keep = new Set(process.env.IDS.split(',').map(Number)); list = list.filter((p) => keep.has(p.id)); }
+  const res = new Array(list.length); let next = 0, done = 0; const T = Date.now();
   await Promise.all(Array.from({ length: PAR }, async () => {
-    while (next < N) { const i = next++; res[i] = { ...list[i], dev: undefined, ...(await parcours(browser, list[i])) }; done++;
-      if (done % 25 === 0) process.stdout.write(`${done}/${N} · ${res.filter(Boolean).filter((r) => !r.ok).length} échecs · ${Math.round((Date.now() - T) / 1000)} s\n`); }
+    while (next < list.length) { const i = next++; res[i] = { ...list[i], dev: undefined, ...(await parcours(browser, list[i])) }; done++;
+      if (done % 25 === 0) process.stdout.write(`${done}/${list.length} · ${res.filter(Boolean).filter((r) => !r.ok).length} échecs · ${Math.round((Date.now() - T) / 1000)} s\n`); }
   }));
   await browser.close();
 
@@ -173,14 +176,14 @@ async function parcours(browser, p) {
 
   const by = (k) => Object.entries(res.reduce((a, r) => { (a[r[k]] ||= { n: 0, ok: 0, duree: 0 }); a[r[k]].n++; a[r[k]].ok += r.ok; a[r[k]].duree += r.duree; return a; }, {}));
   const ok = res.filter((r) => r.ok).length;
-  const lines = [`# Rapport des ${N} parcours simulés`, '', `Exécuté le ${new Date().toISOString()} sur un serveur de test local (données de test). **Simulations automatisées, pas des personnes réelles.**`, '',
-    `**Réussite : ${ok}/${N} (${(ok / N * 100).toFixed(1)} %)** · vérification indépendante via l’administration · durée totale ${Math.round((Date.now() - T) / 1000)} s`, '',
+  const lines = [`# Rapport des ${res.length} parcours simulés`, '', `Exécuté le ${new Date().toISOString()} sur un serveur de test local (données de test). **Simulations automatisées, pas des personnes réelles.**`, '',
+    `**Réussite : ${ok}/${res.length} (${(ok / res.length * 100).toFixed(1)} %)** · vérification indépendante via l’administration · durée totale ${Math.round((Date.now() - T) / 1000)} s`, '',
     '| Comportement | Parcours | Réussis | Durée moyenne |', '|---|---|---|---|', ...by('comportement').map(([k, v]) => `| ${k} | ${v.n} | ${v.ok} | ${(v.duree / v.n / 1000).toFixed(1)} s |`), '',
     '| Appareil | Parcours | Réussis | Durée moyenne |', '|---|---|---|---|', ...by('appareil').map(([k, v]) => `| ${k} | ${v.n} | ${v.ok} | ${(v.duree / v.n / 1000).toFixed(1)} s |`), '',
     '| Réseau | Parcours | Réussis | Durée moyenne |', '|---|---|---|---|', ...by('reseau').map(([k, v]) => `| ${k} | ${v.n} | ${v.ok} | ${(v.duree / v.n / 1000).toFixed(1)} s |`), '',
-    '## Échecs', '', ...(res.filter((r) => !r.ok).map((r) => `- #${r.id} ${r.appareil} · ${r.reseau} · ${r.comportement} : ${r.erreur}${r.capture ? ` (${r.capture})` : ''}`)), ok === N ? '_Aucun._' : ''];
+    '## Échecs', '', ...(res.filter((r) => !r.ok).map((r) => `- #${r.id} ${r.appareil} · ${r.reseau} · ${r.comportement} : ${r.erreur}${r.capture ? ` (${r.capture})` : ''}`)), ok === res.length ? '_Aucun._' : ''];
   fs.writeFileSync(path.join(__dirname, 'rapport-parcours.md'), lines.join('\n'));
   fs.writeFileSync(path.join(__dirname, 'rapport-parcours.json'), JSON.stringify(res, null, 1));
   console.log(lines.slice(0, 6).join('\n'));
-  process.exit(ok === N ? 0 : 1);
+  process.exit(ok === res.length ? 0 : 1);
 })();
