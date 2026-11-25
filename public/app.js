@@ -146,12 +146,32 @@ countdown(); setInterval(countdown, 1000);
   if (!reduce) requestAnimationFrame(frame);
 })();
 
+// neige qui tombe à l'intérieur de la boule
+(function globeSnow() {
+  const cv = $('#globe-snow'); if (!cv) return;
+  const ctx = cv.getContext('2d'); let w, h, flakes = [];
+  const size = () => { const d = Math.min(devicePixelRatio, 2); w = cv.width = cv.offsetWidth * d; h = cv.height = cv.offsetHeight * d;
+    flakes = Array.from({ length: 140 }, () => ({ x: Math.random() * w, y: Math.random() * h * .75, r: (Math.random() * 1.6 + .5) * d, s: (Math.random() * .35 + .12) * d, o: Math.random() * 6, a: Math.random() * .5 + .45 })); };
+  size(); addEventListener('resize', size);
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  (function tick(t) {
+    ctx.clearRect(0, 0, w, h);
+    for (const f of flakes) {
+      f.y += f.s; f.x += Math.sin(t / 900 + f.o) * .35;
+      if (f.y > h * .74) { f.y = h * .08; f.x = w * (.15 + Math.random() * .7); }
+      ctx.fillStyle = `rgba(255,255,255,${f.a})`; ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 7); ctx.fill();
+    }
+    requestAnimationFrame(tick);
+  })(0);
+})();
+
 // léger effet de profondeur sur les lettrages quand la souris bouge
 (function parallax() {
   const v = $('#hero-visual'); if (!v || matchMedia('(pointer: coarse)').matches) return;
   $('#accueil').addEventListener('pointermove', (e) => {
     const x = e.clientX / innerWidth - .5, y = e.clientY / innerHeight - .5;
     v.style.setProperty('--px', x.toFixed(3)); v.style.setProperty('--py', y.toFixed(3));
+    v.querySelector('.globe').style.translate = `${x * -10}px ${y * -8}px`;
   });
 })();
 
@@ -171,8 +191,8 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color('#0a0708');
-scene.fog = new THREE.Fog('#0a0708', 70, 150);
+scene.background = new THREE.Color('#0a1430');
+scene.fog = new THREE.Fog('#0a1430', 70, 150);
 
 const camera = new THREE.PerspectiveCamera(42, 1, .1, 400);
 const HOME = { pos: new THREE.Vector3(0, 40, 33), target: new THREE.Vector3(0, 0, 3) };
@@ -202,7 +222,7 @@ function canvasTex(w, h, draw, repeat = 1) {
 }
 const woodTex = canvasTex(512, 512, (g, w) => {
   for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) {
-    g.fillStyle = (i + j) % 2 ? '#2a2224' : '#1f191b'; g.fillRect(i * 64, j * 64, 64, 64);
+    g.fillStyle = (i + j) % 2 ? '#22304f' : '#1a2541'; g.fillRect(i * 64, j * 64, 64, 64);
   }
   g.strokeStyle = 'rgba(201,164,92,.45)'; g.lineWidth = 1.5;
   for (let i = 0; i <= 8; i++) { g.beginPath(); g.moveTo(i * 64, 0); g.lineTo(i * 64, w); g.moveTo(0, i * 64); g.lineTo(w, i * 64); g.stroke(); }
@@ -213,8 +233,8 @@ const carpetTex = canvasTex(256, 256, (g, w) => {
   for (let i = -w; i < w * 2; i += 32) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i + w, w); g.moveTo(i + w, 0); g.lineTo(i, w); g.stroke(); }
 }, .25);
 const pisteTex = canvasTex(512, 512, (g, w) => {
-  const r = w / 2; g.fillStyle = '#141012'; g.fillRect(0, 0, w, w);
-  for (let i = 0; i < 32; i++) { g.fillStyle = i % 2 ? '#1c1618' : '#120e10'; g.beginPath(); g.moveTo(r, r); g.arc(r, r, r, i * Math.PI / 16, (i + 1) * Math.PI / 16); g.fill(); }
+  const r = w / 2; g.fillStyle = '#101a33'; g.fillRect(0, 0, w, w);
+  for (let i = 0; i < 32; i++) { g.fillStyle = i % 2 ? '#1a2848' : '#111c36'; g.beginPath(); g.moveTo(r, r); g.arc(r, r, r, i * Math.PI / 16, (i + 1) * Math.PI / 16); g.fill(); }
   g.strokeStyle = '#c9a45c'; g.lineWidth = 8; g.beginPath(); g.arc(r, r, r - 6, 0, 7); g.stroke();
   g.lineWidth = 1.5; [.78, .5].forEach((k) => { g.beginPath(); g.arc(r, r, r * k, 0, 7); g.stroke(); });
   g.fillStyle = '#c9a45c'; g.beginPath();
@@ -248,7 +268,7 @@ const ROOM = [[130, 500], [250, 345], [395, 180], [590, 100], [664, 100], [860, 
   const floor = new THREE.Mesh(new THREE.ShapeGeometry(shapeFrom(ROOM)), M.floor);
   floor.rotation.x = -Math.PI / 2; scene.add(floor);
   // grand sol extérieur sombre
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshStandardMaterial({ color: '#100c0d', roughness: 1 }));
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshStandardMaterial({ color: '#c9d6ea', roughness: 1 }));
   ground.rotation.x = -Math.PI / 2; ground.position.y = -.02; scene.add(ground);
 }
 // murs : hauts au fond (côté VIP), bas côté entrée/scène pour garder la vue
@@ -319,7 +339,7 @@ const bigStar = new THREE.Group();
   const glow = new THREE.PointLight('#ffd27a', 80, 22); glow.position.copy(V(CX, CY, 7)); scene.add(glow);
 }
 const floaters = [];
-[[540, 330, 7, '#c9a45c'], [715, 330, 6.6, '#6b1424'], [560, 450, 6.2, '#e9d3a0'], [700, 455, 7.2, '#c9a45c'], [460, 400, 7.5, '#6b1424'], [800, 400, 7, '#e9d3a0']].forEach(([x, y, h, c], k) => {
+[[540, 330, 7, '#e8b04a'], [715, 330, 6.6, '#5c7fb8'], [560, 450, 6.2, '#f4f6fb'], [700, 455, 7.2, '#e8b04a'], [460, 400, 7.5, '#7a1424'], [800, 400, 7, '#5c7fb8']].forEach(([x, y, h, c], k) => {
   const ball = new THREE.Mesh(new THREE.SphereGeometry(.45, 24, 24), new THREE.MeshStandardMaterial({ color: c, metalness: .7, roughness: .15, emissive: c, emissiveIntensity: .08 }));
   ball.position.copy(V(x, y, h)); scene.add(ball);
   const capB = new THREE.Mesh(new THREE.CylinderGeometry(.12, .12, .16, 12), M.gold); capB.position.y = .5; ball.add(capB);
@@ -461,7 +481,7 @@ function flyTable(t) {
   const target = o.base.clone().setY(o.base.y + .4);
   const out = o.base.clone().setY(0).sub(new THREE.Vector3(0, 0, 0)).normalize(); // du centre vers la table
   if (out.lengthSq() < .01) out.set(0, 0, 1);
-  const pos = target.clone().addScaledVector(out, 8.5).add(new THREE.Vector3(0, 10, 0));
+  const pos = target.clone().addScaledVector(out, -5.5).add(new THREE.Vector3(0, 11, 0));
   // on garde un peu l'angle courant pour une trajectoire naturelle
   flyTo(pos, target, 1500);
 }

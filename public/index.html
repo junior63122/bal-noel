@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Le Bal des Fous · Le Bal de Noël — Réservation de tables · Cannes</title>
   <meta name="description" content="Réservez votre table pour le Bal de Noël du Bal des Fous, dimanche 27 décembre sur les terrasses du Palais des Festivals de Cannes.">
-  <meta name="theme-color" content="#0c0809">
+  <meta name="theme-color" content="#0b1428">
   <link rel="icon" type="image/png" href="assets/favicon.png">
   <link rel="preload" as="image" href="assets/traineau.webp">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,15 +26,23 @@
   <div class="frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
 
   <div class="hero-inner">
-    <div class="hero-visual" id="hero-visual">
-      <div class="lw cannes-w reveal" style="--i:1"><img class="lettering cannes" src="assets/cannes.webp" width="1400" height="667" alt="Cannes" fetchpriority="high"><i class="lantern" style="left:8.5%;top:80%"></i><i class="lantern" style="left:91.5%;top:80%"></i></div>
-      <div class="lw date-w reveal" style="--i:2"><img class="lettering date" src="assets/date.webp" width="1200" height="801" alt="Dimanche 27 décembre"><i class="lantern" style="left:17%;top:47%"></i><i class="lantern" style="left:82%;top:47%"></i></div>
+    <div class="hero-globe reveal" style="--i:1" id="hero-visual">
+      <div class="globe-halo" aria-hidden="true"></div>
+      <div class="globe">
+        <img class="globe-img" src="assets/boule.webp" width="900" height="853" alt="Le Bal de Noël" fetchpriority="high">
+        <canvas class="globe-snow" id="globe-snow" aria-hidden="true"></canvas>
+        <i class="globe-shine" aria-hidden="true"></i>
+      </div>
     </div>
     <div class="hero-text">
-      <p class="over reveal" style="--i:3"><span data-lieu-up></span></p>
-      <img class="brand-logo reveal" style="--i:4" src="assets/logo-clair.webp" width="900" height="530" alt="Le Bal des Fous">
-      <div class="ornament reveal" style="--i:5" aria-hidden="true"><span></span><img src="assets/croix.png" alt=""><span></span></div>
-      <h1 class="theme-title reveal" style="--i:6"><span class="shine" data-theme>Le Bal de Noël</span></h1>
+      <p class="over reveal" style="--i:2"><span data-lieu-up></span></p>
+      <img class="brand-logo reveal" style="--i:3" src="assets/logo-clair.webp" width="900" height="530" alt="Le Bal des Fous">
+      <div class="ornament reveal" style="--i:4" aria-hidden="true"><span></span><img src="assets/croix.png" alt=""><span></span></div>
+      <h1 class="sr-only">Le Bal de Noël — Cannes, dimanche 27 décembre</h1>
+      <div class="letterings">
+        <div class="lw cannes-w reveal" style="--i:5"><img class="lettering cannes" src="assets/cannes.webp" width="1400" height="667" alt="Cannes"><i class="lantern" style="left:8.5%;top:80%"></i><i class="lantern" style="left:91.5%;top:80%"></i></div>
+        <div class="lw date-w reveal" style="--i:6"><img class="lettering date" src="assets/date.webp" width="1200" height="801" alt="Dimanche 27 décembre"><i class="lantern" style="left:17%;top:47%"></i><i class="lantern" style="left:82%;top:47%"></i></div>
+      </div>
       <p class="subtitle reveal" style="--i:7">Une soirée de gala sur les terrasses du Palais</p>
       <ul class="facts reveal" style="--i:8">
         <li><small>Horaires</small><span data-horaires-fr></span></li>
@@ -66,7 +74,7 @@
       <div class="plan-head">
         <div>
           <p class="eyebrow" data-soustheme-up></p>
-          <h2>Votre table au <em>Bal de Noël</em></h2>
+          <h2 class="title-img"><span>Votre table au</span><img src="assets/titre.webp" width="1100" height="743" alt="Bal de Noël" loading="lazy"></h2>
         </div>
         <p class="meta" id="meta-count"></p>
       </div>
@@ -175,6 +183,7 @@
 
   <div id="d-ok-view" hidden>
     <img class="ok-bunny" src="assets/lapin.webp" width="600" height="870" alt="">
+    <img class="ok-title" src="assets/titre.webp" width="1100" height="743" alt="" loading="lazy">
     <h3>Demande envoyée</h3>
     <p id="d-ok-text"></p>
     <button class="btn-gold" type="button" id="d-ok-close">Revenir au plan</button>
