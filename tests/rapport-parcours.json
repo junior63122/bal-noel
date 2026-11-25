@@ -1,0 +1,4285 @@
+[
+ {
+  "id": 1,
+  "appareil": "iPhone SE",
+  "comportement": "direct",
+  "reseau": "3G lente",
+  "sombre": true,
+  "rapide": false,
+  "ip": "100.64.0.0",
+  "ok": true,
+  "attendu": "demande",
+  "table": "08",
+  "duree": 44277,
+  "log": [
+   [
+    "accueil prêt",
+    22807
+   ],
+   [
+    "plan visible",
+    33426
+   ]
+  ],
+  "steps": {
+   "clics": 8
+  },
+  "consoleErr": [],
+  "tel": "06 11 00 01 11",
+  "prenom": "Profil1"
+ },
+ {
+  "id": 2,
+  "appareil": "iPhone 13",
+  "comportement": "direct",
+  "reseau": "4G",
+  "sombre": true,
+  "rapide": false,
+  "ip": "100.64.0.1",
+  "ok": true,
+  "attendu": "demande",
+  "table": "15",
+  "duree": 19101,
+  "log": [
+   [
+    "accueil prêt",
+    5445
+   ],
+   [
+    "plan visible",
+    8245
+   ]
+  ],
+  "steps": {
+   "clics": 8
+  },
+  "consoleErr": [],
+  "tel": "06 12 00 02 12",
+  "prenom": "Profil2"
+ },
+ {
+  "id": 3,
+  "appareil": "iPhone 15 Pro Max",
+  "comportement": "direct",
+  "reseau": "4G",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.2",
+  "ok": true,
+  "attendu": "demande",
+  "table": "22",
+  "duree": 22249,
+  "log": [
+   [
+    "accueil prêt",
+    5494
+   ],
+   [
+    "plan visible",
+    7791
+   ]
+  ],
+  "steps": {
+   "clics": 8
+  },
+  "consoleErr": [],
+  "tel": "06 13 00 03 13",
+  "prenom": "Profil3"
+ },
+ {
+  "id": 4,
+  "appareil": "Pixel 7",
+  "comportement": "direct",
+  "reseau": "3G lente",
+  "sombre": true,
+  "rapide": true,
+  "ip": "100.64.0.3",
+  "ok": true,
+  "attendu": "demande",
+  "table": "29",
+  "duree": 49309,
+  "log": [
+   [
+    "accueil prêt",
+    21759
+   ],
+   [
+    "plan visible",
+    25211
+   ]
+  ],
+  "steps": {
+   "clics": 8
+  },
+  "consoleErr": [],
+  "tel": "06 14 00 04 14",
+  "prenom": "Profil4"
+ },
+ {
+  "id": 5,
+  "appareil": "Galaxy S9+",
+  "comportement": "direct",
+  "reseau": "rapide",
+  "sombre": true,
+  "rapide": true,
+  "ip": "100.64.0.4",
+  "ok": true,
+  "attendu": "demande",
+  "table": "36",
+  "duree": 17733,
+  "log": [
+   [
+    "accueil prêt",
+    4295
+   ],
+   [
+    "plan visible",
+    7138
+   ]
+  ],
+  "steps": {
+   "clics": 8
+  },
+  "consoleErr": [],
+  "tel": "06 15 00 05 15",
+  "prenom": "Profil5"
+ },
+ {
+  "id": 6,
+  "appareil": "iPad",
+  "comportement": "direct",
+  "reseau": "3G lente",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.5",
+  "ok": true,
+  "attendu": "demande",
+  "table": "43",
+  "duree": 44141,
+  "log": [
+   [
+    "accueil prêt",
+    21752
+   ],
+   [
+    "plan visible",
+    32252
+   ]
+  ],
+  "steps": {
+   "clics": 8
+  },
+  "consoleErr": [],
+  "tel": "06 16 00 06 16",
+  "prenom": "Profil6"
+ },
+ {
+  "id": 7,
+  "appareil": "iPhone paysage",
+  "comportement": "direct",
+  "reseau": "4G",
+  "sombre": true,
+  "rapide": false,
+  "ip": "100.64.0.6",
+  "ok": true,
+  "attendu": "demande",
+  "table": "50",
+  "duree": 22432,
+  "log": [
+   [
+    "accueil prêt",
+    5477
+   ],
+   [
+    "plan visible",
+    12435
+   ]
+  ],
+  "steps": {
+   "clics": 8
+  },
+  "consoleErr": [],
+  "tel": "06 17 00 07 17",
+  "prenom": "Profil7"
+ },
+ {
+  "id": 8,
+  "appareil": "Ordinateur 1440",
+  "comportement": "direct",
+  "reseau": "4G",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.7",
+  "ok": true,
+  "attendu": "demande",
+  "table": "57",
+  "duree": 31957,
+  "log": [
+   [
+    "accueil prêt",
+    6446
+   ],
+   [
+    "plan visible",
+    23272
+   ]
+  ],
+  "steps": {
+   "clics": 8
+  },
+  "consoleErr": [],
+  "tel": "06 18 00 08 18",
+  "prenom": "Profil8"
+ },
+ {
+  "id": 9,
+  "appareil": "Ordinateur 1920",
+  "comportement": "direct",
+  "reseau": "rapide",
+  "sombre": true,
+  "rapide": false,
+  "ip": "100.64.0.8",
+  "ok": true,
+  "attendu": "demande",
+  "table": "64",
+  "duree": 34067,
+  "log": [
+   [
+    "accueil prêt",
+    4325
+   ],
+   [
+    "plan visible",
+    8437
+   ]
+  ],
+  "steps": {
+   "clics": 8
+  },
+  "consoleErr": [],
+  "tel": "06 19 00 09 19",
+  "prenom": "Profil9"
+ },
+ {
+  "id": 10,
+  "appareil": "Petit portable 1280",
+  "comportement": "direct",
+  "reseau": "4G",
+  "sombre": true,
+  "rapide": false,
+  "ip": "100.64.0.9",
+  "ok": true,
+  "attendu": "demande",
+  "table": "07",
+  "duree": 35482,
+  "log": [
+   [
+    "accueil prêt",
+    5568
+   ],
+   [
+    "plan visible",
+    9235
+   ]
+  ],
+  "steps": {
+   "clics": 8
+  },
+  "consoleErr": [],
+  "tel": "06 20 00 10 10",
+  "prenom": "Profil10"
+ },
+ {
+  "id": 11,
+  "appareil": "iPhone SE",
+  "comportement": "zones",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.10",
+  "ok": true,
+  "attendu": "demande",
+  "table": "21",
+  "duree": 33243,
+  "log": [
+   [
+    "accueil prêt",
+    3965
+   ],
+   [
+    "plan visible",
+    8220
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 21 00 11 11",
+  "prenom": "Profil11"
+ },
+ {
+  "id": 12,
+  "appareil": "iPhone 13",
+  "comportement": "zones",
+  "reseau": "4G",
+  "sombre": true,
+  "rapide": true,
+  "ip": "100.64.0.11",
+  "ok": true,
+  "attendu": "demande",
+  "table": "49",
+  "duree": 40108,
+  "log": [
+   [
+    "accueil prêt",
+    6076
+   ],
+   [
+    "plan visible",
+    26839
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 22 00 12 12",
+  "prenom": "Profil12"
+ },
+ {
+  "id": 13,
+  "appareil": "iPhone 15 Pro Max",
+  "comportement": "zones",
+  "reseau": "rapide",
+  "sombre": true,
+  "rapide": false,
+  "ip": "100.64.0.12",
+  "ok": true,
+  "attendu": "demande",
+  "table": "55",
+  "duree": 37188,
+  "log": [
+   [
+    "accueil prêt",
+    9789
+   ],
+   [
+    "plan visible",
+    12829
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 23 00 13 13",
+  "prenom": "Profil13"
+ },
+ {
+  "id": 14,
+  "appareil": "Pixel 7",
+  "comportement": "zones",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.13",
+  "ok": true,
+  "attendu": "demande",
+  "table": "45",
+  "duree": 35499,
+  "log": [
+   [
+    "accueil prêt",
+    9679
+   ],
+   [
+    "plan visible",
+    12449
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 24 00 14 14",
+  "prenom": "Profil14"
+ },
+ {
+  "id": 15,
+  "appareil": "Galaxy S9+",
+  "comportement": "zones",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.14",
+  "ok": true,
+  "attendu": "demande",
+  "table": "09",
+  "duree": 33976,
+  "log": [
+   [
+    "accueil prêt",
+    10163
+   ],
+   [
+    "plan visible",
+    12961
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 25 00 15 15",
+  "prenom": "Profil15"
+ },
+ {
+  "id": 16,
+  "appareil": "iPad",
+  "comportement": "zones",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.15",
+  "ok": true,
+  "attendu": "demande",
+  "table": "01",
+  "duree": 45062,
+  "log": [
+   [
+    "accueil prêt",
+    6912
+   ],
+   [
+    "plan visible",
+    21217
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 26 00 16 16",
+  "prenom": "Profil16"
+ },
+ {
+  "id": 17,
+  "appareil": "iPhone paysage",
+  "comportement": "zones",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.16",
+  "ok": true,
+  "attendu": "demande",
+  "table": "21",
+  "duree": 38953,
+  "log": [
+   [
+    "accueil prêt",
+    4717
+   ],
+   [
+    "plan visible",
+    9121
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 27 00 17 17",
+  "prenom": "Profil17"
+ },
+ {
+  "id": 18,
+  "appareil": "Ordinateur 1440",
+  "comportement": "zones",
+  "reseau": "4G",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.17",
+  "ok": true,
+  "attendu": "demande",
+  "table": "49",
+  "duree": 44467,
+  "log": [
+   [
+    "accueil prêt",
+    5406
+   ],
+   [
+    "plan visible",
+    22809
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 28 00 18 18",
+  "prenom": "Profil18"
+ },
+ {
+  "id": 19,
+  "appareil": "Ordinateur 1920",
+  "comportement": "zones",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.18",
+  "ok": true,
+  "attendu": "demande",
+  "table": "55",
+  "duree": 43843,
+  "log": [
+   [
+    "accueil prêt",
+    4142
+   ],
+   [
+    "plan visible",
+    8117
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 29 00 19 19",
+  "prenom": "Profil19"
+ },
+ {
+  "id": 20,
+  "appareil": "Petit portable 1280",
+  "comportement": "zones",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.19",
+  "ok": true,
+  "attendu": "demande",
+  "table": "45",
+  "duree": 44149,
+  "log": [
+   [
+    "accueil prêt",
+    7430
+   ],
+   [
+    "plan visible",
+    12608
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 30 00 20 10",
+  "prenom": "Profil20"
+ },
+ {
+  "id": 21,
+  "appareil": "iPhone SE",
+  "comportement": "liste",
+  "reseau": "3G lente",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.20",
+  "ok": true,
+  "attendu": "demande",
+  "table": "10",
+  "duree": 52362,
+  "log": [
+   [
+    "accueil prêt",
+    30234
+   ],
+   [
+    "plan visible",
+    32747
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 31 00 21 11",
+  "prenom": "Profil21"
+ },
+ {
+  "id": 22,
+  "appareil": "iPhone 13",
+  "comportement": "liste",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.21",
+  "ok": true,
+  "attendu": "demande",
+  "table": "11",
+  "duree": 35825,
+  "log": [
+   [
+    "accueil prêt",
+    18396
+   ],
+   [
+    "plan visible",
+    21408
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 32 00 22 12",
+  "prenom": "Profil22"
+ },
+ {
+  "id": 23,
+  "appareil": "iPhone 15 Pro Max",
+  "comportement": "liste",
+  "reseau": "rapide",
+  "sombre": true,
+  "rapide": false,
+  "ip": "100.64.0.22",
+  "ok": true,
+  "attendu": "demande",
+  "table": "12",
+  "duree": 39936,
+  "log": [
+   [
+    "accueil prêt",
+    16538
+   ],
+   [
+    "plan visible",
+    21823
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 33 00 23 13",
+  "prenom": "Profil23"
+ },
+ {
+  "id": 24,
+  "appareil": "Pixel 7",
+  "comportement": "liste",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.23",
+  "ok": true,
+  "attendu": "demande",
+  "table": "09",
+  "duree": 40122,
+  "log": [
+   [
+    "accueil prêt",
+    9501
+   ],
+   [
+    "plan visible",
+    21094
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 34 00 24 14",
+  "prenom": "Profil24"
+ },
+ {
+  "id": 25,
+  "appareil": "Galaxy S9+",
+  "comportement": "liste",
+  "reseau": "4G",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.24",
+  "ok": true,
+  "attendu": "demande",
+  "table": "10",
+  "duree": 34896,
+  "log": [
+   [
+    "accueil prêt",
+    5894
+   ],
+   [
+    "plan visible",
+    16772
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 35 00 25 15",
+  "prenom": "Profil25"
+ },
+ {
+  "id": 26,
+  "appareil": "iPad",
+  "comportement": "liste",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.25",
+  "ok": true,
+  "attendu": "demande",
+  "table": "11",
+  "duree": 30184,
+  "log": [
+   [
+    "accueil prêt",
+    4046
+   ],
+   [
+    "plan visible",
+    5975
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 36 00 26 16",
+  "prenom": "Profil26"
+ },
+ {
+  "id": 27,
+  "appareil": "iPhone paysage",
+  "comportement": "liste",
+  "reseau": "4G",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.26",
+  "ok": true,
+  "attendu": "demande",
+  "table": "12",
+  "duree": 36971,
+  "log": [
+   [
+    "accueil prêt",
+    5427
+   ],
+   [
+    "plan visible",
+    9194
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 37 00 27 17",
+  "prenom": "Profil27"
+ },
+ {
+  "id": 28,
+  "appareil": "Ordinateur 1440",
+  "comportement": "liste",
+  "reseau": "4G",
+  "sombre": true,
+  "rapide": false,
+  "ip": "100.64.0.27",
+  "ok": true,
+  "attendu": "demande",
+  "table": "09",
+  "duree": 41870,
+  "log": [
+   [
+    "accueil prêt",
+    6942
+   ],
+   [
+    "plan visible",
+    12719
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 38 00 28 18",
+  "prenom": "Profil28"
+ },
+ {
+  "id": 29,
+  "appareil": "Ordinateur 1920",
+  "comportement": "liste",
+  "reseau": "4G",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.28",
+  "ok": true,
+  "attendu": "demande",
+  "table": "10",
+  "duree": 38020,
+  "log": [
+   [
+    "accueil prêt",
+    12447
+   ],
+   [
+    "plan visible",
+    14614
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 39 00 29 19",
+  "prenom": "Profil29"
+ },
+ {
+  "id": 30,
+  "appareil": "Petit portable 1280",
+  "comportement": "liste",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.29",
+  "ok": true,
+  "attendu": "demande",
+  "table": "11",
+  "duree": 34963,
+  "log": [
+   [
+    "accueil prêt",
+    10475
+   ],
+   [
+    "plan visible",
+    18663
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 40 00 30 10",
+  "prenom": "Profil30"
+ },
+ {
+  "id": 31,
+  "appareil": "iPhone SE",
+  "comportement": "erreurs",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.30",
+  "ok": true,
+  "attendu": "demande",
+  "table": "26",
+  "duree": 36031,
+  "log": [
+   [
+    "accueil prêt",
+    10260
+   ],
+   [
+    "plan visible",
+    23565
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 41 00 31 11",
+  "prenom": "Profil31"
+ },
+ {
+  "id": 32,
+  "appareil": "iPhone 13",
+  "comportement": "erreurs",
+  "reseau": "rapide",
+  "sombre": true,
+  "rapide": false,
+  "ip": "100.64.0.31",
+  "ok": true,
+  "attendu": "demande",
+  "table": "33",
+  "duree": 28896,
+  "log": [
+   [
+    "accueil prêt",
+    4072
+   ],
+   [
+    "plan visible",
+    8496
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 42 00 32 12",
+  "prenom": "Profil32"
+ },
+ {
+  "id": 33,
+  "appareil": "iPhone 15 Pro Max",
+  "comportement": "erreurs",
+  "reseau": "3G lente",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.32",
+  "ok": true,
+  "attendu": "demande",
+  "table": "40",
+  "duree": 43854,
+  "log": [
+   [
+    "accueil prêt",
+    25767
+   ],
+   [
+    "plan visible",
+    27702
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 43 00 33 13",
+  "prenom": "Profil33"
+ },
+ {
+  "id": 34,
+  "appareil": "Pixel 7",
+  "comportement": "erreurs",
+  "reseau": "3G lente",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.33",
+  "ok": true,
+  "attendu": "demande",
+  "table": "47",
+  "duree": 43913,
+  "log": [
+   [
+    "accueil prêt",
+    23441
+   ],
+   [
+    "plan visible",
+    26363
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 44 00 34 14",
+  "prenom": "Profil34"
+ },
+ {
+  "id": 35,
+  "appareil": "Galaxy S9+",
+  "comportement": "erreurs",
+  "reseau": "rapide",
+  "sombre": true,
+  "rapide": false,
+  "ip": "100.64.0.34",
+  "ok": true,
+  "attendu": "demande",
+  "table": "54",
+  "duree": 30494,
+  "log": [
+   [
+    "accueil prêt",
+    7094
+   ],
+   [
+    "plan visible",
+    9872
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 45 00 35 15",
+  "prenom": "Profil35"
+ },
+ {
+  "id": 36,
+  "appareil": "iPad",
+  "comportement": "erreurs",
+  "reseau": "3G lente",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.35",
+  "ok": true,
+  "attendu": "demande",
+  "table": "61",
+  "duree": 50368,
+  "log": [
+   [
+    "accueil prêt",
+    23122
+   ],
+   [
+    "plan visible",
+    27225
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 46 00 36 16",
+  "prenom": "Profil36"
+ },
+ {
+  "id": 37,
+  "appareil": "iPhone paysage",
+  "comportement": "erreurs",
+  "reseau": "3G lente",
+  "sombre": true,
+  "rapide": false,
+  "ip": "100.64.0.36",
+  "ok": true,
+  "attendu": "demande",
+  "table": "04",
+  "duree": 50105,
+  "log": [
+   [
+    "accueil prêt",
+    21557
+   ],
+   [
+    "plan visible",
+    24583
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 47 00 37 17",
+  "prenom": "Profil37"
+ },
+ {
+  "id": 38,
+  "appareil": "Ordinateur 1440",
+  "comportement": "erreurs",
+  "reseau": "4G",
+  "sombre": true,
+  "rapide": false,
+  "ip": "100.64.0.37",
+  "ok": true,
+  "attendu": "demande",
+  "table": "11",
+  "duree": 33118,
+  "log": [
+   [
+    "accueil prêt",
+    5336
+   ],
+   [
+    "plan visible",
+    8018
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 48 00 38 18",
+  "prenom": "Profil38"
+ },
+ {
+  "id": 39,
+  "appareil": "Ordinateur 1920",
+  "comportement": "erreurs",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.38",
+  "ok": true,
+  "attendu": "demande",
+  "table": "18",
+  "duree": 34349,
+  "log": [
+   [
+    "accueil prêt",
+    4187
+   ],
+   [
+    "plan visible",
+    18976
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 49 00 39 19",
+  "prenom": "Profil39"
+ },
+ {
+  "id": 40,
+  "appareil": "Petit portable 1280",
+  "comportement": "erreurs",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.39",
+  "ok": true,
+  "attendu": "demande",
+  "table": "25",
+  "duree": 33917,
+  "log": [
+   [
+    "accueil prêt",
+    4171
+   ],
+   [
+    "plan visible",
+    9792
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 50 00 40 10",
+  "prenom": "Profil40"
+ },
+ {
+  "id": 41,
+  "appareil": "iPhone SE",
+  "comportement": "double-clic",
+  "reseau": "4G",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.40",
+  "ok": true,
+  "attendu": "demande",
+  "table": "32",
+  "duree": 34542,
+  "log": [
+   [
+    "accueil prêt",
+    6552
+   ],
+   [
+    "plan visible",
+    10200
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 51 00 41 11",
+  "prenom": "Profil41"
+ },
+ {
+  "id": 42,
+  "appareil": "iPhone 13",
+  "comportement": "double-clic",
+  "reseau": "3G lente",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.41",
+  "ok": true,
+  "attendu": "demande",
+  "table": "39",
+  "duree": 42431,
+  "log": [
+   [
+    "accueil prêt",
+    21465
+   ],
+   [
+    "plan visible",
+    24644
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 52 00 42 12",
+  "prenom": "Profil42"
+ },
+ {
+  "id": 43,
+  "appareil": "iPhone 15 Pro Max",
+  "comportement": "double-clic",
+  "reseau": "4G",
+  "sombre": true,
+  "rapide": true,
+  "ip": "100.64.0.42",
+  "ok": true,
+  "attendu": "demande",
+  "table": "46",
+  "duree": 33254,
+  "log": [
+   [
+    "accueil prêt",
+    10885
+   ],
+   [
+    "plan visible",
+    13534
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 53 00 43 13",
+  "prenom": "Profil43"
+ },
+ {
+  "id": 44,
+  "appareil": "Pixel 7",
+  "comportement": "double-clic",
+  "reseau": "4G",
+  "sombre": true,
+  "rapide": true,
+  "ip": "100.64.0.43",
+  "ok": true,
+  "attendu": "demande",
+  "table": "53",
+  "duree": 26673,
+  "log": [
+   [
+    "accueil prêt",
+    6931
+   ],
+   [
+    "plan visible",
+    9868
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 54 00 44 14",
+  "prenom": "Profil44"
+ },
+ {
+  "id": 45,
+  "appareil": "Galaxy S9+",
+  "comportement": "double-clic",
+  "reseau": "4G",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.44",
+  "ok": true,
+  "attendu": "demande",
+  "table": "60",
+  "duree": 29438,
+  "log": [
+   [
+    "accueil prêt",
+    5618
+   ],
+   [
+    "plan visible",
+    9706
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 55 00 45 15",
+  "prenom": "Profil45"
+ },
+ {
+  "id": 46,
+  "appareil": "iPad",
+  "comportement": "double-clic",
+  "reseau": "4G",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.45",
+  "ok": true,
+  "attendu": "demande",
+  "table": "04",
+  "duree": 26995,
+  "log": [
+   [
+    "accueil prêt",
+    7438
+   ],
+   [
+    "plan visible",
+    11693
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 56 00 46 16",
+  "prenom": "Profil46"
+ },
+ {
+  "id": 47,
+  "appareil": "iPhone paysage",
+  "comportement": "double-clic",
+  "reseau": "rapide",
+  "sombre": true,
+  "rapide": false,
+  "ip": "100.64.0.46",
+  "ok": true,
+  "attendu": "demande",
+  "table": "10",
+  "duree": 26031,
+  "log": [
+   [
+    "accueil prêt",
+    3958
+   ],
+   [
+    "plan visible",
+    7673
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 57 00 47 17",
+  "prenom": "Profil47"
+ },
+ {
+  "id": 48,
+  "appareil": "Ordinateur 1440",
+  "comportement": "double-clic",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.47",
+  "ok": true,
+  "attendu": "demande",
+  "table": "18",
+  "duree": 32444,
+  "log": [
+   [
+    "accueil prêt",
+    4326
+   ],
+   [
+    "plan visible",
+    21403
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 58 00 48 18",
+  "prenom": "Profil48"
+ },
+ {
+  "id": 49,
+  "appareil": "Ordinateur 1920",
+  "comportement": "double-clic",
+  "reseau": "3G lente",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.48",
+  "ok": true,
+  "attendu": "demande",
+  "table": "24",
+  "duree": 39668,
+  "log": [
+   [
+    "accueil prêt",
+    20920
+   ],
+   [
+    "plan visible",
+    23178
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 59 00 49 19",
+  "prenom": "Profil49"
+ },
+ {
+  "id": 50,
+  "appareil": "Petit portable 1280",
+  "comportement": "double-clic",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.49",
+  "ok": true,
+  "attendu": "demande",
+  "table": "31",
+  "duree": 25580,
+  "log": [
+   [
+    "accueil prêt",
+    4094
+   ],
+   [
+    "plan visible",
+    6218
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 60 00 50 10",
+  "prenom": "Profil50"
+ },
+ {
+  "id": 51,
+  "appareil": "iPhone SE",
+  "comportement": "retour",
+  "reseau": "3G lente",
+  "sombre": true,
+  "rapide": false,
+  "ip": "100.64.0.50",
+  "ok": true,
+  "attendu": "demande",
+  "table": "38",
+  "duree": 51591,
+  "log": [
+   [
+    "accueil prêt",
+    21652
+   ],
+   [
+    "plan visible",
+    26147
+   ]
+  ],
+  "steps": {
+   "clics": 11
+  },
+  "consoleErr": [],
+  "tel": "06 61 00 51 11",
+  "prenom": "Profil51"
+ },
+ {
+  "id": 52,
+  "appareil": "iPhone 13",
+  "comportement": "retour",
+  "reseau": "3G lente",
+  "sombre": true,
+  "rapide": true,
+  "ip": "100.64.0.51",
+  "ok": true,
+  "attendu": "demande",
+  "table": "45",
+  "duree": 60027,
+  "log": [
+   [
+    "accueil prêt",
+    21297
+   ],
+   [
+    "plan visible",
+    23860
+   ]
+  ],
+  "steps": {
+   "clics": 11
+  },
+  "consoleErr": [],
+  "tel": "06 62 00 52 12",
+  "prenom": "Profil52"
+ },
+ {
+  "id": 53,
+  "appareil": "iPhone 15 Pro Max",
+  "comportement": "retour",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.52",
+  "ok": true,
+  "attendu": "demande",
+  "table": "52",
+  "duree": 39021,
+  "log": [
+   [
+    "accueil prêt",
+    4724
+   ],
+   [
+    "plan visible",
+    8468
+   ]
+  ],
+  "steps": {
+   "clics": 11
+  },
+  "consoleErr": [],
+  "tel": "06 63 00 53 13",
+  "prenom": "Profil53"
+ },
+ {
+  "id": 54,
+  "appareil": "Pixel 7",
+  "comportement": "retour",
+  "reseau": "4G",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.53",
+  "ok": true,
+  "attendu": "demande",
+  "table": "59",
+  "duree": 36978,
+  "log": [
+   [
+    "accueil prêt",
+    5456
+   ],
+   [
+    "plan visible",
+    10233
+   ]
+  ],
+  "steps": {
+   "clics": 11
+  },
+  "consoleErr": [],
+  "tel": "06 64 00 54 14",
+  "prenom": "Profil54"
+ },
+ {
+  "id": 55,
+  "appareil": "Galaxy S9+",
+  "comportement": "retour",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.54",
+  "ok": true,
+  "attendu": "demande",
+  "table": "02",
+  "duree": 35564,
+  "log": [
+   [
+    "accueil prêt",
+    6476
+   ],
+   [
+    "plan visible",
+    10207
+   ]
+  ],
+  "steps": {
+   "clics": 11
+  },
+  "consoleErr": [],
+  "tel": "06 65 00 55 15",
+  "prenom": "Profil55"
+ },
+ {
+  "id": 56,
+  "appareil": "iPad",
+  "comportement": "retour",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.55",
+  "ok": true,
+  "attendu": "demande",
+  "table": "09",
+  "duree": 39499,
+  "log": [
+   [
+    "accueil prêt",
+    4177
+   ],
+   [
+    "plan visible",
+    7697
+   ]
+  ],
+  "steps": {
+   "clics": 11
+  },
+  "consoleErr": [],
+  "tel": "06 66 00 56 16",
+  "prenom": "Profil56"
+ },
+ {
+  "id": 57,
+  "appareil": "iPhone paysage",
+  "comportement": "retour",
+  "reseau": "3G lente",
+  "sombre": true,
+  "rapide": true,
+  "ip": "100.64.0.56",
+  "ok": true,
+  "attendu": "demande",
+  "table": "16",
+  "duree": 57724,
+  "log": [
+   [
+    "accueil prêt",
+    24891
+   ],
+   [
+    "plan visible",
+    41996
+   ]
+  ],
+  "steps": {
+   "clics": 11
+  },
+  "consoleErr": [],
+  "tel": "06 67 00 57 17",
+  "prenom": "Profil57"
+ },
+ {
+  "id": 58,
+  "appareil": "Ordinateur 1440",
+  "comportement": "retour",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.57",
+  "ok": true,
+  "attendu": "demande",
+  "table": "23",
+  "duree": 44753,
+  "log": [
+   [
+    "accueil prêt",
+    4195
+   ],
+   [
+    "plan visible",
+    20923
+   ]
+  ],
+  "steps": {
+   "clics": 11
+  },
+  "consoleErr": [],
+  "tel": "06 68 00 58 18",
+  "prenom": "Profil58"
+ },
+ {
+  "id": 59,
+  "appareil": "Ordinateur 1920",
+  "comportement": "retour",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.58",
+  "ok": true,
+  "attendu": "demande",
+  "table": "31",
+  "duree": 42374,
+  "log": [
+   [
+    "accueil prêt",
+    4133
+   ],
+   [
+    "plan visible",
+    10637
+   ]
+  ],
+  "steps": {
+   "clics": 11
+  },
+  "consoleErr": [],
+  "tel": "06 69 00 59 19",
+  "prenom": "Profil59"
+ },
+ {
+  "id": 60,
+  "appareil": "Petit portable 1280",
+  "comportement": "retour",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.59",
+  "ok": true,
+  "attendu": "demande",
+  "table": "37",
+  "duree": 41493,
+  "log": [
+   [
+    "accueil prêt",
+    4692
+   ],
+   [
+    "plan visible",
+    10717
+   ]
+  ],
+  "steps": {
+   "clics": 11
+  },
+  "consoleErr": [],
+  "tel": "06 70 00 60 10",
+  "prenom": "Profil60"
+ },
+ {
+  "id": 61,
+  "appareil": "iPhone SE",
+  "comportement": "actualise",
+  "reseau": "rapide",
+  "sombre": true,
+  "rapide": false,
+  "ip": "100.64.0.60",
+  "ok": true,
+  "attendu": "demande",
+  "table": "44",
+  "duree": 52388,
+  "log": [
+   [
+    "accueil prêt",
+    8461
+   ],
+   [
+    "plan visible",
+    20215
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 71 00 61 11",
+  "prenom": "Profil61"
+ },
+ {
+  "id": 62,
+  "appareil": "iPhone 13",
+  "comportement": "actualise",
+  "reseau": "rapide",
+  "sombre": true,
+  "rapide": true,
+  "ip": "100.64.0.61",
+  "ok": true,
+  "attendu": "demande",
+  "table": "52",
+  "duree": 51669,
+  "log": [
+   [
+    "accueil prêt",
+    9943
+   ],
+   [
+    "plan visible",
+    12637
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 72 00 62 12",
+  "prenom": "Profil62"
+ },
+ {
+  "id": 63,
+  "appareil": "iPhone 15 Pro Max",
+  "comportement": "actualise",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.62",
+  "ok": true,
+  "attendu": "demande",
+  "table": "58",
+  "duree": 48306,
+  "log": [
+   [
+    "accueil prêt",
+    4234
+   ],
+   [
+    "plan visible",
+    19504
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 73 00 63 13",
+  "prenom": "Profil63"
+ },
+ {
+  "id": 64,
+  "appareil": "Pixel 7",
+  "comportement": "actualise",
+  "reseau": "rapide",
+  "sombre": true,
+  "rapide": true,
+  "ip": "100.64.0.63",
+  "ok": true,
+  "attendu": "demande",
+  "table": "01",
+  "duree": 46137,
+  "log": [
+   [
+    "accueil prêt",
+    4148
+   ],
+   [
+    "plan visible",
+    6982
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 74 00 64 14",
+  "prenom": "Profil64"
+ },
+ {
+  "id": 65,
+  "appareil": "Galaxy S9+",
+  "comportement": "actualise",
+  "reseau": "rapide",
+  "sombre": true,
+  "rapide": true,
+  "ip": "100.64.0.64",
+  "ok": true,
+  "attendu": "demande",
+  "table": "08",
+  "duree": 47823,
+  "log": [
+   [
+    "accueil prêt",
+    5415
+   ],
+   [
+    "plan visible",
+    10439
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 75 00 65 15",
+  "prenom": "Profil65"
+ },
+ {
+  "id": 66,
+  "appareil": "iPad",
+  "comportement": "actualise",
+  "reseau": "4G",
+  "sombre": true,
+  "rapide": true,
+  "ip": "100.64.0.65",
+  "ok": true,
+  "attendu": "demande",
+  "table": "15",
+  "duree": 49290,
+  "log": [
+   [
+    "accueil prêt",
+    10448
+   ],
+   [
+    "plan visible",
+    12609
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 76 00 66 16",
+  "prenom": "Profil66"
+ },
+ {
+  "id": 67,
+  "appareil": "iPhone paysage",
+  "comportement": "actualise",
+  "reseau": "rapide",
+  "sombre": true,
+  "rapide": false,
+  "ip": "100.64.0.66",
+  "ok": true,
+  "attendu": "demande",
+  "table": "22",
+  "duree": 49112,
+  "log": [
+   [
+    "accueil prêt",
+    4206
+   ],
+   [
+    "plan visible",
+    21664
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 77 00 67 17",
+  "prenom": "Profil67"
+ },
+ {
+  "id": 68,
+  "appareil": "Ordinateur 1440",
+  "comportement": "actualise",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.67",
+  "ok": true,
+  "attendu": "demande",
+  "table": "29",
+  "duree": 44355,
+  "log": [
+   [
+    "accueil prêt",
+    3830
+   ],
+   [
+    "plan visible",
+    16793
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 78 00 68 18",
+  "prenom": "Profil68"
+ },
+ {
+  "id": 69,
+  "appareil": "Ordinateur 1920",
+  "comportement": "actualise",
+  "reseau": "3G lente",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.68",
+  "ok": true,
+  "attendu": "demande",
+  "table": "36",
+  "duree": 72590,
+  "log": [
+   [
+    "accueil prêt",
+    24248
+   ],
+   [
+    "plan visible",
+    30196
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 79 00 69 19",
+  "prenom": "Profil69"
+ },
+ {
+  "id": 70,
+  "appareil": "Petit portable 1280",
+  "comportement": "actualise",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.69",
+  "ok": true,
+  "attendu": "demande",
+  "table": "43",
+  "duree": 37553,
+  "log": [
+   [
+    "accueil prêt",
+    6363
+   ],
+   [
+    "plan visible",
+    8778
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 80 00 70 10",
+  "prenom": "Profil70"
+ },
+ {
+  "id": 71,
+  "appareil": "iPhone SE",
+  "comportement": "reservee",
+  "reseau": "rapide",
+  "sombre": true,
+  "rapide": false,
+  "ip": "100.64.0.70",
+  "ok": true,
+  "attendu": "refus",
+  "table": "30",
+  "duree": 17042,
+  "log": [
+   [
+    "accueil prêt",
+    4008
+   ],
+   [
+    "plan visible",
+    7414
+   ]
+  ],
+  "steps": {
+   "clics": 2
+  },
+  "consoleErr": []
+ },
+ {
+  "id": 72,
+  "appareil": "iPhone 13",
+  "comportement": "reservee",
+  "reseau": "3G lente",
+  "sombre": true,
+  "rapide": false,
+  "ip": "100.64.0.71",
+  "ok": true,
+  "attendu": "refus",
+  "table": "17",
+  "duree": 34986,
+  "log": [
+   [
+    "accueil prêt",
+    21167
+   ],
+   [
+    "plan visible",
+    32701
+   ]
+  ],
+  "steps": {
+   "clics": 2
+  },
+  "consoleErr": []
+ },
+ {
+  "id": 73,
+  "appareil": "iPhone 15 Pro Max",
+  "comportement": "reservee",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.72",
+  "ok": true,
+  "attendu": "refus",
+  "table": "51",
+  "duree": 16095,
+  "log": [
+   [
+    "accueil prêt",
+    6895
+   ],
+   [
+    "plan visible",
+    8918
+   ]
+  ],
+  "steps": {
+   "clics": 2
+  },
+  "consoleErr": []
+ },
+ {
+  "id": 74,
+  "appareil": "Pixel 7",
+  "comportement": "reservee",
+  "reseau": "3G lente",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.73",
+  "ok": true,
+  "attendu": "refus",
+  "table": "51",
+  "duree": 24907,
+  "log": [
+   [
+    "accueil prêt",
+    19574
+   ],
+   [
+    "plan visible",
+    23367
+   ]
+  ],
+  "steps": {
+   "clics": 2
+  },
+  "consoleErr": []
+ },
+ {
+  "id": 75,
+  "appareil": "Galaxy S9+",
+  "comportement": "reservee",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.74",
+  "ok": true,
+  "attendu": "refus",
+  "table": "17",
+  "duree": 16264,
+  "log": [
+   [
+    "accueil prêt",
+    3994
+   ],
+   [
+    "plan visible",
+    15185
+   ]
+  ],
+  "steps": {
+   "clics": 2
+  },
+  "consoleErr": []
+ },
+ {
+  "id": 76,
+  "appareil": "iPad",
+  "comportement": "reservee",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.75",
+  "ok": true,
+  "attendu": "refus",
+  "table": "17",
+  "duree": 14299,
+  "log": [
+   [
+    "accueil prêt",
+    4598
+   ],
+   [
+    "plan visible",
+    10274
+   ]
+  ],
+  "steps": {
+   "clics": 2
+  },
+  "consoleErr": []
+ },
+ {
+  "id": 77,
+  "appareil": "iPhone paysage",
+  "comportement": "reservee",
+  "reseau": "rapide",
+  "sombre": true,
+  "rapide": false,
+  "ip": "100.64.0.76",
+  "ok": true,
+  "attendu": "refus",
+  "table": "03",
+  "duree": 11796,
+  "log": [
+   [
+    "accueil prêt",
+    6443
+   ],
+   [
+    "plan visible",
+    9966
+   ]
+  ],
+  "steps": {
+   "clics": 2
+  },
+  "consoleErr": []
+ },
+ {
+  "id": 78,
+  "appareil": "Ordinateur 1440",
+  "comportement": "reservee",
+  "reseau": "3G lente",
+  "sombre": true,
+  "rapide": true,
+  "ip": "100.64.0.77",
+  "ok": true,
+  "attendu": "refus",
+  "table": "51",
+  "duree": 25797,
+  "log": [
+   [
+    "accueil prêt",
+    19623
+   ],
+   [
+    "plan visible",
+    21541
+   ]
+  ],
+  "steps": {
+   "clics": 2
+  },
+  "consoleErr": []
+ },
+ {
+  "id": 79,
+  "appareil": "Ordinateur 1920",
+  "comportement": "reservee",
+  "reseau": "4G",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.78",
+  "ok": true,
+  "attendu": "refus",
+  "table": "30",
+  "duree": 11685,
+  "log": [
+   [
+    "accueil prêt",
+    5406
+   ],
+   [
+    "plan visible",
+    9984
+   ]
+  ],
+  "steps": {
+   "clics": 2
+  },
+  "consoleErr": []
+ },
+ {
+  "id": 80,
+  "appareil": "Petit portable 1280",
+  "comportement": "reservee",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.79",
+  "ok": true,
+  "attendu": "refus",
+  "table": "51",
+  "duree": 9842,
+  "log": [
+   [
+    "accueil prêt",
+    4133
+   ],
+   [
+    "plan visible",
+    7149
+   ]
+  ],
+  "steps": {
+   "clics": 2
+  },
+  "consoleErr": []
+ },
+ {
+  "id": 81,
+  "appareil": "iPhone SE",
+  "comportement": "clavier",
+  "reseau": "4G",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.80",
+  "ok": true,
+  "attendu": "demande",
+  "table": "56",
+  "duree": 13672,
+  "log": [
+   [
+    "accueil prêt",
+    5370
+   ],
+   [
+    "plan visible",
+    8240
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 91 00 81 11",
+  "prenom": "Profil81"
+ },
+ {
+  "id": 82,
+  "appareil": "iPhone 13",
+  "comportement": "clavier",
+  "reseau": "4G",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.81",
+  "ok": true,
+  "attendu": "demande",
+  "table": "63",
+  "duree": 13791,
+  "log": [
+   [
+    "accueil prêt",
+    5386
+   ],
+   [
+    "plan visible",
+    7783
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 92 00 82 12",
+  "prenom": "Profil82"
+ },
+ {
+  "id": 83,
+  "appareil": "iPhone 15 Pro Max",
+  "comportement": "clavier",
+  "reseau": "3G lente",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.82",
+  "ok": true,
+  "attendu": "demande",
+  "table": "06",
+  "duree": 30492,
+  "log": [
+   [
+    "accueil prêt",
+    19564
+   ],
+   [
+    "plan visible",
+    22956
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 93 00 83 13",
+  "prenom": "Profil83"
+ },
+ {
+  "id": 84,
+  "appareil": "Pixel 7",
+  "comportement": "clavier",
+  "reseau": "4G",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.83",
+  "ok": true,
+  "attendu": "demande",
+  "table": "13",
+  "duree": 14582,
+  "log": [
+   [
+    "accueil prêt",
+    5380
+   ],
+   [
+    "plan visible",
+    8518
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 94 00 84 14",
+  "prenom": "Profil84"
+ },
+ {
+  "id": 85,
+  "appareil": "Galaxy S9+",
+  "comportement": "clavier",
+  "reseau": "4G",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.84",
+  "ok": true,
+  "attendu": "demande",
+  "table": "20",
+  "duree": 15928,
+  "log": [
+   [
+    "accueil prêt",
+    5364
+   ],
+   [
+    "plan visible",
+    7535
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 95 00 85 15",
+  "prenom": "Profil85"
+ },
+ {
+  "id": 86,
+  "appareil": "iPad",
+  "comportement": "clavier",
+  "reseau": "3G lente",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.85",
+  "ok": true,
+  "attendu": "demande",
+  "table": "27",
+  "duree": 31407,
+  "log": [
+   [
+    "accueil prêt",
+    19677
+   ],
+   [
+    "plan visible",
+    23045
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 96 00 86 16",
+  "prenom": "Profil86"
+ },
+ {
+  "id": 87,
+  "appareil": "iPhone paysage",
+  "comportement": "clavier",
+  "reseau": "3G lente",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.86",
+  "ok": true,
+  "attendu": "demande",
+  "table": "34",
+  "duree": 36339,
+  "log": [
+   [
+    "accueil prêt",
+    19860
+   ],
+   [
+    "plan visible",
+    22761
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 97 00 87 17",
+  "prenom": "Profil87"
+ },
+ {
+  "id": 88,
+  "appareil": "Ordinateur 1440",
+  "comportement": "clavier",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.87",
+  "ok": true,
+  "attendu": "demande",
+  "table": "41",
+  "duree": 15979,
+  "log": [
+   [
+    "accueil prêt",
+    3863
+   ],
+   [
+    "plan visible",
+    11576
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 98 00 88 18",
+  "prenom": "Profil88"
+ },
+ {
+  "id": 89,
+  "appareil": "Ordinateur 1920",
+  "comportement": "clavier",
+  "reseau": "3G lente",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.88",
+  "ok": true,
+  "attendu": "demande",
+  "table": "48",
+  "duree": 40642,
+  "log": [
+   [
+    "accueil prêt",
+    19813
+   ],
+   [
+    "plan visible",
+    21518
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 10 00 89 19",
+  "prenom": "Profil89"
+ },
+ {
+  "id": 90,
+  "appareil": "Petit portable 1280",
+  "comportement": "clavier",
+  "reseau": "3G lente",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.89",
+  "ok": true,
+  "attendu": "demande",
+  "table": "55",
+  "duree": 43775,
+  "log": [
+   [
+    "accueil prêt",
+    19809
+   ],
+   [
+    "plan visible",
+    21535
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 11 00 90 10",
+  "prenom": "Profil90"
+ },
+ {
+  "id": 91,
+  "appareil": "iPhone SE",
+  "comportement": "vue-table",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.90",
+  "ok": true,
+  "attendu": "demande",
+  "table": "62",
+  "duree": 30712,
+  "log": [
+   [
+    "accueil prêt",
+    4015
+   ],
+   [
+    "plan visible",
+    12121
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 12 00 91 11",
+  "prenom": "Profil91"
+ },
+ {
+  "id": 92,
+  "appareil": "iPhone 13",
+  "comportement": "vue-table",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.91",
+  "ok": true,
+  "attendu": "demande",
+  "table": "05",
+  "duree": 25633,
+  "log": [
+   [
+    "accueil prêt",
+    3950
+   ],
+   [
+    "plan visible",
+    6725
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 13 00 92 12",
+  "prenom": "Profil92"
+ },
+ {
+  "id": 93,
+  "appareil": "iPhone 15 Pro Max",
+  "comportement": "vue-table",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.92",
+  "ok": true,
+  "attendu": "demande",
+  "table": "12",
+  "duree": 30988,
+  "log": [
+   [
+    "accueil prêt",
+    4040
+   ],
+   [
+    "plan visible",
+    7310
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 14 00 93 13",
+  "prenom": "Profil93"
+ },
+ {
+  "id": 94,
+  "appareil": "Pixel 7",
+  "comportement": "vue-table",
+  "reseau": "rapide",
+  "sombre": true,
+  "rapide": false,
+  "ip": "100.64.0.93",
+  "ok": true,
+  "attendu": "demande",
+  "table": "19",
+  "duree": 36601,
+  "log": [
+   [
+    "accueil prêt",
+    3918
+   ],
+   [
+    "plan visible",
+    7914
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 15 00 94 14",
+  "prenom": "Profil94"
+ },
+ {
+  "id": 95,
+  "appareil": "Galaxy S9+",
+  "comportement": "vue-table",
+  "reseau": "4G",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.94",
+  "ok": true,
+  "attendu": "demande",
+  "table": "26",
+  "duree": 40707,
+  "log": [
+   [
+    "accueil prêt",
+    10141
+   ],
+   [
+    "plan visible",
+    14500
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 16 00 95 15",
+  "prenom": "Profil95"
+ },
+ {
+  "id": 96,
+  "appareil": "iPad",
+  "comportement": "vue-table",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.95",
+  "ok": true,
+  "attendu": "demande",
+  "table": "33",
+  "duree": 39366,
+  "log": [
+   [
+    "accueil prêt",
+    10381
+   ],
+   [
+    "plan visible",
+    13344
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 17 00 96 16",
+  "prenom": "Profil96"
+ },
+ {
+  "id": 97,
+  "appareil": "iPhone paysage",
+  "comportement": "vue-table",
+  "reseau": "3G lente",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.96",
+  "ok": false,
+  "erreur": "page.click: Timeout 15000ms exceeded.",
+  "attendu": "demande",
+  "table": "40",
+  "duree": 44121,
+  "log": [
+   [
+    "accueil prêt",
+    22643
+   ],
+   [
+    "plan visible",
+    25996
+   ]
+  ],
+  "steps": {
+   "clics": 3
+  },
+  "consoleErr": [],
+  "tel": "06 18 00 97 17",
+  "capture": "tests/echecs/p97.png"
+ },
+ {
+  "id": 98,
+  "appareil": "Ordinateur 1440",
+  "comportement": "vue-table",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.97",
+  "ok": true,
+  "attendu": "demande",
+  "table": "47",
+  "duree": 37872,
+  "log": [
+   [
+    "accueil prêt",
+    8373
+   ],
+   [
+    "plan visible",
+    11457
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 19 00 98 18",
+  "prenom": "Profil98"
+ },
+ {
+  "id": 99,
+  "appareil": "Ordinateur 1920",
+  "comportement": "vue-table",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.98",
+  "ok": true,
+  "attendu": "demande",
+  "table": "54",
+  "duree": 36364,
+  "log": [
+   [
+    "accueil prêt",
+    5184
+   ],
+   [
+    "plan visible",
+    8164
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 20 00 99 19",
+  "prenom": "Profil99"
+ },
+ {
+  "id": 100,
+  "appareil": "Petit portable 1280",
+  "comportement": "vue-table",
+  "reseau": "3G lente",
+  "sombre": true,
+  "rapide": false,
+  "ip": "100.64.0.99",
+  "ok": true,
+  "attendu": "demande",
+  "table": "61",
+  "duree": 52720,
+  "log": [
+   [
+    "accueil prêt",
+    24379
+   ],
+   [
+    "plan visible",
+    29878
+   ]
+  ],
+  "steps": {
+   "clics": 10
+  },
+  "consoleErr": [],
+  "tel": "06 21 01 00 10",
+  "prenom": "Profil100"
+ },
+ {
+  "id": 101,
+  "appareil": "iPhone SE",
+  "comportement": "filtre",
+  "reseau": "3G lente",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.100",
+  "ok": true,
+  "attendu": "demande",
+  "table": "04",
+  "duree": 45355,
+  "log": [
+   [
+    "accueil prêt",
+    25481
+   ],
+   [
+    "plan visible",
+    28541
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 22 01 01 11",
+  "prenom": "Profil101"
+ },
+ {
+  "id": 102,
+  "appareil": "iPhone 13",
+  "comportement": "filtre",
+  "reseau": "3G lente",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.101",
+  "ok": true,
+  "attendu": "demande",
+  "table": "11",
+  "duree": 42390,
+  "log": [
+   [
+    "accueil prêt",
+    21473
+   ],
+   [
+    "plan visible",
+    24542
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 23 01 02 12",
+  "prenom": "Profil102"
+ },
+ {
+  "id": 103,
+  "appareil": "iPhone 15 Pro Max",
+  "comportement": "filtre",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.102",
+  "ok": true,
+  "attendu": "demande",
+  "table": "18",
+  "duree": 29788,
+  "log": [
+   [
+    "accueil prêt",
+    9225
+   ],
+   [
+    "plan visible",
+    12415
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 24 01 03 13",
+  "prenom": "Profil103"
+ },
+ {
+  "id": 104,
+  "appareil": "Pixel 7",
+  "comportement": "filtre",
+  "reseau": "rapide",
+  "sombre": true,
+  "rapide": false,
+  "ip": "100.64.0.103",
+  "ok": true,
+  "attendu": "demande",
+  "table": "25",
+  "duree": 25913,
+  "log": [
+   [
+    "accueil prêt",
+    4610
+   ],
+   [
+    "plan visible",
+    7864
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 25 01 04 14",
+  "prenom": "Profil104"
+ },
+ {
+  "id": 105,
+  "appareil": "Galaxy S9+",
+  "comportement": "filtre",
+  "reseau": "3G lente",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.104",
+  "ok": true,
+  "attendu": "demande",
+  "table": "32",
+  "duree": 43907,
+  "log": [
+   [
+    "accueil prêt",
+    21626
+   ],
+   [
+    "plan visible",
+    32361
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 26 01 05 15",
+  "prenom": "Profil105"
+ },
+ {
+  "id": 106,
+  "appareil": "iPad",
+  "comportement": "filtre",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.105",
+  "ok": true,
+  "attendu": "demande",
+  "table": "39",
+  "duree": 31663,
+  "log": [
+   [
+    "accueil prêt",
+    3981
+   ],
+   [
+    "plan visible",
+    7943
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 27 01 06 16",
+  "prenom": "Profil106"
+ },
+ {
+  "id": 107,
+  "appareil": "iPhone paysage",
+  "comportement": "filtre",
+  "reseau": "rapide",
+  "sombre": true,
+  "rapide": true,
+  "ip": "100.64.0.106",
+  "ok": true,
+  "attendu": "demande",
+  "table": "46",
+  "duree": 28400,
+  "log": [
+   [
+    "accueil prêt",
+    5235
+   ],
+   [
+    "plan visible",
+    10194
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 28 01 07 17",
+  "prenom": "Profil107"
+ },
+ {
+  "id": 108,
+  "appareil": "Ordinateur 1440",
+  "comportement": "filtre",
+  "reseau": "rapide",
+  "sombre": true,
+  "rapide": true,
+  "ip": "100.64.0.107",
+  "ok": true,
+  "attendu": "demande",
+  "table": "53",
+  "duree": 25143,
+  "log": [
+   [
+    "accueil prêt",
+    5035
+   ],
+   [
+    "plan visible",
+    6958
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 29 01 08 18",
+  "prenom": "Profil108"
+ },
+ {
+  "id": 109,
+  "appareil": "Ordinateur 1920",
+  "comportement": "filtre",
+  "reseau": "4G",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.108",
+  "ok": true,
+  "attendu": "demande",
+  "table": "60",
+  "duree": 34731,
+  "log": [
+   [
+    "accueil prêt",
+    5356
+   ],
+   [
+    "plan visible",
+    9022
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 30 01 09 19",
+  "prenom": "Profil109"
+ },
+ {
+  "id": 110,
+  "appareil": "Petit portable 1280",
+  "comportement": "filtre",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.109",
+  "ok": true,
+  "attendu": "demande",
+  "table": "04",
+  "duree": 35383,
+  "log": [
+   [
+    "accueil prêt",
+    3936
+   ],
+   [
+    "plan visible",
+    20300
+   ]
+  ],
+  "steps": {
+   "clics": 9
+  },
+  "consoleErr": [],
+  "tel": "06 31 01 10 10",
+  "prenom": "Profil110"
+ },
+ {
+  "id": 111,
+  "appareil": "iPhone SE",
+  "comportement": "hesitant",
+  "reseau": "3G lente",
+  "sombre": true,
+  "rapide": false,
+  "ip": "100.64.0.110",
+  "ok": true,
+  "attendu": "demande",
+  "table": "10",
+  "duree": 61494,
+  "log": [
+   [
+    "accueil prêt",
+    21599
+   ],
+   [
+    "plan visible",
+    25742
+   ]
+  ],
+  "steps": {
+   "clics": 14
+  },
+  "consoleErr": [],
+  "tel": "06 32 01 11 11",
+  "prenom": "Profil111"
+ },
+ {
+  "id": 112,
+  "appareil": "iPhone 13",
+  "comportement": "hesitant",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.111",
+  "ok": true,
+  "attendu": "demande",
+  "table": "18",
+  "duree": 42551,
+  "log": [
+   [
+    "accueil prêt",
+    4029
+   ],
+   [
+    "plan visible",
+    10121
+   ]
+  ],
+  "steps": {
+   "clics": 14
+  },
+  "consoleErr": [],
+  "tel": "06 33 01 12 12",
+  "prenom": "Profil112"
+ },
+ {
+  "id": 113,
+  "appareil": "iPhone 15 Pro Max",
+  "comportement": "hesitant",
+  "reseau": "rapide",
+  "sombre": true,
+  "rapide": false,
+  "ip": "100.64.0.112",
+  "ok": true,
+  "attendu": "demande",
+  "table": "24",
+  "duree": 42102,
+  "log": [
+   [
+    "accueil prêt",
+    7267
+   ],
+   [
+    "plan visible",
+    11523
+   ]
+  ],
+  "steps": {
+   "clics": 14
+  },
+  "consoleErr": [],
+  "tel": "06 34 01 13 13",
+  "prenom": "Profil113"
+ },
+ {
+  "id": 114,
+  "appareil": "Pixel 7",
+  "comportement": "hesitant",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.113",
+  "ok": true,
+  "attendu": "demande",
+  "table": "31",
+  "duree": 43962,
+  "log": [
+   [
+    "accueil prêt",
+    7582
+   ],
+   [
+    "plan visible",
+    12258
+   ]
+  ],
+  "steps": {
+   "clics": 14
+  },
+  "consoleErr": [],
+  "tel": "06 35 01 14 14",
+  "prenom": "Profil114"
+ },
+ {
+  "id": 115,
+  "appareil": "Galaxy S9+",
+  "comportement": "hesitant",
+  "reseau": "4G",
+  "sombre": true,
+  "rapide": false,
+  "ip": "100.64.0.114",
+  "ok": true,
+  "attendu": "demande",
+  "table": "38",
+  "duree": 48777,
+  "log": [
+   [
+    "accueil prêt",
+    8736
+   ],
+   [
+    "plan visible",
+    11998
+   ]
+  ],
+  "steps": {
+   "clics": 14
+  },
+  "consoleErr": [],
+  "tel": "06 36 01 15 15",
+  "prenom": "Profil115"
+ },
+ {
+  "id": 116,
+  "appareil": "iPad",
+  "comportement": "hesitant",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.115",
+  "ok": true,
+  "attendu": "demande",
+  "table": "45",
+  "duree": 54482,
+  "log": [
+   [
+    "accueil prêt",
+    7964
+   ],
+   [
+    "plan visible",
+    26675
+   ]
+  ],
+  "steps": {
+   "clics": 14
+  },
+  "consoleErr": [],
+  "tel": "06 37 01 16 16",
+  "prenom": "Profil116"
+ },
+ {
+  "id": 117,
+  "appareil": "iPhone paysage",
+  "comportement": "hesitant",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.116",
+  "ok": false,
+  "erreur": "page.click: Timeout 15000ms exceeded.",
+  "attendu": "demande",
+  "table": "08",
+  "duree": 32926,
+  "log": [
+   [
+    "accueil prêt",
+    8264
+   ],
+   [
+    "plan visible",
+    11481
+   ]
+  ],
+  "steps": {
+   "clics": 3
+  },
+  "consoleErr": [],
+  "tel": "06 38 01 17 17",
+  "capture": "tests/echecs/p117.png"
+ },
+ {
+  "id": 118,
+  "appareil": "Ordinateur 1440",
+  "comportement": "hesitant",
+  "reseau": "4G",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.117",
+  "ok": false,
+  "erreur": "page.click: Timeout 15000ms exceeded.",
+  "attendu": "demande",
+  "table": "08",
+  "duree": 32090,
+  "log": [
+   [
+    "accueil prêt",
+    9123
+   ],
+   [
+    "plan visible",
+    11453
+   ]
+  ],
+  "steps": {
+   "clics": 3
+  },
+  "consoleErr": [],
+  "tel": "06 39 01 18 18",
+  "capture": "tests/echecs/p118.png"
+ },
+ {
+  "id": 119,
+  "appareil": "Ordinateur 1920",
+  "comportement": "hesitant",
+  "reseau": "4G",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.118",
+  "ok": true,
+  "attendu": "demande",
+  "table": "02",
+  "duree": 50591,
+  "log": [
+   [
+    "accueil prêt",
+    11311
+   ],
+   [
+    "plan visible",
+    13191
+   ]
+  ],
+  "steps": {
+   "clics": 14
+  },
+  "consoleErr": [],
+  "tel": "06 40 01 19 19",
+  "prenom": "Profil119"
+ },
+ {
+  "id": 120,
+  "appareil": "Petit portable 1280",
+  "comportement": "hesitant",
+  "reseau": "rapide",
+  "sombre": true,
+  "rapide": false,
+  "ip": "100.64.0.119",
+  "ok": true,
+  "attendu": "demande",
+  "table": "09",
+  "duree": 45118,
+  "log": [
+   [
+    "accueil prêt",
+    7595
+   ],
+   [
+    "plan visible",
+    11182
+   ]
+  ],
+  "steps": {
+   "clics": 14
+  },
+  "consoleErr": [],
+  "tel": "06 41 01 20 10",
+  "prenom": "Profil120"
+ },
+ {
+  "id": 121,
+  "appareil": "iPhone SE",
+  "comportement": "abandon",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.120",
+  "ok": true,
+  "attendu": "aucune",
+  "table": "16",
+  "duree": 31277,
+  "log": [
+   [
+    "accueil prêt",
+    10678
+   ],
+   [
+    "plan visible",
+    13717
+   ]
+  ],
+  "steps": {
+   "clics": 3
+  },
+  "consoleErr": [],
+  "tel": "06 42 01 21 11"
+ },
+ {
+  "id": 122,
+  "appareil": "iPhone 13",
+  "comportement": "abandon",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.121",
+  "ok": true,
+  "attendu": "aucune",
+  "table": "23",
+  "duree": 28679,
+  "log": [
+   [
+    "accueil prêt",
+    8724
+   ],
+   [
+    "plan visible",
+    10819
+   ]
+  ],
+  "steps": {
+   "clics": 3
+  },
+  "consoleErr": [],
+  "tel": "06 43 01 22 12"
+ },
+ {
+  "id": 123,
+  "appareil": "iPhone 15 Pro Max",
+  "comportement": "abandon",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.122",
+  "ok": true,
+  "attendu": "aucune",
+  "table": "31",
+  "duree": 28973,
+  "log": [
+   [
+    "accueil prêt",
+    6571
+   ],
+   [
+    "plan visible",
+    8706
+   ]
+  ],
+  "steps": {
+   "clics": 3
+  },
+  "consoleErr": [],
+  "tel": "06 44 01 23 13"
+ },
+ {
+  "id": 124,
+  "appareil": "Pixel 7",
+  "comportement": "abandon",
+  "reseau": "3G lente",
+  "sombre": true,
+  "rapide": true,
+  "ip": "100.64.0.123",
+  "ok": true,
+  "attendu": "aucune",
+  "table": "37",
+  "duree": 42135,
+  "log": [
+   [
+    "accueil prêt",
+    26618
+   ],
+   [
+    "plan visible",
+    28783
+   ]
+  ],
+  "steps": {
+   "clics": 3
+  },
+  "consoleErr": [],
+  "tel": "06 45 01 24 14"
+ },
+ {
+  "id": 125,
+  "appareil": "Galaxy S9+",
+  "comportement": "abandon",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.124",
+  "ok": true,
+  "attendu": "aucune",
+  "table": "44",
+  "duree": 26947,
+  "log": [
+   [
+    "accueil prêt",
+    4749
+   ],
+   [
+    "plan visible",
+    7407
+   ]
+  ],
+  "steps": {
+   "clics": 3
+  },
+  "consoleErr": [],
+  "tel": "06 46 01 25 15"
+ },
+ {
+  "id": 126,
+  "appareil": "iPad",
+  "comportement": "abandon",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.125",
+  "ok": true,
+  "attendu": "aucune",
+  "table": "52",
+  "duree": 28109,
+  "log": [
+   [
+    "accueil prêt",
+    9803
+   ],
+   [
+    "plan visible",
+    12054
+   ]
+  ],
+  "steps": {
+   "clics": 3
+  },
+  "consoleErr": [],
+  "tel": "06 47 01 26 16"
+ },
+ {
+  "id": 127,
+  "appareil": "iPhone paysage",
+  "comportement": "abandon",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.126",
+  "ok": true,
+  "attendu": "aucune",
+  "table": "58",
+  "duree": 22498,
+  "log": [
+   [
+    "accueil prêt",
+    6903
+   ],
+   [
+    "plan visible",
+    9599
+   ]
+  ],
+  "steps": {
+   "clics": 3
+  },
+  "consoleErr": [],
+  "tel": "06 48 01 27 17"
+ },
+ {
+  "id": 128,
+  "appareil": "Ordinateur 1440",
+  "comportement": "abandon",
+  "reseau": "4G",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.127",
+  "ok": true,
+  "attendu": "aucune",
+  "table": "01",
+  "duree": 22120,
+  "log": [
+   [
+    "accueil prêt",
+    5697
+   ],
+   [
+    "plan visible",
+    9480
+   ]
+  ],
+  "steps": {
+   "clics": 3
+  },
+  "consoleErr": [],
+  "tel": "06 49 01 28 18"
+ },
+ {
+  "id": 129,
+  "appareil": "Ordinateur 1920",
+  "comportement": "abandon",
+  "reseau": "3G lente",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.128",
+  "ok": true,
+  "attendu": "aucune",
+  "table": "08",
+  "duree": 38082,
+  "log": [
+   [
+    "accueil prêt",
+    21657
+   ],
+   [
+    "plan visible",
+    24335
+   ]
+  ],
+  "steps": {
+   "clics": 3
+  },
+  "consoleErr": [],
+  "tel": "06 50 01 29 19"
+ },
+ {
+  "id": 130,
+  "appareil": "Petit portable 1280",
+  "comportement": "abandon",
+  "reseau": "rapide",
+  "sombre": true,
+  "rapide": true,
+  "ip": "100.64.0.129",
+  "ok": true,
+  "attendu": "aucune",
+  "table": "15",
+  "duree": 22166,
+  "log": [
+   [
+    "accueil prêt",
+    3898
+   ],
+   [
+    "plan visible",
+    9189
+   ]
+  ],
+  "steps": {
+   "clics": 3
+  },
+  "consoleErr": [],
+  "tel": "06 51 01 30 10"
+ },
+ {
+  "id": 131,
+  "appareil": "iPhone SE",
+  "comportement": "lien-direct",
+  "reseau": "rapide",
+  "sombre": true,
+  "rapide": true,
+  "ip": "100.64.0.130",
+  "ok": true,
+  "attendu": "demande",
+  "table": "22",
+  "duree": 19457,
+  "log": [
+   [
+    "plan visible",
+    5175
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 52 01 31 11",
+  "prenom": "Profil131"
+ },
+ {
+  "id": 132,
+  "appareil": "iPhone 13",
+  "comportement": "lien-direct",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.131",
+  "ok": true,
+  "attendu": "demande",
+  "table": "29",
+  "duree": 24189,
+  "log": [
+   [
+    "plan visible",
+    17820
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 53 01 32 12",
+  "prenom": "Profil132"
+ },
+ {
+  "id": 133,
+  "appareil": "iPhone 15 Pro Max",
+  "comportement": "lien-direct",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.132",
+  "ok": true,
+  "attendu": "demande",
+  "table": "36",
+  "duree": 20486,
+  "log": [
+   [
+    "plan visible",
+    6201
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 54 01 33 13",
+  "prenom": "Profil133"
+ },
+ {
+  "id": 134,
+  "appareil": "Pixel 7",
+  "comportement": "lien-direct",
+  "reseau": "rapide",
+  "sombre": true,
+  "rapide": true,
+  "ip": "100.64.0.133",
+  "ok": true,
+  "attendu": "demande",
+  "table": "43",
+  "duree": 24792,
+  "log": [
+   [
+    "plan visible",
+    15872
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 55 01 34 14",
+  "prenom": "Profil134"
+ },
+ {
+  "id": 135,
+  "appareil": "Galaxy S9+",
+  "comportement": "lien-direct",
+  "reseau": "rapide",
+  "sombre": true,
+  "rapide": false,
+  "ip": "100.64.0.134",
+  "ok": true,
+  "attendu": "demande",
+  "table": "50",
+  "duree": 27450,
+  "log": [
+   [
+    "plan visible",
+    15687
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 56 01 35 15",
+  "prenom": "Profil135"
+ },
+ {
+  "id": 136,
+  "appareil": "iPad",
+  "comportement": "lien-direct",
+  "reseau": "rapide",
+  "sombre": true,
+  "rapide": true,
+  "ip": "100.64.0.135",
+  "ok": true,
+  "attendu": "demande",
+  "table": "57",
+  "duree": 32201,
+  "log": [
+   [
+    "plan visible",
+    15812
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 57 01 36 16",
+  "prenom": "Profil136"
+ },
+ {
+  "id": 137,
+  "appareil": "iPhone paysage",
+  "comportement": "lien-direct",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.136",
+  "ok": true,
+  "attendu": "demande",
+  "table": "64",
+  "duree": 31696,
+  "log": [
+   [
+    "plan visible",
+    18661
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 58 01 37 17",
+  "prenom": "Profil137"
+ },
+ {
+  "id": 138,
+  "appareil": "Ordinateur 1440",
+  "comportement": "lien-direct",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.137",
+  "ok": true,
+  "attendu": "demande",
+  "table": "07",
+  "duree": 27102,
+  "log": [
+   [
+    "plan visible",
+    14582
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 59 01 38 18",
+  "prenom": "Profil138"
+ },
+ {
+  "id": 139,
+  "appareil": "Ordinateur 1920",
+  "comportement": "lien-direct",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.138",
+  "ok": true,
+  "attendu": "demande",
+  "table": "14",
+  "duree": 34105,
+  "log": [
+   [
+    "plan visible",
+    24176
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 60 01 39 19",
+  "prenom": "Profil139"
+ },
+ {
+  "id": 140,
+  "appareil": "Petit portable 1280",
+  "comportement": "lien-direct",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.139",
+  "ok": true,
+  "attendu": "demande",
+  "table": "21",
+  "duree": 28742,
+  "log": [
+   [
+    "plan visible",
+    12957
+   ]
+  ],
+  "steps": {
+   "clics": 7
+  },
+  "consoleErr": [],
+  "tel": "06 61 01 40 10",
+  "prenom": "Profil140"
+ },
+ {
+  "id": 141,
+  "appareil": "iPhone SE",
+  "comportement": "mouvement-reduit",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.140",
+  "ok": true,
+  "attendu": "demande",
+  "table": "28",
+  "duree": 27204,
+  "log": [
+   [
+    "accueil prêt",
+    11271
+   ],
+   [
+    "plan visible",
+    12760
+   ]
+  ],
+  "steps": {
+   "clics": 8
+  },
+  "consoleErr": [],
+  "tel": "06 62 01 41 11",
+  "prenom": "Profil141"
+ },
+ {
+  "id": 142,
+  "appareil": "iPhone 13",
+  "comportement": "mouvement-reduit",
+  "reseau": "3G lente",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.141",
+  "ok": true,
+  "attendu": "demande",
+  "table": "35",
+  "duree": 41051,
+  "log": [
+   [
+    "accueil prêt",
+    23885
+   ],
+   [
+    "plan visible",
+    26082
+   ]
+  ],
+  "steps": {
+   "clics": 8
+  },
+  "consoleErr": [],
+  "tel": "06 63 01 42 12",
+  "prenom": "Profil142"
+ },
+ {
+  "id": 143,
+  "appareil": "iPhone 15 Pro Max",
+  "comportement": "mouvement-reduit",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.142",
+  "ok": true,
+  "attendu": "demande",
+  "table": "42",
+  "duree": 26948,
+  "log": [
+   [
+    "accueil prêt",
+    7997
+   ],
+   [
+    "plan visible",
+    19361
+   ]
+  ],
+  "steps": {
+   "clics": 8
+  },
+  "consoleErr": [],
+  "tel": "06 64 01 43 13",
+  "prenom": "Profil143"
+ },
+ {
+  "id": 144,
+  "appareil": "Pixel 7",
+  "comportement": "mouvement-reduit",
+  "reseau": "4G",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.143",
+  "ok": true,
+  "attendu": "demande",
+  "table": "49",
+  "duree": 24022,
+  "log": [
+   [
+    "accueil prêt",
+    4337
+   ],
+   [
+    "plan visible",
+    15913
+   ]
+  ],
+  "steps": {
+   "clics": 8
+  },
+  "consoleErr": [],
+  "tel": "06 65 01 44 14",
+  "prenom": "Profil144"
+ },
+ {
+  "id": 145,
+  "appareil": "Galaxy S9+",
+  "comportement": "mouvement-reduit",
+  "reseau": "3G lente",
+  "sombre": true,
+  "rapide": false,
+  "ip": "100.64.0.144",
+  "ok": true,
+  "attendu": "demande",
+  "table": "56",
+  "duree": 50655,
+  "log": [
+   [
+    "accueil prêt",
+    21483
+   ],
+   [
+    "plan visible",
+    23727
+   ]
+  ],
+  "steps": {
+   "clics": 8
+  },
+  "consoleErr": [],
+  "tel": "06 66 01 45 15",
+  "prenom": "Profil145"
+ },
+ {
+  "id": 146,
+  "appareil": "iPad",
+  "comportement": "mouvement-reduit",
+  "reseau": "3G lente",
+  "sombre": false,
+  "rapide": false,
+  "ip": "100.64.0.145",
+  "ok": true,
+  "attendu": "demande",
+  "table": "63",
+  "duree": 50515,
+  "log": [
+   [
+    "accueil prêt",
+    20677
+   ],
+   [
+    "plan visible",
+    23964
+   ]
+  ],
+  "steps": {
+   "clics": 8
+  },
+  "consoleErr": [],
+  "tel": "06 67 01 46 16",
+  "prenom": "Profil146"
+ },
+ {
+  "id": 147,
+  "appareil": "iPhone paysage",
+  "comportement": "mouvement-reduit",
+  "reseau": "rapide",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.146",
+  "ok": true,
+  "attendu": "demande",
+  "table": "06",
+  "duree": 21875,
+  "log": [
+   [
+    "accueil prêt",
+    3626
+   ],
+   [
+    "plan visible",
+    5896
+   ]
+  ],
+  "steps": {
+   "clics": 8
+  },
+  "consoleErr": [],
+  "tel": "06 68 01 47 17",
+  "prenom": "Profil147"
+ },
+ {
+  "id": 148,
+  "appareil": "Ordinateur 1440",
+  "comportement": "mouvement-reduit",
+  "reseau": "4G",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.147",
+  "ok": true,
+  "attendu": "demande",
+  "table": "13",
+  "duree": 30494,
+  "log": [
+   [
+    "accueil prêt",
+    6848
+   ],
+   [
+    "plan visible",
+    9841
+   ]
+  ],
+  "steps": {
+   "clics": 8
+  },
+  "consoleErr": [],
+  "tel": "06 69 01 48 18",
+  "prenom": "Profil148"
+ },
+ {
+  "id": 149,
+  "appareil": "Ordinateur 1920",
+  "comportement": "mouvement-reduit",
+  "reseau": "4G",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.148",
+  "ok": true,
+  "attendu": "demande",
+  "table": "20",
+  "duree": 26427,
+  "log": [
+   [
+    "accueil prêt",
+    7101
+   ],
+   [
+    "plan visible",
+    8239
+   ]
+  ],
+  "steps": {
+   "clics": 8
+  },
+  "consoleErr": [],
+  "tel": "06 70 01 49 19",
+  "prenom": "Profil149"
+ },
+ {
+  "id": 150,
+  "appareil": "Petit portable 1280",
+  "comportement": "mouvement-reduit",
+  "reseau": "4G",
+  "sombre": false,
+  "rapide": true,
+  "ip": "100.64.0.149",
+  "ok": true,
+  "attendu": "demande",
+  "table": "27",
+  "duree": 36595,
+  "log": [
+   [
+    "accueil prêt",
+    3220
+   ],
+   [
+    "plan visible",
+    6075
+   ]
+  ],
+  "steps": {
+   "clics": 8
+  },
+  "consoleErr": [],
+  "tel": "06 71 01 50 10",
+  "prenom": "Profil150"
+ }
+]

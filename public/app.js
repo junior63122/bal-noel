@@ -98,7 +98,7 @@ let lenis = null;
 function startLenis() {
   if (reduceMotion || !window.Lenis || matchMedia('(pointer: coarse)').matches) return;
   lenis = new window.Lenis({ lerp: .11, wheelMultiplier: .9 });
-  if (document.body.dataset.view !== 'plan') lenis.stop();
+  if (location.hash !== '#plan') lenis.stop(); // la page du plan (lien direct ou actualisation) doit défiler
   const raf = (t) => { lenis.raf(t); requestAnimationFrame(raf); }; requestAnimationFrame(raf);
 }
 window.Lenis ? startLenis() : addEventListener('load', startLenis);
@@ -151,7 +151,7 @@ controls.enableDamping = true;
 controls.dampingFactor = .08;
 controls.zoomToCursor = true;
 controls.minDistance = 3.5;
-controls.maxDistance = 90;
+controls.maxDistance = 130;
 controls.maxPolarAngle = 1.32;
 controls.screenSpacePanning = false;
 
@@ -420,9 +420,10 @@ let frameNo = 0;
 const TABLE_OBJ = new Map();
 const segGeo = new THREE.BoxGeometry(.94, .4, .55);
 const segBackGeo = new THREE.BoxGeometry(.94, .45, .14);
-const lowGeo = new THREE.BoxGeometry(.4, .36, .4);
-const lowTopGeo = new THREE.BoxGeometry(.44, .04, .44);
-const LOW_MAT = new THREE.MeshStandardMaterial({ color: '#efe8dc', roughness: .5 });
+const lowGeo = new THREE.BoxGeometry(.56, .36, .5);
+const lowTopGeo = new THREE.BoxGeometry(.6, .04, .54);
+const LOW_MAT = new THREE.MeshStandardMaterial({ color: '#1d2235', roughness: .4, metalness: .3 });
+const TOP_MAT = new THREE.MeshStandardMaterial({ color: '#f6f1e8', roughness: .2, metalness: .1 }); // plateau marbre blanc
 function banquette(g, mat) {
   const s = new THREE.Mesh(segGeo, mat); s.position.set(0, .2, -.55); g.add(s);
   const bk = new THREE.Mesh(segBackGeo, mat); bk.position.set(0, .55, -.86); g.add(bk);
@@ -432,7 +433,7 @@ TABLES.forEach((t) => {
   const mat = M.sofa.clone(), mats = [mat];
   banquette(g, mat);
   const low = new THREE.Mesh(lowGeo, LOW_MAT); low.position.y = .18; g.add(low);
-  const top = new THREE.Mesh(lowTopGeo, M.gold); top.position.y = .38; g.add(top);
+  const top = new THREE.Mesh(lowTopGeo, TOP_MAT); top.position.y = .38; g.add(top);
   const h = heightAt(t.x, t.y);
   g.position.copy(V(t.x, t.y, h));
   g.rotation.y = THREE.MathUtils.degToRad(t.rot);
@@ -444,6 +445,50 @@ TABLES.forEach((t) => {
   scene.add(g);
   TABLE_OBJ.set(t.id, { group: g, mats, plate, anchor: V(t.x, t.y, h + .95), base: V(t.x, t.y, h) });
 });
+// service à table : seau à champagne + bouteille + flûtes sur chaque table (InstancedMesh = 1 appel par type d'objet)
+{
+  const lathe = (pts, seg = 16) => new THREE.LatheGeometry(pts.map(([x, y]) => new THREE.Vector2(x, y)), seg);
+  const bucketGeo = lathe([[0, 0], [.085, 0], [.1, .16], [.105, .17], [0, .17]], 20);
+  const iceGeo = new THREE.CylinderGeometry(.094, .094, .01, 16);
+  const bottleGeo = lathe([[0, 0], [.04, 0], [.042, .02], [.042, .16], [.036, .2], [.016, .25], [.014, .31], [0, .31]], 14);
+  const foilGeo = lathe([[0, 0], [.017, 0], [.017, .055], [.012, .07], [0, .07]], 10);
+  const labelGeo = new THREE.CylinderGeometry(.0435, .0435, .05, 14, 1, true);
+  const fluteGeo = lathe([[0, 0], [.022, 0], [.022, .004], [.003, .008], [.003, .1], [.017, .12], [.021, .18], [.022, .2]], 12);
+  const wineGeo = lathe([[0, .13], [.016, .13], [.019, .17], [0, .17]], 10);
+  const mats = {
+    bucket: new THREE.MeshStandardMaterial({ color: '#ffe2a0', emissive: '#f0a83a', emissiveIntensity: 1.1, roughness: .3, transparent: true, opacity: .92 }), // seau lumineux LED, comme en club
+    ice: new THREE.MeshStandardMaterial({ color: '#eaf4ff', roughness: .25, transparent: true, opacity: .85 }),
+    bottle: new THREE.MeshStandardMaterial({ color: '#0f2a1c', metalness: .2, roughness: .15 }),
+    foil: new THREE.MeshStandardMaterial({ color: '#e8b04a', metalness: 1, roughness: .25 }),
+    label: new THREE.MeshStandardMaterial({ color: '#e8b04a', metalness: .8, roughness: .3 }),
+    flute: new THREE.MeshStandardMaterial({ color: '#dfeaff', metalness: .1, roughness: .05, transparent: true, opacity: .35, depthWrite: false }),
+    wine: new THREE.MeshStandardMaterial({ color: '#ffd86b', emissive: '#c98a1c', emissiveIntensity: .35, roughness: .2, transparent: true, opacity: .85 }),
+  };
+  // positions locales sur la table basse (dessus à y = .4) : seau au centre, 4 flûtes autour
+  const TOP = .4;
+  const items = [
+    ['bucket', bucketGeo, [[0, TOP, 0]]], ['ice', iceGeo, [[0, TOP + .165, 0]]],
+    ['bottle', bottleGeo, [[0, TOP + .06, 0]], .38], ['foil', foilGeo, [[0, TOP + .06 + .245, 0]], .38], ['label', labelGeo, [[0, TOP + .06 + .09, 0]], .38],
+    ['flute', fluteGeo, [[.15, TOP, .13], [-.15, TOP, .13], [.16, TOP, -.1], [-.16, TOP, -.1]]],
+    ['wine', wineGeo, [[.15, TOP, .13], [-.15, TOP, .13], [.16, TOP, -.1], [-.16, TOP, -.1]]],
+  ];
+  const m = new THREE.Matrix4(), local = new THREE.Matrix4(), tilt = new THREE.Quaternion().setFromEuler(new THREE.Euler(.38, 0, .12));
+  for (const [key, geo, spots, lean] of items) {
+    const im = new THREE.InstancedMesh(geo, mats[key], TABLES.length * spots.length);
+    let k = 0;
+    TABLES.forEach((t) => {
+      const g = TABLE_OBJ.get(t.id).group; g.updateMatrixWorld(true);
+      for (const [x, y, z] of spots) {
+        // la bouteille est inclinée dans le seau, comme au service
+        local.compose(new THREE.Vector3(x * 1.3, TOP + (y - TOP) * 1.3, z * 1.3), lean ? tilt : new THREE.Quaternion(), new THREE.Vector3(1.3, 1.3, 1.3));
+        m.multiplyMatrices(g.matrixWorld, local); im.setMatrixAt(k++, m);
+      }
+    });
+    im.raycast = () => {}; // ne gêne pas le clic sur les tables
+    scene.add(im);
+  }
+}
+
 // bouts de banquette (non réservables) aux extrémités de chaque rangée, comme sur le plan
 ROWS.forEach((r) => {
   const [p0, p1] = [r.pts[0], r.pts.at(-1)];
@@ -472,6 +517,7 @@ TABLES.forEach((t) => {
   b.type = 'button'; b.className = 'tlabel'; b.textContent = t.id;
   b.style.setProperty('--zc', zoneOf(t).couleurs.at(-1));
   b.title = `Table ${t.id} · ${zoneOf(t).nom} · ${euros(prixTable(t))}`;
+  b.setAttribute('aria-label', b.title);
   b.addEventListener('click', () => selectTable(t));
   b.addEventListener('pointerenter', () => highlight(t.id, true));
   b.addEventListener('pointerleave', () => highlight(t.id, false));
@@ -500,7 +546,16 @@ const easeIO = (t) => (t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
 function flyTo(pos, target, ms = 1300, done) {
   fly = { p0: camera.position.clone(), t0: controls.target.clone(), p1: pos, t1: target, start: performance.now(), ms, done };
 }
-function flyHome() { flyTo(HOME.pos.clone(), HOME.target.clone(), 1500); }
+// vue d'ensemble adaptée à l'écran : sur un écran étroit (téléphone en vertical),
+// on recule et on passe plus en vue du dessus pour que toute la salle tienne en largeur
+function fitHome() {
+  const aspect = stage.clientWidth / Math.max(1, stage.clientHeight);
+  if (aspect >= 1.15) { HOME.pos.set(0, 40, 33); HOME.target.set(0, 0, 3); return; }
+  const hfov = 2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * aspect);
+  const d = 22 / Math.tan(hfov / 2);
+  HOME.pos.set(0, d * .93, d * .37); HOME.target.set(0, 0, 2);
+}
+function flyHome() { fitHome(); flyTo(HOME.pos.clone(), HOME.target.clone(), 1500); }
 function flyZone(zoneId) {
   const ts = TABLES.filter((t) => t.zone === zoneId);
   const box = new THREE.Box3(); ts.forEach((t) => box.expandByPoint(TABLE_OBJ.get(t.id).anchor));
@@ -530,6 +585,7 @@ function enterPov(t) {
   const dir = look.clone().sub(eye).setY(0).normalize();
   eye.addScaledVector(dir, -.9);
   pov = true; ring.visible = false;
+  document.body.classList.add('pov-mode'); applyViewOffset();
   controls.enabled = false;
   flyTo(eye, look, 1800);
   $('#pov-txt').textContent = `Vue depuis la table ${t.id}`;
@@ -538,6 +594,7 @@ function enterPov(t) {
 function exitPov(goHome = false) {
   if (!pov) return;
   pov = false; controls.enabled = true; $('#pov-bar').hidden = true; stage.classList.remove('pov');
+  document.body.classList.remove('pov-mode'); applyViewOffset();
   if (current && !goHome) { ring.visible = true; flyTable(current); } else flyHome();
 }
 function zoomBy(f) {
@@ -587,10 +644,14 @@ canvas.addEventListener('pointermove', (e) => {
 });
 
 // arrivée dans la salle : survol de la caméra la première fois que le plan est visible
+let userMoved = false;
+controls.addEventListener('start', () => (userMoved = true));
 const INTRO = new THREE.Vector3(-34, 46, -38);
 camera.position.copy(INTRO);
 new IntersectionObserver((en, obs) => {
-  if (en[0].isIntersecting) { flyTo(HOME.pos.clone(), HOME.target.clone(), 2600); obs.disconnect(); }
+  if (!en[0].isIntersecting) return; obs.disconnect();
+  if (current || userMoved) return; // l'utilisateur a déjà choisi une table ou bougé la vue : on ne l'interrompt pas
+  fitHome(); flyTo(HOME.pos.clone(), HOME.target.clone(), 2600);
 }, { threshold: .35 }).observe(stage);
 
 /* ================================================================ boucle */
@@ -598,7 +659,7 @@ function resize() {
   const w = stage.clientWidth, h = stage.clientHeight;
   renderer.setSize(w, h, false); camera.aspect = w / h;
   camera.fov = w < 640 ? 55 : 42;
-  camera.updateProjectionMatrix();
+  camera.updateProjectionMatrix(); applyViewOffset();
 }
 new ResizeObserver(resize).observe(stage); resize();
 const clock = new THREE.Clock();
@@ -630,6 +691,13 @@ renderer.setAnimationLoop(() => {
   placeLabels();
 });
 $('#loading').remove();
+{
+  const hint = $('.hint');
+  if (matchMedia('(pointer: coarse)').matches) hint.textContent = 'Glissez pour tourner · Pincez pour zoomer · Touchez une table';
+  const hide = () => hint.classList.add('gone');
+  canvas.addEventListener('pointerdown', hide, { once: true });
+  setTimeout(hide, 9000);
+}
 // le bouton de l'accueil devient actif quand la salle est prête
 requestAnimationFrame(() => { const c = $('#cta-main'); c.classList.remove('loading'); c.querySelector('.cta-txt').textContent = 'Choisir ma table'; c.insertAdjacentHTML('beforeend', '<span class="arrow">→</span>'); });
 
@@ -667,6 +735,7 @@ function refreshLabels() {
   for (const t of TABLES) {
     const b = LABEL.get(t.id), taken = reserved.has(t.id);
     b.classList.toggle('taken', taken);
+    b.setAttribute('aria-label', `Table ${t.id}, ${zoneOf(t).nom}, ${euros(prixTable(t))}, ${taken ? 'réservée' : 'disponible'}`);
     b.classList.toggle('hide', only && taken);
     b.classList.toggle('dim', !!activeZone && t.zone !== activeZone);
     const o = TABLE_OBJ.get(t.id);
@@ -697,13 +766,23 @@ function selectTable(t) {
   $('#tp-status').innerHTML = taken ? '<strong>Réservée</strong>Choisissez une autre table sur le plan ou dans la liste.' : '<strong>Disponible</strong>Envoyez votre demande : l’organisation vous recontacte rapidement.';
   $('#tp-ask').disabled = taken;
   const side = $('#side'); side.classList.add('closed', 'has-table'); $('#collapse').textContent = '+';
-  const panel = $('#tpanel'); panel.hidden = false; panel.classList.remove('in'); void panel.offsetWidth; panel.classList.add('in');
+  const panel = $('#tpanel'); panel.hidden = false; panel.classList.remove('enter'); void panel.offsetWidth; panel.classList.add('enter');
   renderZones(); refreshLabels();
   flyTable(t);
-  if (innerWidth <= 1100) scrollToEl(stage, -20);
+  if (isSheet()) { document.body.classList.add('sheet-open'); scrollToEl(stage, -64); }
+  applyViewOffset();
 }
+// mobile / tablette : la fiche de la table s'ouvre en panneau bas, le plan reste visible au-dessus
+function isSheet() { return innerWidth <= 1100; }
+function applyViewOffset() {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  if (isSheet() && document.body.classList.contains('sheet-open') && !document.body.classList.contains('pov-mode')) camera.setViewOffset(w, h, 0, h * .2, w, h);
+  else camera.clearViewOffset();
+}
+addEventListener('resize', applyViewOffset, { passive: true });
 function deselectTable() {
   current = null; ring.visible = false; $('#badge').hidden = true; $('#tpanel').hidden = true;
+  document.body.classList.remove('sheet-open'); applyViewOffset();
   const side = $('#side'); side.classList.remove('closed', 'has-table'); $('#collapse').textContent = '−';
   LABEL.forEach((b) => b.classList.remove('sel'));
 }
@@ -721,6 +800,11 @@ function renderStrip() {
   }).join('');
   $('#zs-list').querySelectorAll('button').forEach((b) => (b.onclick = () => selectTable(TABLES.find((t) => t.id === b.dataset.id))));
   el.hidden = false;
+}
+{
+  let y0 = null;
+  $('#tpanel').addEventListener('touchstart', (e) => { if ($('#tpanel').scrollTop <= 0) y0 = e.touches[0].clientY; }, { passive: true });
+  $('#tpanel').addEventListener('touchend', (e) => { if (y0 !== null && e.changedTouches[0].clientY - y0 > 70) $('#tp-close').click(); y0 = null; }, { passive: true });
 }
 $('#tp-close').onclick = () => { exitPov(true); deselectTable(); selectZone(activeZone); };
 $('#tp-pov').onclick = () => current && enterPov(current);
@@ -745,12 +829,24 @@ function openDrawer(t) {
   $('#d-taken').hidden = !taken; form.hidden = taken;
   $('#d-error').hidden = true;
   $('#d-form-view').hidden = false; $('#d-ok-view').hidden = true;
+  lastFocus = document.activeElement;
   drawer.classList.add('open'); drawer.setAttribute('aria-hidden', 'false'); back.hidden = false;
   setTimeout(() => (taken ? $('#drawer-close') : form.prenom).focus({ preventScroll: true }), 350);
 }
+let lastFocus = null;
 function closeDrawer() {
+  if (!drawer.classList.contains('open')) return;
   drawer.classList.remove('open'); drawer.setAttribute('aria-hidden', 'true'); back.hidden = true;
+  if (lastFocus && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true });
 }
+// la touche Tab reste dans le formulaire tant qu'il est ouvert
+drawer.addEventListener('keydown', (e) => {
+  if (e.key !== 'Tab') return;
+  const f = [...drawer.querySelectorAll('button, input:not(.hp), select, textarea, a[href]')].filter((x) => x.offsetParent !== null && !x.disabled);
+  if (!f.length) return;
+  if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f.at(-1).focus(); }
+  else if (!e.shiftKey && document.activeElement === f.at(-1)) { e.preventDefault(); f[0].focus(); }
+});
 $('#drawer-close').onclick = closeDrawer; back.onclick = closeDrawer; $('#d-ok-close').onclick = closeDrawer;
 addEventListener('keydown', (e) => { if (e.key !== 'Escape') return; if (drawer.classList.contains('open')) closeDrawer(); else if (pov) exitPov(); });
 
@@ -763,7 +859,9 @@ form.addEventListener('submit', async (e) => {
   if (f.tel.replace(/\D/g, '').length < 8) problems.push('indiquez un numéro de téléphone valide');
   if (f.email && !/^\S+@\S+\.\S+$/.test(f.email)) problems.push('l’e-mail semble incorrect');
   if (!f.cgv) problems.push('cochez la case concernant l’acompte');
-  if (problems.length) { err.textContent = 'Merci de vérifier : ' + problems.join(', ') + '.'; err.hidden = false; return; }
+  const bad = { prenom: !f.prenom.trim(), nom: !f.nom.trim(), tel: f.tel.replace(/\D/g, '').length < 8, email: !!f.email && !/^\S+@\S+\.\S+$/.test(f.email), cgv: !f.cgv };
+  Object.entries(bad).forEach(([k, v]) => form[k].setAttribute('aria-invalid', v ? 'true' : 'false'));
+  if (problems.length) { err.textContent = 'Merci de vérifier : ' + problems.join(', ') + '.'; err.hidden = false; form[Object.keys(bad).find((k) => bad[k])].focus(); return; }
   const btn = $('#d-submit'); btn.disabled = true;
   try {
     await submitDemande({ table: current.id, prenom: f.prenom, nom: f.nom, tel: f.tel, email: f.email, personnes: f.personnes, contact: f.contact, message: f.message, website: f.website });

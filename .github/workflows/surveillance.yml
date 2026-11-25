@@ -1,0 +1,31 @@
+# Vérifie le site en ligne toutes les 30 minutes. En cas de problème, le job échoue
+# et GitHub envoie un e-mail au propriétaire du dépôt (réglage par défaut des notifications).
+name: Surveillance du site
+on:
+  schedule: [{ cron: '*/30 * * * *' }]
+  workflow_dispatch:
+jobs:
+  sante:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Santé du serveur et des données
+        run: |
+          set -e
+          URL=https://bal-noel-mgh6.onrender.com
+          for i in 1 2 3; do
+            code=$(curl -s -o h.json -w '%{http_code}' --max-time 20 $URL/api/health || true)
+            [ "$code" = 200 ] && break; sleep 20
+          done
+          cat h.json; echo
+          [ "$code" = 200 ] || { echo "::error::Santé en erreur (HTTP $code)"; exit 1; }
+          grep -q '"ok":true' h.json || { echo "::error::Données non vérifiées"; exit 1; }
+          grep -q '"adminActive":true' h.json || { echo "::error::Administration désactivée"; exit 1; }
+      - name: Pages et fichiers essentiels
+        run: |
+          set -e
+          URL=https://bal-noel-mgh6.onrender.com
+          for p in / /app.js /config.js /style.css /vendor/three.module.min.js /assets/boule.webp /admin; do
+            t=$(curl -s -o /dev/null -w '%{http_code} %{time_total}' --max-time 20 $URL$p); echo "$p → $t"
+            [ "${t%% *}" = 200 ] || { echo "::error::$p indisponible"; exit 1; }
+            awk -v s="${t##* }" 'BEGIN{ if (s > 5) { print "::warning::lent"; } }'
+          done

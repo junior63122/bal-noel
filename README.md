@@ -9,7 +9,7 @@ node server.js            # Node 18 ou plus, aucune dépendance
 ```
 Ouvrir http://localhost:3000 — administration : http://localhost:3000/admin
 
-Variables : `ADMIN_PASSWORD` (mot de passe admin, **à définir**), `PORT`, `DATA_DIR` (dossier de db.json).
+Variables : `ADMIN_PASSWORD` (mot de passe admin, **10 caractères minimum**, obligatoire en ligne), `PORT`, `DATA_DIR` (dossier de db.json).
 
 ## Modifier l'événement, les zones, les prix, les tables
 
@@ -30,3 +30,23 @@ et les 33 tables (numéro, zone, position sur le plan).
 
 Service web Node, commande de démarrage `node server.js`. Ajouter un **disque persistant** monté sur `DATA_DIR`,
 sinon les demandes sont perdues à chaque redémarrage. Sur un hébergement 100 % statique, le site fonctionne en mode démo (sans admin).
+
+## Tests
+
+```
+node --test tests/*.test.mjs                                   # 13 tests serveur (sécurité, données, charge)
+NODE_PATH=$(npm root -g) node tests/parcours.cjs 1000 8        # 1 000 parcours simulés dans Chromium (Playwright requis)
+```
+
+Les tests serveur démarrent un vrai serveur temporaire et vérifient chaque résultat en relisant le fichier
+de données et l'administration, jamais sur la seule réponse HTTP. Les parcours sont des **simulations
+automatisées** (10 appareils × 15 comportements × 3 réseaux), vérifiées ensuite via l'administration.
+Rapport : `tests/rapport-parcours.md`.
+
+## Surveillance
+
+- `GET /api/health` : relit les données sur disque et les compare à la mémoire (HTTP 503 si incohérence),
+  compteurs de demandes, refus, erreurs d'écriture, échecs de connexion admin.
+- `.github/workflows/surveillance.yml` : contrôle le site en ligne toutes les 30 min ; un échec déclenche
+  l'e-mail de notification GitHub.
+- Une copie quotidienne des données est gardée 14 jours dans `DATA_DIR/sauvegardes/`.

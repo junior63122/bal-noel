@@ -74,7 +74,7 @@
       </div>
 
       <div class="stage" id="stage" data-lenis-prevent>
-        <canvas id="scene"></canvas>
+        <canvas id="scene" role="img" aria-label="Plan 3D de la salle : piste tournante au centre, régie DJ, zones VIP. Les numéros de table sont des boutons."></canvas>
         <div class="labels" id="labels"></div>
         <button class="btn-gold overview" id="btn-overview" type="button">Vue d’ensemble</button>
         <div class="stage-badge" id="badge" hidden></div>
@@ -108,15 +108,18 @@
         <p class="side-sub">Prix par table · <span data-personnes></span> selon la zone</p>
         <ul class="zones" id="zones"></ul>
       </div>
-      <div class="table-panel" id="tpanel" hidden>
-        <div class="tp-head"><p class="eyebrow">Votre table</p><button type="button" class="tp-close" id="tp-close" aria-label="Fermer">×</button></div>
+      <div class="table-panel" id="tpanel" hidden role="region" aria-label="Table sélectionnée">
+        <span class="grab" aria-hidden="true"></span>
+        <div class="tp-head"><p class="eyebrow">Votre table</p><button type="button" class="tp-close" id="tp-close" aria-label="Fermer la fiche de la table">×</button></div>
         <h3 id="tp-title">Table</h3>
         <p class="tp-zone" id="tp-zone"></p>
         <p class="tp-price" id="tp-price"></p>
         <p class="tp-sub" id="tp-sub"></p>
         <div class="tp-status" id="tp-status"></div>
-        <button type="button" class="tp-btn ghost" id="tp-pov">Voir depuis cette table <span>↗</span></button>
-        <button type="button" class="tp-btn gold" id="tp-ask">Demander cette table <span>→</span></button>
+        <div class="tp-actions">
+          <button type="button" class="tp-btn ghost" id="tp-pov">Voir depuis cette table <span>↗</span></button>
+          <button type="button" class="tp-btn gold" id="tp-ask">Demander cette table <span>→</span></button>
+        </div>
       </div>
       <div class="side-info">
         <div class="info">
@@ -141,7 +144,7 @@
 
 <!-- =========================== FICHE TABLE =========================== -->
 <div class="drawer-back" id="drawer-back" hidden></div>
-<aside class="drawer" data-lenis-prevent id="drawer" aria-hidden="true" role="dialog" aria-labelledby="d-title">
+<aside class="drawer" data-lenis-prevent id="drawer" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="d-title">
   <button class="drawer-close" id="drawer-close" type="button" aria-label="Fermer">×</button>
 
   <div id="d-form-view">
@@ -170,13 +173,13 @@
       <label><span>Message <em>(facultatif)</em></span><textarea name="message" rows="2" placeholder="Anniversaire, bouteilles souhaitées, heure d’arrivée…"></textarea></label>
       <input name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
       <label class="check"><input type="checkbox" name="cgv" required> <span>J’ai compris qu’un acompte de <span data-acompte></span> % me sera demandé après validation de ma demande.</span></label>
-      <p class="error" id="d-error" hidden></p>
+      <p class="error" id="d-error" role="alert" hidden></p>
       <button class="btn-red" type="submit" id="d-submit">Envoyer ma demande <span>→</span></button>
       <p class="fine">Aucun paiement maintenant. L’organisation vous recontacte pour confirmer.</p>
     </form>
   </div>
 
-  <div id="d-ok-view" hidden>
+  <div id="d-ok-view" role="status" aria-live="polite" hidden>
     <img class="ok-bunny" src="assets/lapin.webp" width="600" height="870" alt="">
     <img class="ok-title" src="assets/titre.webp" width="1100" height="743" alt="" loading="lazy">
     <h3>Demande envoyée</h3>
