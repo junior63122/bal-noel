@@ -10,10 +10,10 @@ export const EVENT = {
   dateLongue: 'Dimanche 27 décembre',
   dateCourte: '27 DÉCEMBRE 2026',
   horaires: '16H00 — MINUIT',
-  horairesFr: '16 h — minuit',
+  horairesFr: 'Ouverture des portes à 16 h · Fermeture à minuit',
   debut: '2026-12-27T16:00:00+01:00',   // pour le compte à rebours
   lieu: 'Palais des Festivals · Cannes',
-  lieuDetail: 'Les Terrasses, Palais des Festivals, Cannes',
+  lieuDetail: 'La Terrasse du Palais des Festivals, Cannes',
   tagline: 'LE BAL DE NOËL · CANNES',
   acomptePct: 20,
   personnes: '10 ou 15 personnes',
