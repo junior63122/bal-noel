@@ -53,127 +53,74 @@ async function submitDemande(data) {
   return j;
 }
 
-/* ================================================================ neige (accueil) */
-function snow(canvas, density = 120) {
-  const ctx = canvas.getContext('2d');
-  let w, h, flakes;
-  const reset = () => {
-    w = canvas.width = canvas.offsetWidth * devicePixelRatio;
-    h = canvas.height = canvas.offsetHeight * devicePixelRatio;
-    flakes = Array.from({ length: density }, () => ({ x: Math.random() * w, y: Math.random() * h, r: (Math.random() * 1.5 + .4) * devicePixelRatio, s: Math.random() * .45 + .15, o: Math.random() * 6, a: Math.random() * .45 + .2 }));
+/* ================================================================ accueil */
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const heroEl = $('#accueil');
+let heroVisible = true;
+new IntersectionObserver((e) => (heroVisible = e[0].isIntersecting)).observe(heroEl);
+
+// neige : une seule boucle pour la neige de l'accueil et celle de la boule,
+// arrêtée dès que l'accueil n'est plus à l'écran (aucun coût pendant le défilement du plan)
+function flakesFor(cv, n, area) {
+  const d = Math.min(devicePixelRatio, 1.5);
+  const st = { cv, ctx: cv.getContext('2d'), d, area, list: [] };
+  const size = () => {
+    st.w = cv.width = Math.round(cv.offsetWidth * d); st.h = cv.height = Math.round(cv.offsetHeight * d);
+    st.list = Array.from({ length: n }, () => ({ x: Math.random() * st.w, y: Math.random() * st.h * area.bottom, r: (Math.random() * area.r + .5) * d, s: (Math.random() * area.s + .15) * d, o: Math.random() * 6, a: Math.random() * .45 + area.a }));
   };
-  reset(); addEventListener('resize', reset);
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  (function tick(t) {
-    ctx.clearRect(0, 0, w, h);
-    for (const f of flakes) {
-      f.y += f.s * devicePixelRatio; f.x += Math.sin(t / 1400 + f.o) * .4;
-      if (f.y > h) { f.y = -5; f.x = Math.random() * w; }
-      ctx.fillStyle = `rgba(255,248,235,${f.a})`; ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 7); ctx.fill();
-    }
-    requestAnimationFrame(tick);
-  })(0);
+  size(); addEventListener('resize', size, { passive: true });
+  return st;
 }
-snow($('#snow'), innerWidth < 640 ? 35 : 70);
-
-// compte à rebours
-function countdown() {
-  const el = $('#countdown'); if (!el) return;
-  const ms = new Date(EVENT.debut) - Date.now();
-  if (ms <= 0) { el.innerHTML = '<div><b>Ce soir</b><small>à partir de 16 h</small></div>'; return; }
-  const d = Math.floor(ms / 864e5), h = Math.floor(ms / 36e5) % 24, m = Math.floor(ms / 6e4) % 60, sec = Math.floor(ms / 1e3) % 60;
-  el.innerHTML = [[d, 'jours'], [h, 'heures'], [m, 'min'], [sec, 'sec']].map(([v, u]) => `<div><b>${String(v).padStart(2, '0')}</b><small>${u}</small></div>`).join('');
-}
-countdown(); setInterval(countdown, 1000);
-
-/* ================================================================ traîneau du Père Noël */
-// Trajectoire en courbe de Bézier : le traîneau arrive de loin (petit), grossit, s'incline
-// selon la pente du vol, galope (léger rebond) et sème une poussière d'étoiles dorée.
-(function sleighFlight() {
-  const hero = $('#accueil'), el = $('#sleigh'), cv = $('#dust');
-  if (!el || !cv) return;
-  const ctx = cv.getContext('2d');
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let W, H, dpr;
-  const size = () => { dpr = Math.min(devicePixelRatio, 2); W = hero.clientWidth; H = hero.clientHeight; cv.width = W * dpr; cv.height = H * dpr; };
-  size(); addEventListener('resize', size);
-  const bez = (p0, p1, p2, p3, t) => { const u = 1 - t; return u * u * u * p0 + 3 * u * u * t * p1 + 3 * u * t * t * p2 + t * t * t * p3; };
-  const dbez = (p0, p1, p2, p3, t) => { const u = 1 - t; return 3 * u * u * (p1 - p0) + 6 * u * t * (p2 - p1) + 3 * t * t * (p3 - p2); };
-  let flight = null, nextAt = performance.now() + 1200, parts = [];
-  function newFlight(now) {
-    const left = Math.random() < .5; // alterne aléatoirement le sens d'arrivée en hauteur
-    // vol dans la bande haute de l'écran, au-dessus des textes
-    const top = innerWidth < 1000 ? 10 : 22;
-    flight = { start: now, dur: innerWidth < 640 ? 7000 : 9500,
-      x: [W + 80, W * .72, W * .3, -W * .35], y: [top + (left ? 40 : 20), top - 25, top + 70, top + (left ? 5 : 30)] };
-  }
-  function frame(now) {
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
-    if (!flight && now > nextAt && !document.hidden) newFlight(now);
-    if (flight) {
-      const k = (now - flight.start) / flight.dur;
-      if (k >= 1) { flight = null; nextAt = now + 7000 + Math.random() * 5000; el.style.opacity = 0; }
-      else {
-        const t = k, x = bez(...flight.x, t), y = bez(...flight.y, t);
-        const dx = dbez(...flight.x, t), dy = dbez(...flight.y, t);
-        const ang = Math.atan2(dy, dx) + Math.PI;          // le traîneau regarde vers la gauche
-        const tilt = THREE.MathUtils.clamp(ang > Math.PI ? ang - 2 * Math.PI : ang, -.35, .35) * .8;
-        const sc = .62 + .5 * Math.sin(Math.min(1, t * 1.15) * Math.PI / 2); // approche : de loin vers près
-        const gallop = Math.sin(now / 95) ;                  // cadence du galop
-        const w = el.offsetWidth;
-        el.style.opacity = Math.min(1, k * 8, (1 - k) * 8);
-        el.style.transform = `translate(${x - w / 2}px, ${y + gallop * 3}px) rotate(${tilt + gallop * .012}rad) scale(${sc}) skewX(${gallop * 1.2}deg)`;
-        // poussière d'étoiles depuis l'arrière du traîneau
-        if (!reduce) for (let i = 0; i < 3; i++) {
-          const bx = x + w * .38 * sc, by = y + w * .62 * .5 * sc;
-          parts.push({ x: bx + (Math.random() - .5) * 18, y: by + (Math.random() - .5) * 14, vx: 30 + Math.random() * 50, vy: (Math.random() - .3) * 22, life: 0, max: 1.1 + Math.random() * 1.2, r: Math.random() * 1.8 + .5, star: Math.random() < .12 });
-        }
-      }
-    }
-    const dt = 1 / 60;
-    parts = parts.filter((p) => (p.life += dt) < p.max);
-    for (const p of parts) {
-      p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 8 * dt; p.vx *= .985;
-      const a = (1 - p.life / p.max) * (.6 + .4 * Math.sin(p.life * 22));
-      ctx.globalAlpha = Math.max(0, a);
-      if (p.star) { ctx.fillStyle = '#fff6dc'; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.life * 3); ctx.fillRect(-p.r * 2.4, -.5, p.r * 4.8, 1); ctx.fillRect(-.5, -p.r * 2.4, 1, p.r * 4.8); ctx.restore(); }
-      else { ctx.fillStyle = p.life < .25 ? '#fff4d6' : '#e2c487'; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fill(); }
+const snows = [];
+if ($('#snow')) snows.push(flakesFor($('#snow'), innerWidth < 640 ? 30 : 55, { bottom: 1, r: 1.3, s: .35, a: .15, top: 0 }));
+if ($('#globe-snow')) snows.push(flakesFor($('#globe-snow'), 90, { bottom: .74, r: 1.4, s: .3, a: .45, top: .08, inside: true }));
+function snowTick(t) {
+  if (heroVisible && !document.hidden) for (const st of snows) {
+    const { ctx, w, h, area } = st;
+    ctx.clearRect(0, 0, w, h); ctx.fillStyle = '#fff';
+    for (const f of st.list) {
+      f.y += f.s; f.x += Math.sin(t / 1100 + f.o) * .3;
+      if (f.y > h * area.bottom) { f.y = h * area.top; f.x = area.inside ? w * (.15 + Math.random() * .7) : Math.random() * w; }
+      ctx.globalAlpha = f.a; ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 7); ctx.fill();
     }
     ctx.globalAlpha = 1;
-    requestAnimationFrame(frame);
   }
-  el.style.opacity = 0;
-  if (!reduce) requestAnimationFrame(frame);
-})();
+  requestAnimationFrame(snowTick);
+}
+if (!reduceMotion) requestAnimationFrame(snowTick);
 
-// neige qui tombe à l'intérieur de la boule
-(function globeSnow() {
-  const cv = $('#globe-snow'); if (!cv) return;
-  const ctx = cv.getContext('2d'); let w, h, flakes = [];
-  const size = () => { const d = Math.min(devicePixelRatio, 2); w = cv.width = cv.offsetWidth * d; h = cv.height = cv.offsetHeight * d;
-    flakes = Array.from({ length: 140 }, () => ({ x: Math.random() * w, y: Math.random() * h * .75, r: (Math.random() * 1.6 + .5) * d, s: (Math.random() * .35 + .12) * d, o: Math.random() * 6, a: Math.random() * .5 + .45 })); };
-  size(); addEventListener('resize', size);
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  (function tick(t) {
-    ctx.clearRect(0, 0, w, h);
-    for (const f of flakes) {
-      f.y += f.s; f.x += Math.sin(t / 900 + f.o) * .35;
-      if (f.y > h * .74) { f.y = h * .08; f.x = w * (.15 + Math.random() * .7); }
-      ctx.fillStyle = `rgba(255,255,255,${f.a})`; ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 7); ctx.fill();
-    }
-    requestAnimationFrame(tick);
-  })(0);
-})();
+// ouverture : entièrement en CSS (opacity/transform) ; on enlève juste le calque à la fin
+setTimeout(() => { const i = $('#intro'); if (i) i.hidden = true; }, document.documentElement.classList.contains('quick') ? 1500 : 3600);
+try { sessionStorage.setItem('bal-noel-intro', '1'); } catch {}
 
-// léger effet de profondeur sur les lettrages quand la souris bouge
-(function parallax() {
-  const v = $('#hero-visual'); if (!v || matchMedia('(pointer: coarse)').matches) return;
-  $('#accueil').addEventListener('pointermove', (e) => {
-    const x = e.clientX / innerWidth - .5, y = e.clientY / innerHeight - .5;
-    v.style.setProperty('--px', x.toFixed(3)); v.style.setProperty('--py', y.toFixed(3));
-    v.querySelector('.globe').style.translate = `${x * -10}px ${y * -8}px`;
-  });
-})();
+// défilement adouci (Lenis) ; le plan 3D et la fiche gardent la molette pour eux
+let lenis = null;
+function startLenis() {
+  if (reduceMotion || !window.Lenis || matchMedia('(pointer: coarse)').matches) return;
+  lenis = new window.Lenis({ lerp: .11, wheelMultiplier: .9 });
+  if (document.body.dataset.view !== 'plan') lenis.stop();
+  const raf = (t) => { lenis.raf(t); requestAnimationFrame(raf); }; requestAnimationFrame(raf);
+}
+window.Lenis ? startLenis() : addEventListener('load', startLenis);
+const scrollToEl = (el, offset = 0) => (lenis ? lenis.scrollTo(el, { offset, duration: 1.2 }) : el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }));
+
+// deux pages : l'accueil, puis le plan (ouvert par « Choisir ma table »)
+const body = document.body;
+function showView(v, animate = true) {
+  if (body.dataset.view === v) return;
+  const go = () => {
+    body.dataset.view = v;
+    if (lenis) lenis.scrollTo(0, { immediate: true }); else scrollTo(0, 0);
+    body.classList.remove('leaving');
+    if (animate && !reduceMotion) { body.classList.add('entering'); setTimeout(() => body.classList.remove('entering'), 1100); }
+    if (v === 'plan') { lenis && lenis.start(); dispatchEvent(new Event('resize')); } else lenis && lenis.stop();
+  };
+  if (animate && !reduceMotion && v === 'plan') { body.classList.add('leaving'); setTimeout(go, 650); } else go();
+}
+$$('a[href="#reserver"]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); if (a.classList.contains('loading')) return; history.pushState({ v: 'plan' }, '', '#plan'); showView('plan'); }));
+$$('a[href="#accueil"]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); history.pushState({ v: 'hero' }, '', location.pathname); showView('hero'); }));
+addEventListener('popstate', () => showView(location.hash === '#plan' ? 'plan' : 'hero'));
+body.dataset.view = location.hash === '#plan' ? 'plan' : 'hero';
 
 /* ================================================================ scène 3D */
 const PX = 17;               // pixels du plan par mètre
@@ -185,7 +132,7 @@ const mirror = (pts) => pts.map(([x, y]) => [2 * CX - x, y]).reverse();
 const canvas = $('#scene');
 const stage = $('#stage');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
@@ -209,16 +156,16 @@ controls.maxPolarAngle = 1.32;
 controls.screenSpacePanning = false;
 
 // lumières : ambiance chaude de salle de bal + touches de couleur de Noël
-scene.add(new THREE.HemisphereLight('#fff1dc', '#5a2a2a', 1.35));
-const sun = new THREE.DirectionalLight('#ffd9a3', 1.4); sun.position.set(-20, 40, 25); scene.add(sun);
-[[-16, 6, -6, '#ffb877'], [16, 6, -6, '#ffb877'], [0, 6, 14, '#ff9a7a'], [0, 7, -14, '#ffd59a']].forEach(([x, y, z, c]) => {
-  const l = new THREE.PointLight(c, 120, 40, 1.6); l.position.set(x, y, z); scene.add(l);
+scene.add(new THREE.HemisphereLight('#fff1dc', '#3a2a40', 1.7));
+const sun = new THREE.DirectionalLight('#ffd9a3', 1.5); sun.position.set(-20, 40, 25); scene.add(sun);
+[[-14, 7, -4, '#ffb877'], [14, 7, -4, '#ffb877']].forEach(([x, y, z, c]) => {
+  const l = new THREE.PointLight(c, 170, 46, 1.6); l.position.set(x, y, z); scene.add(l);
 });
 
 // textures procédurales
 function canvasTex(w, h, draw, repeat = 1) {
   const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h);
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeat, repeat); t.anisotropy = 8; return t;
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeat, repeat); t.anisotropy = 4; return t;
 }
 const woodTex = canvasTex(512, 512, (g, w) => {
   for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) {
@@ -258,9 +205,9 @@ const M = {
   tree: new THREE.MeshStandardMaterial({ color: '#173a2b', roughness: .85 }),
 };
 
-const blinkers = [];
+// toutes les ampoules (murs + sapins) sont dessinées en un seul appel (InstancedMesh)
+const bulbSpots = [];
 const BULB_COLORS = ['#ffe3a8', '#fff1d6', '#ffd889', '#fff1d6'];
-const BULB_GEO = new THREE.SphereGeometry(.06, 8, 8);
 
 // sol de la salle (contour relevé sur le plan)
 const ROOM = [[130, 500], [250, 345], [395, 180], [590, 100], [664, 100], [860, 180], [1005, 345], [1125, 500], [1090, 532], [940, 572], [810, 612], [700, 742], [627, 772], [554, 742], [444, 612], [314, 572], [164, 532]];
@@ -268,7 +215,7 @@ const ROOM = [[130, 500], [250, 345], [395, 180], [590, 100], [664, 100], [860, 
   const floor = new THREE.Mesh(new THREE.ShapeGeometry(shapeFrom(ROOM)), M.floor);
   floor.rotation.x = -Math.PI / 2; scene.add(floor);
   // grand sol extérieur sombre
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshStandardMaterial({ color: '#c9d6ea', roughness: 1 }));
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshBasicMaterial({ color: '#0c1730' }));
   ground.rotation.x = -Math.PI / 2; ground.position.y = -.02; scene.add(ground);
 }
 // murs : hauts au fond (côté VIP), bas côté entrée/scène pour garder la vue
@@ -287,10 +234,10 @@ ROOM.forEach((p, i) => {
   // guirlande lumineuse le long du mur
   const nb = Math.floor(len / .9);
   for (let k = 0; k < nb; k++) {
-    const c = BULB_COLORS[k % 4];
-    const bulb = new THREE.Mesh(BULB_GEO, new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: 2 }));
-    bulb.position.copy(a).lerp(b, (k + .5) / nb); bulb.position.y = h - .35 - Math.sin(((k + .5) / nb * len / 1.8) % 1 * Math.PI) * .35;
-    bulb.rotation.y = wall.rotation.y; bulb.translateZ(back ? .3 : .25); scene.add(bulb); blinkers.push(bulb);
+    const o = new THREE.Object3D();
+    o.position.copy(a).lerp(b, (k + .5) / nb); o.position.y = h - .35 - Math.sin(((k + .5) / nb * len / 1.8) % 1 * Math.PI) * .35;
+    o.rotation.y = wall.rotation.y; o.translateZ(back ? .3 : .25);
+    bulbSpots.push({ pos: o.position.clone(), color: BULB_COLORS[k % 4], r: .06 });
   }
   if (back) {
     // arcades lumineuses
@@ -336,7 +283,7 @@ const bigStar = new THREE.Group();
   const st = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth: .3, bevelEnabled: true, bevelSize: .08, bevelThickness: .08 }), new THREE.MeshStandardMaterial({ color: '#ffd35a', emissive: '#ffb800', emissiveIntensity: 1.6, metalness: .6, roughness: .3 }));
   st.position.z = -.15; bigStar.add(st);
   bigStar.position.copy(V(CX, CY, 8.5)); scene.add(bigStar);
-  const glow = new THREE.PointLight('#ffd27a', 80, 22); glow.position.copy(V(CX, CY, 7)); scene.add(glow);
+  const glow = new THREE.PointLight('#ffd27a', 110, 24); glow.position.copy(V(CX, CY, 7)); scene.add(glow);
 }
 const floaters = [];
 [[540, 330, 7, '#e8b04a'], [715, 330, 6.6, '#5c7fb8'], [560, 450, 6.2, '#f4f6fb'], [700, 455, 7.2, '#e8b04a'], [460, 400, 7.5, '#7a1424'], [800, 400, 7, '#5c7fb8']].forEach(([x, y, h, c], k) => {
@@ -367,7 +314,6 @@ const floaters = [];
     b.position.set(-1.1 + i * .245, 2.4, 0); g.add(b);
   }
   g.position.copy(V(x, y)); g.rotation.y = THREE.MathUtils.degToRad(a); scene.add(g);
-  const l = new THREE.PointLight('#ffcf80', 30, 12); l.position.copy(V(x, y, 4)); scene.add(l);
 });
 
 // sapins de Noël 4 m (S1 → S6 sur le plan) avec guirlandes clignotantes
@@ -382,16 +328,25 @@ const floaters = [];
   const colors = ['#ffe3a8', '#fff4dc', '#ffd27a', '#fff4dc'];
   for (let i = 0; i < 34; i++) {
     const t = Math.random(), yy = .7 + t * h * .82, rr = 1.3 * (1 - t) + .08, ang = i * 2.4;
-    const c = colors[i % 4];
-    const bulb = new THREE.Mesh(new THREE.SphereGeometry(.05, 8, 8), new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: 2 }));
-    bulb.position.set(Math.cos(ang) * rr, yy, Math.sin(ang) * rr); g.add(bulb); blinkers.push(bulb);
+    bulbSpots.push({ local: new THREE.Vector3(Math.cos(ang) * rr, yy, Math.sin(ang) * rr), group: g, color: colors[i % 4], r: .05 });
   }
   const star = new THREE.Mesh(new THREE.OctahedronGeometry(.28), new THREE.MeshStandardMaterial({ color: '#ffd166', emissive: '#ffcf4a', emissiveIntensity: 2.5 }));
   star.position.y = .5 + h + .2; g.add(star);
 
   g.position.copy(V(x, y, heightAt(x, y))); scene.add(g);
-  const l = new THREE.PointLight('#ffb35a', 14, 8); l.position.copy(V(x, y, 2.5)); scene.add(l);
 });
+const bulbs = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 6, 6), new THREE.MeshBasicMaterial({ toneMapped: false }), bulbSpots.length);
+{
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3();
+  bulbSpots.forEach((b, i) => {
+    if (b.group) { b.group.updateMatrixWorld(true); b.pos = b.local.clone().applyMatrix4(b.group.matrixWorld); }
+    b.base = new THREE.Color(b.color).multiplyScalar(1.6);
+    m.compose(b.pos, q, sc.setScalar(b.r)); bulbs.setMatrixAt(i, m); bulbs.setColorAt(i, b.base);
+  });
+  scene.add(bulbs);
+}
+const tmpColor = new THREE.Color();
+let frameNo = 0;
 
 // tables : canapés + tables basses
 const TABLE_OBJ = new Map();
@@ -403,7 +358,7 @@ TABLES.forEach((t) => {
   const mats = [];
   for (let i = 0; i < t.n; i++) {
     const x = (i - (t.n - 1) / 2) * 1.55;
-    const mat = M.sofa.clone(); mats.push(mat);
+    const mat = mats[0] || (mats.push(M.sofa.clone()), mats[0]);
     const s = new THREE.Mesh(sofaGeo, mat); s.position.set(x, .21, -.3); g.add(s);
     const b = new THREE.Mesh(backGeo, mat); b.position.set(x, .55, -.6); g.add(b);
     const lt = new THREE.Mesh(lowGeo, M.table); lt.position.set(x, .19, .45); g.add(lt);
@@ -423,7 +378,7 @@ TABLES.forEach((t) => {
 });
 
 // neige dans la salle
-const SNOW_N = 900;
+const SNOW_N = 450;
 const snowGeo = new THREE.BufferGeometry();
 const sp = new Float32Array(SNOW_N * 3);
 for (let i = 0; i < SNOW_N; i++) { sp[i * 3] = (Math.random() - .5) * 70; sp[i * 3 + 1] = Math.random() * 18; sp[i * 3 + 2] = (Math.random() - .5) * 46; }
@@ -481,7 +436,8 @@ function flyTable(t) {
   const target = o.base.clone().setY(o.base.y + .4);
   const out = o.base.clone().setY(0).sub(new THREE.Vector3(0, 0, 0)).normalize(); // du centre vers la table
   if (out.lengthSq() < .01) out.set(0, 0, 1);
-  const pos = target.clone().addScaledVector(out, -5.5).add(new THREE.Vector3(0, 11, 0));
+  const stageSide = !t.zone.startsWith('fond') && t.zone !== 'ailes'; // scène : murs bas derrière, on arrive par l'arrière
+  const pos = target.clone().addScaledVector(out, stageSide ? 7 : -5.5).add(new THREE.Vector3(0, stageSide ? 9 : 11, 0));
   // on garde un peu l'angle courant pour une trajectoire naturelle
   flyTo(pos, target, 1500);
 }
@@ -566,12 +522,18 @@ function resize() {
 }
 new ResizeObserver(resize).observe(stage); resize();
 const clock = new THREE.Clock();
+let stageVisible = false;
+new IntersectionObserver((e) => (stageVisible = e[0].isIntersecting), { rootMargin: '100px' }).observe(stage);
 renderer.setAnimationLoop(() => {
-  const dt = clock.getDelta(), t = clock.elapsedTime;
+  const dt = Math.min(clock.getDelta(), .05), t = clock.elapsedTime;
+  if ((!stageVisible || document.hidden) && !fly) return; // rien à dessiner hors écran
   piste.rotation.y += dt * .25;
   bigStar.rotation.y += dt * .6; bigStar.position.y = 8.5 + Math.sin(t * 1.2) * .25;
   floaters.forEach((f) => (f.ball.position.y = f.h + Math.sin(t * 1.3 + f.k) * .15));
-  blinkers.forEach((b, i) => (b.material.emissiveIntensity = 1.6 + Math.sin(t * 1.6 + i * 1.7) * .7));
+  if ((frameNo++ & 3) === 0) { // scintillement des guirlandes, 15 fois par seconde suffit
+    for (let i = 0; i < bulbSpots.length; i++) bulbs.setColorAt(i, tmpColor.copy(bulbSpots[i].base).multiplyScalar(.55 + .45 * Math.sin(t * 1.6 + i * 1.7)));
+    bulbs.instanceColor.needsUpdate = true;
+  }
   const p = snowGeo.attributes.position;
   for (let i = 0; i < SNOW_N; i++) { let y = p.getY(i) - dt * (.6 + (i % 5) * .15); if (y < 0) y = 18; p.setY(i, y); p.setX(i, p.getX(i) + Math.sin(t + i) * .003); }
   p.needsUpdate = true;
@@ -618,7 +580,7 @@ function selectZone(id) {
   if (current && current.zone !== id) deselectTable();
   renderZones(); refreshLabels(); renderStrip();
   id ? flyZone(id) : flyHome();
-  if (id && innerWidth <= 1100) stage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  if (id && innerWidth <= 1100) scrollToEl(stage, -80);
 }
 function refreshLabels() {
   const only = $('#only-free').checked;
@@ -658,7 +620,7 @@ function selectTable(t) {
   const panel = $('#tpanel'); panel.hidden = false; panel.classList.remove('in'); void panel.offsetWidth; panel.classList.add('in');
   renderZones(); refreshLabels();
   flyTable(t);
-  if (innerWidth <= 1100) stage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (innerWidth <= 1100) scrollToEl(stage, -20);
 }
 function deselectTable() {
   current = null; ring.visible = false; $('#badge').hidden = true; $('#tpanel').hidden = true;

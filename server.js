@@ -6,6 +6,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { TABLES } from './public/config.js';
 
@@ -20,14 +21,40 @@ if (!process.env.ADMIN_PASSWORD) console.warn('⚠  ADMIN_PASSWORD non défini :
 const TABLE_IDS = new Set(TABLES.map((t) => t.id));
 fs.mkdirSync(DATA_DIR, { recursive: true });
 
-function load() {
-  try { return JSON.parse(fs.readFileSync(DB, 'utf8')); } catch { return { reserved: [], demandes: [] }; }
-}
+// la base est gardée en mémoire (lecture instantanée), et écrite sur disque après chaque changement
+let DBMEM;
+try { DBMEM = JSON.parse(fs.readFileSync(DB, 'utf8')); } catch { DBMEM = { reserved: [], demandes: [] }; }
+let stateCache = null;
+const load = () => DBMEM;
+let writing = false, again = false;
 function save(db) {
-  fs.writeFileSync(DB + '.tmp', JSON.stringify(db, null, 2));
-  fs.renameSync(DB + '.tmp', DB);
+  DBMEM = db; stateCache = null;
+  if (writing) { again = true; return; }
+  writing = true;
+  fs.promises.writeFile(DB + '.tmp', JSON.stringify(db, null, 2))
+    .then(() => fs.promises.rename(DB + '.tmp', DB))
+    .catch((e) => console.error('Écriture impossible', e))
+    .finally(() => { writing = false; if (again) { again = false; save(DBMEM); } });
 }
+// sauvegarde synchrone à l'arrêt (redéploiement Render)
+for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, () => { try { fs.writeFileSync(DB, JSON.stringify(DBMEM, null, 2)); } catch {} process.exit(0); });
 
+const STATIC = new Map();
+const COMPRESSIBLE = new Set(['.html', '.js', '.css', '.svg', '.json']);
+function getStatic(file) {
+  if (STATIC.has(file)) return STATIC.get(file);
+  let raw; try { raw = fs.readFileSync(file); } catch { return null; }
+  const ext = path.extname(file);
+  const f = { raw, type: MIME[ext] || 'application/octet-stream', etag: '"' + crypto.createHash('sha1').update(raw).digest('base64url').slice(0, 16) + '"',
+    // pages : toujours revalidées ; images et librairies : en cache 1 jour
+    cache: ext === '.html' || file.endsWith('app.js') || file.endsWith('config.js') || ext === '.css' ? 'no-cache' : 'public, max-age=86400' };
+  if (COMPRESSIBLE.has(ext)) {
+    f.gz = zlib.gzipSync(raw, { level: 9 });
+    f.br = zlib.brotliCompressSync(raw, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 11 } });
+  }
+  STATIC.set(file, f);
+  return f;
+}
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.ico': 'image/x-icon', '.json': 'application/json' };
 
@@ -51,6 +78,7 @@ const clean = (v, max = 200) => String(v ?? '').trim().slice(0, max);
 
 // anti-spam très simple : 5 demandes / 10 min par IP
 const hits = new Map();
+setInterval(() => { const now = Date.now(); for (const [k, v] of hits) if (!v.some((t) => now - t < 600000)) hits.delete(k); }, 300000).unref();
 function limited(ip) {
   const now = Date.now();
   const arr = (hits.get(ip) || []).filter((t) => now - t < 600000);
@@ -61,10 +89,11 @@ function limited(ip) {
 async function api(req, res, url) {
   const db = load();
 
-  if (req.method === 'GET' && url.pathname === '/api/state') return send(res, 200, { reserved: db.reserved });
+  if (req.method === 'GET' && url.pathname === '/api/state') { stateCache ||= JSON.stringify({ reserved: db.reserved }); res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); return res.end(stateCache); }
 
   if (req.method === 'POST' && url.pathname === '/api/demandes') {
-    const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress;
+    // derrière le proxy Render, la dernière adresse ajoutée est la seule fiable
+    const ip = String(req.headers['x-forwarded-for'] || '').split(',').map((x) => x.trim()).filter(Boolean).at(-1) || req.socket.remoteAddress;
     if (limited(ip)) return send(res, 429, { error: 'Trop de demandes, réessayez plus tard.' });
     const b = await readBody(req);
     if (b.website) return send(res, 200, { ok: true }); // pot de miel
@@ -118,12 +147,20 @@ http.createServer(async (req, res) => {
     if (p === '/admin') p = '/admin.html';
     const file = path.join(PUB, path.normalize(p));
     if (!file.startsWith(PUB)) { res.writeHead(403); return res.end(); }
-    fs.readFile(file, (err, data) => {
-      if (err) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); return res.end('Page introuvable'); }
-      res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] || 'application/octet-stream' });
-      res.end(data);
-    });
+    const f = getStatic(file);
+    if (!f) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); return res.end('Page introuvable'); }
+    const headers = { 'Content-Type': f.type, 'Cache-Control': f.cache, ETag: f.etag, Vary: 'Accept-Encoding' };
+    if (req.headers['if-none-match'] === f.etag) { res.writeHead(304, headers); return res.end(); }
+    const ae = String(req.headers['accept-encoding'] || '');
+    if (f.br && /\bbr\b/.test(ae)) { headers['Content-Encoding'] = 'br'; res.writeHead(200, headers); return res.end(f.br); }
+    if (f.gz && /\bgzip\b/.test(ae)) { headers['Content-Encoding'] = 'gzip'; res.writeHead(200, headers); return res.end(f.gz); }
+    res.writeHead(200, headers); res.end(f.raw);
   } catch (e) {
     send(res, 400, { error: e.message });
   }
-}).listen(PORT, () => console.log(`Bal de Noël → http://localhost:${PORT}  (admin : /admin)`));
+}).listen(PORT, () => {
+  // préchauffe : tous les fichiers du site sont lus et compressés une fois au démarrage
+  const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).forEach((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : getStatic(path.join(d, e.name))));
+  const t0 = Date.now(); walk(PUB);
+  console.log(`Bal de Noël → http://localhost:${PORT}  (admin : /admin) — ${STATIC.size} fichiers prêts en ${Date.now() - t0} ms`);
+});
