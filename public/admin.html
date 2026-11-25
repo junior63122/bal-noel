@@ -7,7 +7,7 @@
   <title>Administration — Bal de Noël</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    :root { --bg:#3d0610; --panel:#5a0816; --line:rgba(217,184,120,.25); --gold:#d9b878; --ink:#f4ecdc; --muted:#a9b3a6; }
+    :root { --bg:#0c0809; --panel:#151012; --line:rgba(201,164,92,.28); --gold:#c9a45c; --ink:#f4ecdc; --muted:#a9b3a6; }
     * { box-sizing: border-box; }
     [hidden] { display: none !important; }
     body { margin: 0; background: var(--bg); color: var(--ink); font-family: Manrope, system-ui, sans-serif; }
@@ -47,7 +47,7 @@
 <body>
 <form class="login" id="login">
   <h1>Administration</h1>
-  <p class="muted">Bal des Fous · Nuit de Noël</p>
+  <p class="muted">Bal des Fous · Le Bal de Noël</p>
   <input type="password" id="pw" placeholder="Mot de passe" autocomplete="current-password" required>
   <button class="gold">Entrer</button>
   <p id="lerr" style="color:#ff8f9c" hidden></p>
@@ -55,7 +55,7 @@
 
 <div id="app" hidden>
   <header>
-    <h1>Réservations · Nuit de Noël</h1>
+    <h1>Réservations · Le Bal de Noël</h1>
     <div><button id="refresh">Actualiser</button> <button id="csv">Exporter CSV</button> <button id="logout">Déconnexion</button></div>
   </header>
   <main>

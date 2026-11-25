@@ -1,6 +1,6 @@
-# Le Bal des Fous — Nuit de Noël · Réservation de tables
+# Le Bal des Fous — Le Bal de Noël · Cannes · Réservation de tables
 
-Site de réservation de tables VIP, sur le même principe que lebaldesfous-reservation.com, construit sur le plan de la salle (piste tournante, 2 bars, DJ, sapins S1–S6).
+Site de réservation de tables VIP pour le Bal de Noël — dimanche 27 décembre 2026, 16 h – minuit, Les Terrasses du Palais des Festivals, Cannes. Construit sur le plan de la salle (piste tournante, 2 bars, DJ, sapins S1–S6).
 
 ## Lancer
 

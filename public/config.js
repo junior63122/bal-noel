@@ -5,26 +5,28 @@
 
 export const EVENT = {
   marque: 'Le Bal des Fous',
-  theme: 'Nuit de Noël',
-  sousTheme: 'Flocons & Merveilles',
-  dateLongue: 'Samedi 19 Décembre',
-  dateCourte: '19 DÉCEMBRE 2026',
-  horaires: '23H00 — 06H00',
-  debut: '2026-12-19T23:00:00+01:00',   // pour le compte à rebours
-  lieu: 'Le Palais',
-  tagline: 'LE BAL DE NOËL',
+  theme: 'Le Bal de Noël',
+  sousTheme: 'Édition Noël',
+  dateLongue: 'Dimanche 27 décembre',
+  dateCourte: '27 DÉCEMBRE 2026',
+  horaires: '16H00 — MINUIT',
+  horairesFr: '16 h — minuit',
+  debut: '2026-12-27T16:00:00+01:00',   // pour le compte à rebours
+  lieu: 'Palais des Festivals · Cannes',
+  lieuDetail: 'Les Terrasses, Palais des Festivals, Cannes',
+  tagline: 'LE BAL DE NOËL · CANNES',
   acomptePct: 20,
   personnes: '10 ou 15 personnes',
 };
 
 // Zones : nom, prix (nombre ou [min, max]), capacité, couleur de la pastille
 export const ZONES = [
-  { id: 'front',   nom: 'Scène · Front DJ',       prix: 3500,         capacite: 15, couleurs: ['#e0393e'] },
-  { id: 'diag',    nom: 'Scène · Diagonales',     prix: [2000, 2500], capacite: 10, couleurs: ['#f2c94c', '#27ae60'] },
-  { id: 'balcon',  nom: 'Scène · Balcons +0,60',  prix: 1800,         capacite: 10, couleurs: ['#6c5ce7'] },
-  { id: 'fond1',   nom: 'VIP Fond · rang 1',      prix: 2000,         capacite: 15, couleurs: ['#f39c12'] },
-  { id: 'fond2',   nom: 'VIP Fond · rang 2',      prix: 1500,         capacite: 10, couleurs: ['#e84393'] },
-  { id: 'ailes',   nom: 'VIP Fond · ailes',       prix: 1200,         capacite: 10, couleurs: ['#00b8d4'] },
+  { id: 'front',   nom: 'Scène · Front DJ',       prix: 3500,         capacite: 15, couleurs: ['#e9d3a0'] },
+  { id: 'diag',    nom: 'Scène · Diagonales',     prix: [2000, 2500], capacite: 10, couleurs: ['#c9a45c', '#9fbf98'] },
+  { id: 'balcon',  nom: 'Scène · Balcons +0,60',  prix: 1800,         capacite: 10, couleurs: ['#b8a3d9'] },
+  { id: 'fond1',   nom: 'VIP Fond · rang 1',      prix: 2000,         capacite: 15, couleurs: ['#e0997a'] },
+  { id: 'fond2',   nom: 'VIP Fond · rang 2',      prix: 1500,         capacite: 10, couleurs: ['#d0829a'] },
+  { id: 'ailes',   nom: 'VIP Fond · ailes',       prix: 1200,         capacite: 10, couleurs: ['#93bccf'] },
 ];
 
 // Tables : coordonnées relevées sur le plan (pixels du plan 1280 × 834),

@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Le Bal des Fous · Nuit de Noël — Réservation de tables</title>
-  <meta name="description" content="Réservez votre table VIP pour la Nuit de Noël du Bal des Fous.">
-  <meta name="theme-color" content="#6e0a18">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎄</text></svg>">
+  <title>Le Bal des Fous · Le Bal de Noël — Réservation de tables · Cannes</title>
+  <meta name="description" content="Réservez votre table pour le Bal de Noël du Bal des Fous, dimanche 27 décembre sur les terrasses du Palais des Festivals de Cannes.">
+  <meta name="theme-color" content="#0c0809">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='%23c9a45c' d='M50 4 58 42 96 50 58 58 50 96 42 58 4 50 42 42Z'/></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&family=Cinzel+Decorative:wght@700;900&family=DM+Serif+Display&family=Great+Vibes&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Great+Vibes&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script type="importmap">{ "imports": { "three": "./vendor/three.module.js" } }</script>
 </head>
@@ -18,55 +18,36 @@
 
 <!-- ============================== ACCUEIL ============================== -->
 <section class="hero" id="accueil">
-  <div class="bokeh" aria-hidden="true"></div>
-
-  <!-- guirlande lumineuse -->
-  <svg class="lights" viewBox="0 0 1200 120" preserveAspectRatio="none" aria-hidden="true">
-    <path d="M0 10 Q150 95 300 30 T600 30 T900 30 T1200 10" fill="none" stroke="#2b5f37" stroke-width="5"/>
-    <g id="bulbs"></g>
-  </svg>
-
-  <!-- boules de Noël suspendues -->
-  <div class="baubles" aria-hidden="true">
-    <span style="--x:6%;--l:120px;--c:#d4142a;--d:0s"></span>
-    <span style="--x:14%;--l:200px;--c:#e8c46a;--d:-1.2s"></span>
-    <span style="--x:22%;--l:90px;--c:#f5f5f5;--d:-.6s"></span>
-    <span style="--x:78%;--l:110px;--c:#e8c46a;--d:-.9s"></span>
-    <span style="--x:86%;--l:210px;--c:#d4142a;--d:-.3s"></span>
-    <span style="--x:94%;--l:140px;--c:#f5f5f5;--d:-1.5s"></span>
-  </div>
+  <div class="glow" aria-hidden="true"></div>
+  <div class="frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
 
   <div class="hero-inner">
-    <svg class="star" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 4 61 38 97 38 68 59 79 94 50 72 21 94 32 59 3 38 39 38Z"/></svg>
+    <p class="over"><span data-lieu-up></span></p>
     <div class="logo big" data-marque>Le Bal des Fous</div>
-    <p class="presents">fête</p>
-    <h1 class="theme-title"><span class="t1" data-theme>Nuit de Noël</span></h1>
-    <p class="t2"><span>❄</span> <span data-soustheme>Flocons &amp; Merveilles</span> <span>❄</span></p>
-    <p class="script date" data-datelongue>Samedi 19 Décembre</p>
-    <p class="script lieu" data-lieu>Le Palais</p>
-    <div class="countdown" id="countdown" aria-label="Compte à rebours"></div>
-    <a class="cta" href="#reserver"><span class="gift">🎁</span> Choisir ma table <span>→</span></a>
-    <p class="hero-foot"><span data-datecourte></span> · <span data-horaires></span></p>
-  </div>
 
-  <!-- paysage enneigé -->
-  <svg class="drift" viewBox="0 0 1440 260" preserveAspectRatio="none" aria-hidden="true">
-    <defs>
-      <linearGradient id="snowg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dfe9f5"/></linearGradient>
-      <g id="pine"><path d="M0-120 34-60H18L46-10H24L56 40H-56L-24-10H-46L-18-60H-34Z" fill="#1d5a34"/><path d="M0-120 14-95 0-90-14-95Z M-34-60-18-60-8-52-22-50Z M34-60 18-60 8-52 22-50Z M-46-10-24-10-12-2-30 0Z M46-10 24-10 12-2 30 0Z" fill="#fff"/><rect x="-8" y="40" width="16" height="18" fill="#5a3418"/><path d="M0-132 4-124 13-124 6-118 9-110 0-115-9-110-6-118-13-124-4-124Z" fill="#ffd35a"/></g>
-      <g id="gift"><rect x="-22" y="-30" width="44" height="30" style="fill:var(--gc)"/><rect x="-25" y="-38" width="50" height="10" style="fill:var(--gc)"/><rect x="-4" y="-38" width="8" height="38" fill="#e8c46a"/><path d="M0-38C-14-52-22-40-4-38M0-38C14-52 22-40 4-38" stroke="#e8c46a" stroke-width="4" fill="none"/></g>
-    </defs>
-    <use href="#pine" x="120" y="150" transform="scale(1)" />
-    <use href="#pine" x="230" y="175" transform="translate(-30 30) scale(.8)" />
-    <use href="#pine" x="1320" y="150" />
-    <use href="#pine" x="1520" y="205" transform="scale(.8)" />
-    <path d="M0 200 Q180 140 360 190 T720 185 T1080 190 T1440 170 V260 H0Z" fill="url(#snowg)"/>
-    <use href="#gift" x="300" y="215" style="--gc:#d4142a"/>
-    <use href="#gift" x="350" y="222" style="--gc:#1d5a34" transform="translate(0 0)"/>
-    <use href="#gift" x="1110" y="212" style="--gc:#e8c46a;--x:0"/>
-    <use href="#gift" x="1160" y="220" style="--gc:#d4142a"/>
-    <path d="M0 230 Q240 200 480 228 T960 222 T1440 215 V260 H0Z" fill="#fff"/>
-  </svg>
+    <svg class="ornament" viewBox="0 0 320 40" aria-hidden="true">
+      <line x1="0" y1="20" x2="128" y2="20"/><line x1="192" y1="20" x2="320" y2="20"/>
+      <path d="M160 2 L163.5 16.5 L178 20 L163.5 23.5 L160 38 L156.5 23.5 L142 20 L156.5 16.5Z"/>
+      <circle cx="136" cy="20" r="2"/><circle cx="184" cy="20" r="2"/>
+    </svg>
+
+    <h1 class="theme-title" data-theme>Le Bal de Noël</h1>
+    <p class="subtitle">Une soirée de gala sur les terrasses du Palais</p>
+
+    <ul class="facts">
+      <li><small>Date</small><span data-datelongue></span></li>
+      <li><small>Horaires</small><span data-horaires-fr></span></li>
+      <li><small>Lieu</small><span data-lieudetail></span></li>
+    </ul>
+
+    <div class="countdown" id="countdown" aria-label="Compte à rebours"></div>
+
+    <div class="ctas">
+      <a class="cta" href="#reserver">Réserver une table</a>
+      <a class="cta-ghost" href="#reserver">Découvrir le plan de salle</a>
+    </div>
+  </div>
+  <a class="scroll" href="#reserver" aria-label="Descendre"><span></span></a>
 </section>
 
 <!-- ============================ RÉSERVATION ============================ -->
@@ -85,7 +66,7 @@
       <div class="plan-head">
         <div>
           <p class="eyebrow" data-soustheme-up></p>
-          <h2>Votre table au Bal des Fous</h2>
+          <h2>Votre table au <em>Bal de Noël</em></h2>
         </div>
         <p class="meta" id="meta-count"></p>
       </div>
@@ -144,7 +125,7 @@
     <p class="eyebrow" id="d-zone"></p>
     <h3 id="d-title">Table 01</h3>
     <div class="d-facts">
-      <div><span>Prix de la table</span><strong id="d-price"></strong></div>
+      <div><span>Prix</span><strong id="d-price"></strong></div>
       <div><span>Capacité</span><strong id="d-cap"></strong></div>
       <div><span>Acompte</span><strong id="d-dep"></strong></div>
     </div>
@@ -173,8 +154,8 @@
   </div>
 
   <div id="d-ok-view" hidden>
-    <div class="ok-star">🎅</div>
-    <h3>Demande envoyée !</h3>
+    <svg class="ok-star" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 2 23.5 16.5 38 20 23.5 23.5 20 38 16.5 23.5 2 20 16.5 16.5Z"/></svg>
+    <h3>Demande envoyée</h3>
     <p id="d-ok-text"></p>
     <button class="btn-gold" type="button" id="d-ok-close">Revenir au plan</button>
   </div>
