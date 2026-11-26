@@ -909,7 +909,7 @@ form.addEventListener('submit', async (e) => {
   try {
     const rep = await submitDemande({ ligne: current.id, prenom: f.prenom, nom: f.nom, tel: f.tel, email: f.email, personnes: f.personnes, contact: f.contact, message: f.message, website: f.website });
     const n = Number(f.personnes) || 1, dep = euros(acompteLigne(current, n));
-    $('#d-ok-text').innerHTML = `Merci ${escapeHtml(f.prenom)} ! Votre demande en <strong>${current.nom}</strong> (${VIP_NOM}) est bien enregistrée.<br><br>
+    $('#d-ok-text').innerHTML = `Merci ${escapeHtml(f.prenom)} ! ${rep.doublon ? 'Votre demande en <strong>' + current.nom + '</strong> avait déjà été reçue : elle n’a pas été enregistrée une deuxième fois.' : `Votre demande en <strong>${current.nom}</strong> (${VIP_NOM}) est bien enregistrée.`}<br><br>
       L’organisation vous attribue votre table et vous contacte par <strong>${f.contact === 'sms' ? 'SMS' : 'WhatsApp'}</strong> au ${escapeHtml(f.tel)} dans les heures qui suivent.
       Pour ${n} personne${n > 1 ? 's' : ''} (${euros(totalLigne(current, n))}), un acompte de ${EVENT.acomptePct} % (${dep}) vous sera demandé après validation.<br><br><small>Numéro de demande : <strong>${escapeHtml(rep.id)}</strong></small>`;
     $('#d-form-view').hidden = true; $('#d-ok-view').hidden = false;

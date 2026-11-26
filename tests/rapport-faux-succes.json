@@ -11,17 +11,17 @@
   "id": "S2",
   "titre": "Le serveur répond 200 « ok » mais sans numéro de demande",
   "attendu": "FAILED",
-  "obtenu": "FAUX_SUCCES",
-  "ok": false,
-  "erreurAffichee": ""
+  "obtenu": "FAILED",
+  "ok": true,
+  "erreurAffichee": "Réponse du serveur incomplète : votre demande n’est pas confirmée. Réessayez."
  },
  {
   "id": "S3",
   "titre": "Réponse 200 non JSON (page d’erreur d’un proxy)",
   "attendu": "FAILED",
-  "obtenu": "FAUX_SUCCES",
-  "ok": false,
-  "erreurAffichee": ""
+  "obtenu": "FAILED",
+  "ok": true,
+  "erreurAffichee": "Réponse du serveur incomplète : votre demande n’est pas confirmée. Réessayez."
  },
  {
   "id": "S4",

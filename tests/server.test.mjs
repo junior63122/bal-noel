@@ -26,7 +26,7 @@ const LIGNES = ['z1-av', 'z1-ar', 'z2-av', 'z2-ar', 'z3-av', 'z3-ar', 'z4-av', '
 const valid = (o = {}) => ({ ligne: 'z2-av', prenom: 'Test', nom: 'Auto', tel: '06 11 22 33 44', personnes: 4, contact: 'sms', ...o });
 
 before(async () => {
-  srv = spawn(process.execPath, ['server.js'], { cwd: ROOT, env: { ...process.env, PORT: String(PORT), DATA_DIR: DATA, ADMIN_PASSWORD: PW, RENDER: '' }, stdio: 'pipe' });
+  srv = spawn(process.execPath, ['server.js'], { cwd: ROOT, env: { ...process.env, PORT: String(PORT), DATA_DIR: DATA, ADMIN_PASSWORD: PW, RENDER: '', TRUST_PROXY: '1' }, stdio: 'pipe' });
   for (let i = 0; i < 50; i++) { try { await fetch(BASE + '/api/state'); return; } catch { await wait(100); } }
   throw new Error('serveur non démarré');
 });
@@ -197,7 +197,7 @@ test('sauvegarde : la copie du jour existe et se RESTAURE réellement sur un ser
   // restauration : un second serveur démarre avec la sauvegarde comme base
   const D2 = fs.mkdtempSync(path.join(os.tmpdir(), 'bal-noel-restore-'));
   fs.copyFileSync(path.join(dir, f), path.join(D2, 'db.json'));
-  const P2 = PORT + 1, s2 = spawn(process.execPath, ['server.js'], { cwd: ROOT, env: { ...process.env, PORT: String(P2), DATA_DIR: D2, ADMIN_PASSWORD: PW, RENDER: '' }, stdio: 'ignore' });
+  const P2 = PORT + 1, s2 = spawn(process.execPath, ['server.js'], { cwd: ROOT, env: { ...process.env, PORT: String(P2), DATA_DIR: D2, ADMIN_PASSWORD: PW, RENDER: '', TRUST_PROXY: '1' }, stdio: 'ignore' });
   try {
     let h; for (let i = 0; i < 50; i++) { try { h = await (await fetch(`http://127.0.0.1:${P2}/api/health`)).json(); break; } catch { await wait(100); } }
     assert.equal(h.ok, true);
@@ -212,4 +212,90 @@ test('pages légales, 404, robots et sitemap servis correctement', async () => {
   const csp = (await fetch(BASE + '/')).headers.get('content-security-policy');
   assert.doesNotMatch(csp, /googleapis|gstatic/, 'des ressources Google restent autorisées');
   assert.doesNotMatch(await (await fetch(BASE + '/')).text(), /fonts\.googleapis/, 'polices Google encore chargées');
+});
+
+// ---------- défauts trouvés par le contre-audit indépendant (ils ne doivent jamais revenir)
+test('C1 : l’admin ne peut pas valider au-delà des places de la ligne (surréservation)', async () => {
+  const a = (await (await post('/api/demandes', valid({ ligne: 'z4-av', personnes: 30, tel: '06 71 00 00 01' }))).json()).id;
+  const b = (await (await post('/api/demandes', valid({ ligne: 'z4-av', personnes: 30, tel: '06 71 00 00 02' }))).json()).id;
+  assert.equal((await admin('demande', { id: a, statut: 'validee' })).status, 200);
+  const r = await admin('demande', { id: b, statut: 'validee' });
+  assert.equal(r.status, 409, 'surréservation acceptée');
+  assert.match((await r.json()).error, /6 place/);
+  await wait(150);
+  assert.equal(disk().demandes.find((d) => d.id === b).statut, 'nouvelle');
+});
+
+test('C2 : une table ne peut jamais être à deux clients, ni bloquée si attribuée', async () => {
+  const a = (await (await post('/api/demandes', valid({ ligne: 'z4-ar', personnes: 2, tel: '06 72 00 00 01' }))).json()).id;
+  const b = (await (await post('/api/demandes', valid({ ligne: 'z4-ar', personnes: 2, tel: '06 72 00 00 02' }))).json()).id;
+  await admin('attribuer', { id: a, tables: ['33'] });
+  await admin('demande', { id: a, statut: 'refusee' });
+  assert.equal((await admin('attribuer', { id: b, tables: ['33'] })).status, 200);
+  await admin('demande', { id: a, statut: 'validee' }); // A revient : il ne doit pas récupérer la 33
+  await wait(150);
+  const D = disk().demandes;
+  const avec33 = D.filter((d) => d.statut !== 'refusee' && (d.tables || []).includes('33'));
+  assert.equal(avec33.length, 1, `table 33 attribuée ${avec33.length} fois`);
+  assert.equal((await admin('table', { id: '33', reserved: true })).status, 409, 'blocage d’une table attribuée accepté');
+});
+
+test('C4 : renvoi MODIFIÉ (autre nombre) = nouvelle demande ; renvoi identique = doublon signalé', async () => {
+  const r1 = await (await post('/api/demandes', valid({ ligne: 'z1-ar', personnes: 2, tel: '06 74 00 00 01' }))).json();
+  const r2 = await (await post('/api/demandes', valid({ ligne: 'z1-ar', personnes: 8, message: 'finalement 8', tel: '06 74 00 00 01' }))).json();
+  assert.notEqual(r2.id, r1.id); assert.ok(!r2.doublon);
+  const r3 = await (await post('/api/demandes', valid({ ligne: 'z1-ar', personnes: 8, message: 'finalement 8', tel: '06 74 00 00 01' }))).json();
+  assert.equal(r3.id, r2.id); assert.equal(r3.doublon, true);
+  await admin('demande', { id: r2.id, statut: 'refusee' });
+  const r4 = await (await post('/api/demandes', valid({ ligne: 'z1-ar', personnes: 8, message: 'finalement 8', tel: '06 74 00 00 01' }))).json();
+  assert.notEqual(r4.id, r2.id, 'renvoi après refus rattaché à la demande refusée');
+  await wait(150);
+  assert.equal(disk().demandes.find((d) => d.id === r2.id).personnes, 8);
+});
+
+test('C3 + C5 : base abîmée → mise de côté et restaurée ; anciennes demandes migrées au bon prix sans doublon', async () => {
+  const D3 = fs.mkdtempSync(path.join(os.tmpdir(), 'bal-noel-c3-'));
+  fs.mkdirSync(path.join(D3, 'sauvegardes'));
+  const ancien = { reserved: ['30'], demandes: [
+    { id: 'a1', date: new Date().toISOString(), table: '30', prenom: 'A', nom: 'A', tel: '0600000001', personnes: 6, statut: 'validee', contact: 'sms' },
+    { id: 'a2', date: new Date().toISOString(), table: '30', prenom: 'B', nom: 'B', tel: '0600000002', personnes: 5, statut: 'nouvelle', contact: 'sms' }] };
+  fs.writeFileSync(path.join(D3, 'sauvegardes', 'db-2026-11-20.json'), JSON.stringify(ancien));
+  fs.writeFileSync(path.join(D3, 'db.json'), '{"reserved":[],"demandes":[{"id":"x"'); // tronqué
+  const P3 = PORT + 2, s3 = spawn(process.execPath, ['server.js'], { cwd: ROOT, env: { ...process.env, PORT: String(P3), DATA_DIR: D3, ADMIN_PASSWORD: PW, RENDER: '' }, stdio: 'ignore' });
+  try {
+    let h; for (let i = 0; i < 50; i++) { try { h = await (await fetch(`http://127.0.0.1:${P3}/api/health`)).json(); break; } catch { await wait(100); } }
+    assert.equal(h.restaureDepuis, 'db-2026-11-20.json');
+    assert.ok(fs.readdirSync(D3).some((f) => f.startsWith('db.json.corrompu-')), 'fichier abîmé non conservé');
+    const d = await (await fetch(`http://127.0.0.1:${P3}/api/admin/data`, { headers: { 'x-admin-password': PW } })).json();
+    assert.equal(d.demandes.length, 2);
+    for (const x of d.demandes) { assert.equal(x.ligne, 'z1-av'); assert.equal(x.prixPers, 150, 'ancien prix ailes non conservé'); }
+    assert.equal(d.demandes.filter((x) => x.tables.includes('30')).length, 1, 'table 30 migrée en double');
+    assert.ok(!d.reserved.includes('30'), 'table migrée restée bloquée');
+  } finally { s3.kill('SIGTERM'); }
+});
+
+test('C6 : sans proxy de confiance, X-Forwarded-For est ignoré (anti-spam non contournable)', async () => {
+  const P4 = PORT + 3, D4 = fs.mkdtempSync(path.join(os.tmpdir(), 'bal-noel-c6-'));
+  const s4 = spawn(process.execPath, ['server.js'], { cwd: ROOT, env: { ...process.env, PORT: String(P4), DATA_DIR: D4, ADMIN_PASSWORD: PW, RENDER: '', TRUST_PROXY: '' }, stdio: 'ignore' });
+  try {
+    for (let i = 0; i < 50; i++) { try { await fetch(`http://127.0.0.1:${P4}/api/health`); break; } catch { await wait(100); } }
+    const codes = [];
+    for (let i = 0; i < 8; i++) codes.push((await fetch(`http://127.0.0.1:${P4}/api/demandes`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-forwarded-for': `5.5.5.${i}` }, body: JSON.stringify(valid({ tel: `06 76 00 00 ${10 + i}` })) })).status);
+    assert.ok(codes.slice(5).every((c) => c === 429), codes.join(','));
+  } finally { s4.kill('SIGTERM'); }
+});
+
+test('C3 bis : un redémarrage n’écrase jamais la sauvegarde déjà faite ce jour-là', async () => {
+  const D5 = fs.mkdtempSync(path.join(os.tmpdir(), 'bal-noel-c3b-'));
+  fs.mkdirSync(path.join(D5, 'sauvegardes'));
+  const jour = new Date().toISOString().slice(0, 10), f = path.join(D5, 'sauvegardes', `db-${jour}.json`);
+  const avant = JSON.stringify({ reserved: [], demandes: [{ id: 'garde', ligne: 'z1-av', personnes: 2, tel: '0600000009', prenom: 'G', nom: 'G', statut: 'nouvelle', date: new Date().toISOString() }] });
+  fs.writeFileSync(f, avant);
+  const P5 = PORT + 4, s5 = spawn(process.execPath, ['server.js'], { cwd: ROOT, env: { ...process.env, PORT: String(P5), DATA_DIR: D5, ADMIN_PASSWORD: PW, RENDER: '', TRUST_PROXY: '1' }, stdio: 'ignore' });
+  try {
+    for (let i = 0; i < 50; i++) { try { await fetch(`http://127.0.0.1:${P5}/api/health`); break; } catch { await wait(100); } }
+    assert.equal((await fetch(`http://127.0.0.1:${P5}/api/demandes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(valid({ tel: '06 79 00 00 01' })) })).status, 201);
+    await wait(300);
+    assert.equal(fs.readFileSync(f, 'utf8'), avant, 'sauvegarde du jour écrasée');
+  } finally { s5.kill('SIGTERM'); }
 });

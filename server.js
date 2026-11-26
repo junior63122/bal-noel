@@ -35,27 +35,58 @@ const tablesPrises = (db, sauf) => new Set([...db.reserved, ...db.demandes.filte
 fs.mkdirSync(DATA_DIR, { recursive: true });
 
 // la base est gardée en mémoire (lecture instantanée), et écrite sur disque après chaque changement
-let DBMEM;
-try { DBMEM = JSON.parse(fs.readFileSync(DB, 'utf8')); } catch { DBMEM = { reserved: [], demandes: [] }; }
-for (const d of DBMEM.demandes) if (!d.ligne && d.table) { d.ligne = LIGNE_DE_TABLE.get(d.table); d.tables = [d.table]; delete d.table; }
+let DBMEM, RESTAURE = null;
+const SAUV = path.join(DATA_DIR, 'sauvegardes');
+const lireBase = (f) => { const j = JSON.parse(fs.readFileSync(f, 'utf8')); if (!Array.isArray(j.demandes) || !Array.isArray(j.reserved)) throw new Error('format'); return j; };
+if (!fs.existsSync(DB)) DBMEM = { reserved: [], demandes: [] };
+else {
+  try { DBMEM = lireBase(DB); }
+  catch (e) {
+    // fichier abîmé : on le met de côté (jamais écrasé) et on repart de la dernière sauvegarde lisible
+    const mis = `${DB}.corrompu-${Date.now()}`; fs.renameSync(DB, mis);
+    const copies = fs.existsSync(SAUV) ? fs.readdirSync(SAUV).filter((x) => x.startsWith('db-')).sort().reverse() : [];
+    for (const c of copies) { try { DBMEM = lireBase(path.join(SAUV, c)); RESTAURE = c; break; } catch {} }
+    if (!DBMEM) DBMEM = { reserved: [], demandes: [] };
+    console.error(`⚠ db.json illisible, mis de côté dans ${path.basename(mis)} ; ${RESTAURE ? 'restauré depuis ' + RESTAURE : 'AUCUNE sauvegarde lisible'}`);
+  }
+}
+// migration des anciennes demandes « par table » : ligne de la table, prix d'origine figé, table gardée seulement si libre
+{
+  const anciensPrix = (t) => (Number(t) >= 9 && Number(t) <= 20 ? 200 : Number(t) <= 44 ? 150 : null);
+  const prises = new Set();
+  for (const d of DBMEM.demandes) {
+    if (!d.ligne && d.table) {
+      d.ligne = LIGNE_DE_TABLE.get(d.table) || 'inconnue'; d.prixPers ??= anciensPrix(d.table);
+      d.tables = d.statut !== 'refusee' && !prises.has(d.table) ? [d.table] : [];
+      DBMEM.reserved = DBMEM.reserved.filter((x) => x !== d.table); delete d.table;
+    }
+    if (d.prixPers === undefined) d.prixPers = LIGNES.get(d.ligne)?.prixPers ?? null;
+    (d.tables ||= []).forEach((t) => prises.add(t));
+  }
+}
 let stateCache = null;
 const load = () => DBMEM;
-let writing = false, again = false, lastBackup = '';
-function dailyBackup(db) { // une copie par jour, conservée 14 jours
+let lastBackup = '';
+function dailyBackup(db) { // une copie par jour (la première de la journée, jamais écrasée), conservée 14 jours
   const day = new Date().toISOString().slice(0, 10);
   if (day === lastBackup) return; lastBackup = day;
-  const dir = path.join(DATA_DIR, 'sauvegardes'); fs.mkdirSync(dir, { recursive: true });
-  fs.promises.writeFile(path.join(dir, `db-${day}.json`), JSON.stringify(db)).catch(() => {});
+  const dir = SAUV; fs.mkdirSync(dir, { recursive: true });
+  fs.promises.writeFile(path.join(dir, `db-${day}.json`), JSON.stringify(db), { flag: 'wx' }).catch(() => {});
   fs.promises.readdir(dir).then((f) => f.sort().slice(0, -14).forEach((x) => fs.promises.unlink(path.join(dir, x)).catch(() => {}))).catch(() => {});
 }
+let enCours = null, prochaine = null;
 function save(db) {
   DBMEM = db; stateCache = null; dailyBackup(db);
-  if (writing) { again = true; return; }
-  writing = true;
-  fs.promises.writeFile(DB + '.tmp', JSON.stringify(db, null, 2))
-    .then(() => fs.promises.rename(DB + '.tmp', DB))
-    .catch((e) => { METRICS.ecrituresKO++; METRICS.derniereErreur = 'écriture: ' + e.message; console.error('Écriture impossible', e); })
-    .finally(() => { writing = false; if (again) { again = false; save(DBMEM); } });
+  if (prochaine) return prochaine; // une écriture est déjà prévue : elle contiendra ce changement
+  prochaine = (async () => {
+    await null; // laisse l'affectation de « prochaine » se terminer avant de la remettre à zéro
+    if (enCours) await enCours.catch(() => {});
+    prochaine = null;
+    enCours = fs.promises.writeFile(DB + '.tmp', JSON.stringify(DBMEM, null, 2)).then(() => fs.promises.rename(DB + '.tmp', DB));
+    try { await enCours; } catch (e) { METRICS.ecrituresKO++; METRICS.derniereErreur = 'écriture: ' + e.message; console.error('Écriture impossible', e); throw e; }
+  })();
+  prochaine.catch(() => {});
+  return prochaine;
 }
 // RGPD : effacement automatique des demandes N jours après la soirée (vérifié au démarrage puis toutes les 6 h)
 function purge() {
@@ -66,7 +97,7 @@ function purge() {
 }
 setTimeout(purge, 5000); setInterval(purge, 6 * 3600e3).unref();
 // sauvegarde synchrone à l'arrêt (redéploiement Render)
-for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, () => { try { fs.writeFileSync(DB, JSON.stringify(DBMEM, null, 2)); } catch {} process.exit(0); });
+for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, () => { try { fs.writeFileSync(DB + '.tmp', JSON.stringify(DBMEM, null, 2)); fs.renameSync(DB + '.tmp', DB); } catch {} process.exit(0); });
 
 const STATIC = new Map();
 const COMPRESSIBLE = new Set(['.html', '.js', '.css', '.svg', '.json', '.xml', '.txt']);
@@ -107,7 +138,8 @@ function readBody(req) {
   });
 }
 const adminFails = new Map();
-function clientIp(req) { return String(req.headers['x-forwarded-for'] || '').split(',').map((x) => x.trim()).filter(Boolean).at(-1) || req.socket.remoteAddress; }
+const TRUST_PROXY = !!(process.env.RENDER || process.env.TRUST_PROXY);
+function clientIp(req) { if (!TRUST_PROXY) return req.socket.remoteAddress; return String(req.headers['x-forwarded-for'] || '').split(',').map((x) => x.trim()).filter(Boolean).at(-1) || req.socket.remoteAddress; }
 function isAdmin(req) {
   if (!ADMIN_PASSWORD || ADMIN_PASSWORD.length < 10) return false;
   const given = Buffer.from(String(req.headers['x-admin-password'] || ''));
@@ -132,10 +164,10 @@ async function api(req, res, url) {
   if (req.method === 'GET' && url.pathname === '/api/health') {
     // contrôle réel : la base est relue depuis le disque et comparée à la mémoire
     let disque = 'ok';
-    try { const onDisk = JSON.parse(fs.readFileSync(DB, 'utf8')); if (!writing && onDisk.demandes.length !== DBMEM.demandes.length) disque = 'désynchronisé'; }
+    try { await (prochaine || enCours || Promise.resolve()).catch(() => {}); const onDisk = JSON.parse(fs.readFileSync(DB, 'utf8')); if (onDisk.demandes.length !== DBMEM.demandes.length) disque = 'désynchronisé'; }
     catch (e) { disque = fs.existsSync(DB) ? 'illisible' : (DBMEM.demandes.length ? 'absent' : 'vide'); }
     const ok = disque === 'ok' || disque === 'vide';
-    return send(res, ok ? 200 : 503, { ok, disque, adminActive: ADMIN_PASSWORD.length >= 10, uptimeMin: Math.round((Date.now() - STARTED) / 60000),
+    return send(res, ok ? 200 : 503, { ok, disque, restaureDepuis: RESTAURE, adminActive: ADMIN_PASSWORD.length >= 10, uptimeMin: Math.round((Date.now() - STARTED) / 60000),
       tables: TABLES.length, reservees: tablesPrises(db).size, demandes: db.demandes.length, ...METRICS });
   }
   if (req.method === 'GET' && url.pathname === '/api/state') { stateCache ||= JSON.stringify({ reserved: [...tablesPrises(db)], restant: Object.fromEntries(ZONES.filter((l) => l.enVente).map((l) => [l.id, Math.max(0, restantLigne(db, l.id))])) }); res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); return res.end(stateCache); }
@@ -165,9 +197,12 @@ async function api(req, res, url) {
     const maxi = Math.min(reste, MAX_PAR_DEMANDE);
     if (d.personnes < 1 || d.personnes > maxi) { METRICS.rejets++; return send(res, 400, { error: `Indiquez entre 1 et ${maxi} personnes.` }); }
     // double clic ou renvoi : même téléphone, même ligne, moins de 30 min → on renvoie la demande existante
-    const dup = db.demandes.find((x) => x.ligne === d.ligne && x.tel.replace(/\D/g, '') === digits && Date.now() - Date.parse(x.date) < 1800000);
+    d.prixPers = ligne.prixPers;
+    const dup = db.demandes.find((x) => x.statut !== 'refusee' && x.personnes === d.personnes && (x.message || '') === d.message && x.ligne === d.ligne && x.tel.replace(/\D/g, '') === digits && Date.now() - Date.parse(x.date) < 1800000);
     if (dup) return send(res, 200, { ok: true, id: dup.id, doublon: true });
-    db.demandes.unshift(d); save(db);
+    db.demandes.unshift(d);
+    // succès renvoyé UNIQUEMENT après écriture réelle sur disque
+    try { await save(db); } catch { DBMEM.demandes = DBMEM.demandes.filter((x) => x.id !== d.id); stateCache = null; return send(res, 503, { error: 'Enregistrement impossible pour le moment : votre demande n’a pas été enregistrée. Réessayez dans un instant.' }); }
     METRICS.demandes++;
     console.log(`Nouvelle demande ${d.id} — ${d.ligne} — ${d.personnes} pers.`); // pas de données personnelles dans les journaux
     return send(res, 201, { ok: true, id: d.id });
@@ -182,6 +217,7 @@ async function api(req, res, url) {
     if (req.method === 'POST' && url.pathname === '/api/admin/table') {
       const { id, reserved } = await readBody(req);
       if (!TABLE_IDS.has(id)) return send(res, 400, { error: 'Table inconnue.' });
+      if (reserved && db.demandes.some((d) => d.statut !== 'refusee' && (d.tables || []).includes(id))) return send(res, 409, { error: `La table ${id} est déjà attribuée à une demande.` });
       db.reserved = db.reserved.filter((x) => x !== id);
       if (reserved) db.reserved.push(id);
       save(db); return send(res, 200, db);
@@ -207,6 +243,15 @@ async function api(req, res, url) {
       if (statut === 'supprimer') db.demandes = db.demandes.filter((x) => x.id !== id);
       else {
         if (!STATUTS.has(statut)) return send(res, 400, { error: 'Statut inconnu.' });
+        if (statut === 'validee' && d.statut !== 'validee') {
+          const reste = restantLigne(db, d.ligne);
+          if (d.personnes > reste) return send(res, 409, { error: `Impossible de valider : ${d.personnes} personnes demandées, ${Math.max(0, reste)} place(s) restante(s) sur cette ligne.` });
+        }
+        if (d.statut === 'refusee' && statut !== 'refusee') {
+          const prises = tablesPrises(db, d.id);
+          const perdues = (d.tables || []).filter((t) => prises.has(t));
+          if (perdues.length) d.tables = d.tables.filter((t) => !prises.has(t));
+        }
         d.statut = statut;
       }
       save(db); return send(res, 200, db);
