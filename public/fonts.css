@@ -5,3 +5,4 @@
 @font-face { font-family: 'Cormorant Garamond'; src: url(fonts/cormorant-600.woff2) format('woff2'); font-weight: 600; font-display: swap; }
 @font-face { font-family: 'Cormorant Garamond'; src: url(fonts/cormorant-400i.woff2) format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
 @font-face { font-family: 'Cormorant Garamond'; src: url(fonts/cormorant-500i.woff2) format('woff2'); font-weight: 500; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Archivo'; src: url(fonts/archivo.woff2) format('woff2'); font-weight: 100 900; font-stretch: 62% 125%; font-display: swap; }

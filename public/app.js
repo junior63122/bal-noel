@@ -21,7 +21,7 @@ fill('[data-lieu-up]', EVENT.lieu.toUpperCase());
 fill('[data-tagline]', EVENT.tagline);
 fill('[data-acompte]', EVENT.acomptePct);
 fill('[data-personnes]', EVENT.personnes);
-$('#meta-count').textContent = `${VIP_NOM} · 4 zones · lignes avant et arrière`;
+if ($('#meta-count')) $('#meta-count').textContent = `${VIP_NOM} · 4 zones · lignes avant et arrière`;
 
 /* ================================================================ état (toujours le serveur, jamais de simulation locale) */
 let reserved = new Set();
@@ -115,7 +115,11 @@ function startLenis() {
   const raf = (t) => { lenis.raf(t); requestAnimationFrame(raf); }; requestAnimationFrame(raf);
 }
 window.Lenis ? startLenis() : addEventListener('load', startLenis);
-const scrollToEl = (el, offset = 0) => (lenis ? lenis.scrollTo(el, { offset, duration: 1.2 }) : el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }));
+const scrollToEl = (el, offset = 0) => {
+  if (lenis) return lenis.scrollTo(el, { offset, duration: 1.2 });
+  scrollTo({ top: el.getBoundingClientRect().top + scrollY + offset, behavior: reduceMotion ? 'auto' : 'smooth' });
+};
+const sousEntete = () => -((document.querySelector('.topbar')?.offsetHeight || 0) + 8);
 
 // deux pages : l'accueil, puis le plan (ouvert par « Choisir ma table »)
 const body = document.body;
@@ -133,7 +137,11 @@ function showView(v, animate = true) {
 }
 $$('a[href="#reserver"]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); if (a.classList.contains('loading')) return; history.pushState({ v: 'plan' }, '', '#plan'); showView('plan'); }));
 $$('a[href="#accueil"]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); history.pushState({ v: 'hero' }, '', location.pathname); showView('hero'); }));
-addEventListener('popstate', () => showView(location.hash === '#plan' ? 'plan' : 'hero'));
+addEventListener('popstate', () => {
+  if (drawerOuvert()) { closeDrawer(true); if (location.hash === '#plan') return; }
+  showView(location.hash === '#plan' ? 'plan' : 'hero');
+});
+const drawerOuvert = () => document.querySelector('#drawer')?.classList.contains('open');
 body.dataset.view = location.hash === '#plan' ? 'plan' : 'hero';
 if (body.dataset.view === 'plan') chargerImagesPlan();
 
@@ -146,7 +154,14 @@ const mirror = (pts) => pts.map(([x, y]) => [2 * CX - x, y]).reverse();
 
 const canvas = $('#scene');
 const stage = $('#stage');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+let renderer, sansGL = false;
+try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true }); }
+catch {
+  // appareil sans 3D : on garde toute la logique de réservation, sans dessiner la salle
+  sansGL = true; stage.classList.add('no-gl');
+  renderer = { setPixelRatio() {}, setSize() {}, setClearColor() {}, render() {}, setAnimationLoop() {}, domElement: canvas };
+  stage.insertAdjacentHTML('beforeend', '<p class="no-gl-msg">Le plan 3D ne peut pas s’afficher sur cet appareil. Choisissez votre zone dans la liste ci-dessous.</p>');
+}
 renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -534,7 +549,7 @@ GROUPES.forEach((g) => {
   const ts = TABLES.filter((t) => zoneOf(t).groupe === g.id);
   const b = document.createElement('button');
   b.type = 'button'; b.className = 'zmark' + (g.bientot ? ' soon' : '');
-  b.innerHTML = g.bientot ? '<b>Scène</b><small>bientôt</small>' : `<b>${g.num}</b><small>Zone</small>`;
+  b.innerHTML = g.bientot ? '<b>Scène</b><small>bientôt</small>' : `<b>${g.num}</b>`;
   b.setAttribute('aria-label', g.bientot ? 'Scène, pas encore en vente' : `${g.nom}, ${g.desc}`);
   b.addEventListener('click', () => selectGroupe(g.id));
   labels.appendChild(b); MARKS.push({ el: b, pos: centre(ts, 2.4), kind: 'g', id: g.id });
@@ -542,7 +557,7 @@ GROUPES.forEach((g) => {
 ZONES.filter((l) => l.enVente).forEach((l) => {
   const b = document.createElement('button');
   b.type = 'button'; b.className = 'lmark ' + l.type; b.style.setProperty('--zc', l.couleurs[0]);
-  b.innerHTML = `<span>${l.libelle}</span><b>${l.prixPers} €<small> / pers.</small></b>`;
+  b.innerHTML = `<span>${l.type === 'avant' ? 'Avant' : 'Arrière'}</span><b>${l.prixPers} €</b>`;
   b.setAttribute('aria-label', `${l.nom}, ${l.prixPers} euros par personne`);
   b.addEventListener('click', () => selectLigne(l.id));
   b.addEventListener('pointerenter', () => glow(l.id, true));
@@ -728,13 +743,13 @@ renderer.setAnimationLoop(() => {
 $('#loading').remove();
 {
   const hint = $('.hint');
-  if (matchMedia('(pointer: coarse)').matches) hint.textContent = 'Glissez pour tourner · Pincez pour zoomer · Touchez une zone';
+  if (matchMedia('(pointer: coarse)').matches) hint.textContent = 'Faites glisser pour tourner la salle';
   const hide = () => hint.classList.add('gone');
   canvas.addEventListener('pointerdown', hide, { once: true });
   setTimeout(hide, 9000);
 }
 // le bouton de l'accueil devient actif quand la salle est prête
-requestAnimationFrame(() => { const c = $('#cta-main'); c.classList.remove('loading'); c.querySelector('.cta-txt').textContent = 'Choisir ma table'; c.insertAdjacentHTML('beforeend', '<span class="arrow">→</span>'); });
+requestAnimationFrame(() => { const c = $('#cta-main'); c.classList.remove('loading'); c.querySelector('.cta-txt').textContent = 'Réserver ma place'; c.insertAdjacentHTML('beforeend', '<span class="arrow">→</span>'); });
 
 /* ================================================================ zones et lignes */
 let activeGroupe = null;
@@ -744,7 +759,7 @@ const lignesDe = (gid) => ZONES.filter((l) => l.groupe === gid && l.enVente);
 function renderZones() {
   zonesEl.innerHTML = '';
   const all = document.createElement('li');
-  all.innerHTML = `<button type="button" class="zone all ${activeGroupe ? '' : 'active'}"><span class="zn">Toute la salle</span><small>vue d’ensemble ↗</small></button>`;
+  all.innerHTML = `<button type="button" class="zone all ${activeGroupe ? '' : 'active'}"><span class="zn">Toute la salle</span></button>`;
   all.firstChild.onclick = () => selectGroupe(null);
   zonesEl.appendChild(all);
   GROUPES.forEach((g) => {
@@ -752,7 +767,7 @@ function renderZones() {
     const li = document.createElement('li');
     li.innerHTML = `<button type="button" class="zone ${activeGroupe === g.id ? 'active' : ''} ${g.bientot || !libres ? 'full' : ''}" data-g="${g.id}">
       <span class="zn"><span class="znum">${g.num || '★'}</span><span>${g.bientot ? 'Scène' : g.nom}<small class="zdesc">${g.desc}</small></span></span>
-      <span class="zp"><strong>${g.bientot ? 'Bientôt' : `dès ${Math.min(...ls.map((l) => l.prixPers))} €`}</strong><small>${g.bientot ? 'pas encore en vente' : libres ? 'par personne' : 'complet'}</small></span></button>`;
+      <span class="zp"><strong>${g.bientot ? 'Bientôt' : `dès ${Math.min(...ls.map((l) => l.prixPers))} €`}</strong><small>${g.bientot ? 'pas encore en vente' : libres ? '/ personne' : 'complet'}</small></span></button>`;
     li.firstChild.onclick = () => selectGroupe(g.id);
     zonesEl.appendChild(li);
   });
@@ -774,7 +789,7 @@ $('#only-free')?.closest('label')?.remove();
 function openPanel() {
   const side = $('#side'); side.classList.add('closed', 'has-table'); $('#collapse').textContent = '+';
   const panel = $('#tpanel'); panel.hidden = false; panel.classList.remove('enter'); void panel.offsetWidth; panel.classList.add('enter');
-  if (isSheet()) { document.body.classList.add('sheet-open'); scrollToEl(stage, -64); }
+  if (isSheet()) { document.body.classList.add('sheet-open'); scrollToEl(stage, sousEntete()); }
   applyViewOffset();
 }
 // 1) le client choisit une zone : on zoome et on propose ses deux lignes
@@ -788,6 +803,7 @@ function selectGroupe(gid) {
   const g = GROUPES.find((x) => x.id === gid);
   $('#tp-eyebrow').textContent = VIP_NOM;
   $('#tp-title').textContent = g.bientot ? 'Scène' : g.nom;
+  setStep(g.bientot ? 1 : 2);
   $('#tp-zone').textContent = g.desc;
   $('#tp-price').textContent = ''; $('#tp-sub').textContent = '';
   if (g.bientot) {
@@ -797,13 +813,14 @@ function selectGroupe(gid) {
     $('#tp-status').hidden = false; $('#tp-actions').hidden = true;
   } else {
     $('#tp-status').hidden = true; $('#tp-actions').hidden = true;
-    $('#tp-lines').innerHTML = `<p class="tp-step">Choisissez votre ligne</p>` + lignesDe(gid).map((l) => {
+    $('#tp-lines').innerHTML = lignesDe(gid).map((l) => {
       const r = restant(l.id);
       return `<button type="button" class="tp-line ${l.type} ${r ? '' : 'full'}" data-l="${l.id}" style="--zc:${l.couleurs[0]}" ${r ? '' : 'disabled'}>
-        <span><b>${l.libelle}</b><small>${l.type === 'avant' ? 'au plus près de la piste' : 'juste derrière, en surplomb'}</small></span>
-        <span class="tp-lp"><b>${l.prixPers} €</b><small>${r ? 'par personne' : 'complet'}</small></span></button>`;
+        <span><b>${l.libelle}</b><small>${l.type === 'avant' ? 'Premier rang, au bord de la piste' : 'Deuxième rang, juste derrière'}</small></span>
+        <span class="tp-lp"><b>${l.prixPers} €</b><small>${r ? '/ personne' : 'complet'}</small></span></button>`;
     }).join('');
     $('#tp-lines').querySelectorAll('[data-l]').forEach((b) => (b.onclick = () => selectLigne(b.dataset.l)));
+    setTimeout(() => $('#tp-lines .tp-line:not(:disabled)')?.focus({ preventScroll: true }), 60);
   }
   openPanel();
 }
@@ -819,18 +836,23 @@ function selectLigne(id) {
   badge.classList.remove('pop'); void badge.offsetWidth; badge.classList.add('pop');
   $('#tp-eyebrow').textContent = `${VIP_NOM} · ${g.nom}`;
   $('#tp-title').textContent = l.libelle;
+  setStep(3);
   $('#tp-zone').textContent = `${g.desc} · ${tablesDe(l.id).length} tables`;
   $('#tp-price').textContent = `${euros(l.prixPers)} / personne`;
-  $('#tp-sub').textContent = `Exemple : ${euros(totalLigne(l, 10))} pour 10 personnes · acompte ${EVENT.acomptePct} % · l’organisation vous attribue votre table`;
+  $('#tp-sub').textContent = `Pour 10 personnes : ${euros(totalLigne(l, 10))}. Votre table vous est attribuée par l’organisation.`;
   $('#tp-lines').innerHTML = `<button type="button" class="tp-back" id="tp-back">← Changer de ligne</button>`;
   $('#tp-back').onclick = () => selectGroupe(l.groupe);
   $('#tp-status').hidden = false;
   $('#tp-status').className = 'tp-status ' + (r ? 'free' : 'taken');
-  $('#tp-status').innerHTML = r ? '<strong>Disponible</strong>Indiquez combien vous serez : l’organisation vous recontacte et vous attribue votre table.' : '<strong>Complet</strong>Cette ligne est complète. Essayez l’autre ligne ou une autre zone.';
+  $('#tp-status').innerHTML = r ? '<strong>Places disponibles</strong>' : '<strong>Complet</strong> Essayez l’autre ligne ou une autre zone.';
   $('#tp-actions').hidden = false; $('#tp-ask').disabled = !r;
+  setTimeout(() => (r ? $('#tp-ask') : $('#tp-back'))?.focus({ preventScroll: true }), 60);
+  try { sessionStorage.setItem('bal-noel-ligne', l.id); } catch {}
   openPanel();
 }
+function setStep(n) { $$('.steps li').forEach((li, i) => li.classList.toggle('on', i < n)); }
 function closePanel() {
+  setStep(1);
   if (current) glow(current.id, false);
   current = null; $('#badge').hidden = true; $('#tpanel').hidden = true;
   document.body.classList.remove('sheet-open'); applyViewOffset();
@@ -858,7 +880,7 @@ const drawer = $('#drawer'), back = $('#drawer-back'), form = $('#form');
 function openDrawer(l) {
   const r = restant(l.id), max = Math.min(r, MAX_PAR_DEMANDE), g = groupeOf(l);
   $('#d-zone').textContent = `${VIP_NOM} · ${g.nom}`;
-  $('#d-title').textContent = l.libelle;
+  $('#d-title').textContent = `${g.nom} · ${l.libelle}`;
   $('#d-price').textContent = euros(l.prixPers);
   $('#d-pers').innerHTML = `<option value="" selected disabled>Combien serez-vous ?</option>` + Array.from({ length: max }, (_, i) => `<option value="${i + 1}">${i + 1} personne${i ? 's' : ''}</option>`).join('');
   majTotal();
@@ -866,6 +888,9 @@ function openDrawer(l) {
   $('#d-error').hidden = true;
   $('#d-form-view').hidden = false; $('#d-ok-view').hidden = true;
   lastFocus = document.activeElement;
+  drawer.inert = false; drawer.hidden = false;
+  if (!history.state?.formulaire) history.pushState({ v: 'plan', formulaire: 1 }, '', '#plan');
+  void drawer.offsetWidth;
   drawer.classList.add('open'); drawer.setAttribute('aria-hidden', 'false'); back.hidden = false;
   setTimeout(() => (r > 0 ? $('#d-pers') : $('#drawer-close')).focus({ preventScroll: true }), 350);
 }
@@ -878,14 +903,15 @@ function majTotal() {
 }
 $('#d-pers').addEventListener('change', majTotal);
 let lastFocus = null;
-function closeDrawer() {
+function closeDrawer(depuisRetour) {
   if (!drawer.classList.contains('open')) return;
-  drawer.classList.remove('open'); drawer.setAttribute('aria-hidden', 'true'); back.hidden = true;
+  drawer.classList.remove('open'); drawer.setAttribute('aria-hidden', 'true'); back.hidden = true; drawer.inert = true;
+  if (!depuisRetour && history.state?.formulaire) history.back();
   if (lastFocus && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true });
 }
 // la touche Tab reste dans le formulaire tant qu'il est ouvert
 drawer.addEventListener('keydown', (e) => {
-  if (e.key !== 'Tab') return;
+  if (e.key !== 'Tab' || !drawer.classList.contains('open')) return;
   const f = [...drawer.querySelectorAll('button, input:not(.hp), select, textarea, a[href]')].filter((x) => x.offsetParent !== null && !x.disabled);
   if (!f.length) return;
   if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f.at(-1).focus(); }
@@ -915,6 +941,7 @@ form.addEventListener('submit', async (e) => {
       L’organisation vous attribue votre table et vous contacte par <strong>${f.contact === 'sms' ? 'SMS' : 'WhatsApp'}</strong> au ${escapeHtml(f.tel)} dans les heures qui suivent.
       Pour ${n} personne${n > 1 ? 's' : ''} (${euros(totalLigne(current, n))}), un acompte de ${EVENT.acomptePct} % (${dep}) vous sera demandé après validation.<br><br><small>Numéro de demande : <strong>${escapeHtml(rep.id)}</strong></small>`;
     $('#d-form-view').hidden = true; $('#d-ok-view').hidden = false;
+    $('#d-ok-view h3').setAttribute('tabindex', '-1'); $('#d-ok-view h3').focus({ preventScroll: true });
     form.reset();
   } catch (x) {
     err.textContent = x.message; err.hidden = false;
@@ -924,6 +951,9 @@ form.addEventListener('submit', async (e) => {
 const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
 /* ================================================================ démarrage */
+drawer.inert = true;
 await loadState();
 renderZones(); refreshLabels();
 setInterval(async () => { if (document.visibilityState === 'visible') { await loadState(); refreshLabels(); renderZones(); } }, 30000);
+// après une actualisation sur le plan, on retrouve la ligne choisie
+try { const l = sessionStorage.getItem('bal-noel-ligne'); if (l && body.dataset.view === 'plan' && ligneById(l)?.enVente) setTimeout(() => selectLigne(l), 400); } catch {}

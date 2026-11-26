@@ -22,8 +22,7 @@
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"Event","name":"Le Bal de Noël — Le Bal des Fous","startDate":"2026-12-27T16:00:00+01:00","endDate":"2026-12-28T00:00:00+01:00","eventStatus":"https://schema.org/EventScheduled","eventAttendanceMode":"https://schema.org/OfflineEventAttendanceMode","location":{"@type":"Place","name":"La Terrasse du Palais des Festivals","address":{"@type":"PostalAddress","streetAddress":"1 boulevard de la Croisette","postalCode":"06400","addressLocality":"Cannes","addressCountry":"FR"}},"image":["https://bal-noel-mgh6.onrender.com/assets/partage.jpg"],"description":"Soirée de Noël du Bal des Fous sur la Terrasse du Palais des Festivals de Cannes. Places VIP Croisette de 150 € à 200 € par personne.","organizer":{"@type":"Organization","name":"Le Bal des Fous"},"offers":[{"@type":"Offer","name":"VIP Croisette · ligne avant","price":"200","priceCurrency":"EUR","url":"https://bal-noel-mgh6.onrender.com/#plan"},{"@type":"Offer","name":"VIP Croisette · ligne arrière","price":"150","priceCurrency":"EUR","url":"https://bal-noel-mgh6.onrender.com/#plan"}]}</script>
   <link rel="preload" as="image" href="assets/boule.webp" imagesrcset="assets/boule-440.webp 440w, assets/boule-600.webp 600w, assets/boule.webp 760w" imagesizes="(max-width: 760px) 54vw, 520px" fetchpriority="high">
   <link rel="preload" as="image" href="assets/logo-clair.webp">
-  <link rel="preload" as="font" type="font/woff2" href="fonts/manrope.woff2" crossorigin>
-  <link rel="preload" as="font" type="font/woff2" href="fonts/cormorant-500.woff2" crossorigin>
+  <link rel="preload" as="font" type="font/woff2" href="fonts/archivo.woff2" crossorigin>
   <link rel="stylesheet" href="fonts.css">
   <link rel="stylesheet" href="style.css">
   <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
@@ -72,8 +71,8 @@
   <header class="topbar">
     <a class="brand-small" href="#accueil"><img data-src="assets/logo-ligne.webp" width="700" height="103" alt="Le Bal des Fous"></a>
     <div class="topbar-center">
-      <span class="kicker" data-lieu-up></span>
-      <strong data-datecourte></strong>
+      <strong data-datelongue></strong>
+      <span class="kicker">Ouverture 16 h · La Terrasse du Palais des Festivals, Cannes</span>
     </div>
     <span class="kicker right" data-tagline></span>
   </header>
@@ -82,23 +81,26 @@
     <div class="plan-col">
       <div class="plan-head">
         <div>
-          <p class="eyebrow" data-soustheme-up></p>
-          <h2 class="title-img"><span>Votre place au</span><img src="assets/titre.webp" width="1100" height="743" alt="Bal de Noël" loading="lazy"></h2>
+          <h1 class="plan-title">VIP Croisette</h1>
+          <p class="plan-sub">Choisissez une zone sur le plan, puis la ligne avant ou arrière. Les prix sont par personne.</p>
         </div>
-        <p class="meta" id="meta-count"></p>
+        <ul class="price-chips" aria-label="Tarifs">
+          <li><i style="background:#f2b84b"></i>Ligne avant <b>200 €</b></li>
+          <li><i style="background:#8fb8dc"></i>Ligne arrière <b>150 €</b></li>
+        </ul>
       </div>
 
       <div class="stage" id="stage" data-lenis-prevent>
         <canvas id="scene" role="img" aria-label="Plan 3D de la salle : piste tournante au centre, régie DJ, zones VIP. Les zones 1 à 4 du VIP Croisette sont des boutons."></canvas>
         <div class="labels" id="labels"></div>
-        <button class="btn-gold overview" id="btn-overview" type="button">Vue d’ensemble</button>
+        <button class="btn-gold overview" id="btn-overview" type="button">Toute la salle</button>
         <div class="stage-badge" id="badge" hidden></div>
         <div class="pov-bar" id="pov-bar" hidden><span id="pov-txt"></span><button type="button" id="pov-exit">Revenir au plan</button></div>
         <div class="zoom">
           <button type="button" id="zoom-in" aria-label="Zoomer">+</button>
           <button type="button" id="zoom-out" aria-label="Dézoomer">−</button>
         </div>
-        <p class="hint">Glissez pour tourner · Zoomez · Choisissez une zone</p>
+        <p class="hint">Faites glisser pour tourner la salle</p>
         <div class="loading" id="loading">Chargement de la salle…</div>
       </div>
 
@@ -118,33 +120,35 @@
 
     <aside class="side" id="side" aria-label="Choix de la zone">
       <div class="side-head">
-        <h3>VIP Croisette</h3>
+        <h2>Réserver</h2>
         <button type="button" class="collapse" id="collapse" aria-label="Replier">−</button>
       </div>
       <div class="side-body">
-        <p class="side-sub">1. Choisissez une zone · 2. votre ligne · 3. le nombre de personnes</p>
+        <ol class="steps" aria-label="Étapes"><li class="on">Zone</li><li>Ligne</li><li>Vos infos</li></ol>
         <ul class="zones" id="zones"></ul>
       </div>
       <div class="table-panel" id="tpanel" hidden role="region" aria-label="Zone sélectionnée">
         <span class="grab" aria-hidden="true"></span>
         <div class="tp-head"><p class="eyebrow" id="tp-eyebrow">VIP Croisette</p><button type="button" class="tp-close" id="tp-close" aria-label="Fermer">×</button></div>
-        <h3 id="tp-title"></h3>
+        <h2 id="tp-title"></h2>
         <p class="tp-zone" id="tp-zone"></p>
         <div class="tp-lines" id="tp-lines"></div>
         <p class="tp-price" id="tp-price"></p>
         <p class="tp-sub" id="tp-sub"></p>
         <div class="tp-status" id="tp-status"></div>
         <div class="tp-actions" id="tp-actions">
-          <button type="button" class="tp-btn ghost" id="tp-pov">Voir depuis cette ligne <span>↗</span></button>
-          <button type="button" class="tp-btn gold" id="tp-ask">Réserver dans cette ligne <span>→</span></button>
+          <button type="button" class="tp-btn ghost" id="tp-pov">Voir la vue depuis cette ligne</button>
+          <button type="button" class="tp-btn gold" id="tp-ask">Continuer</button>
         </div>
       </div>
       <div class="side-info">
         <div class="info">
-          <img class="info-bunny" data-src="assets/lapin.webp" width="320" height="464" alt="" loading="lazy">
-          <h4>Une demande, puis un échange.</h4>
-          <p>L’organisation vous contactera par SMS ou WhatsApp, selon votre choix, dans les heures qui suivent.
-            Acompte de <span data-acompte></span> % après validation.</p>
+          <h3>Comment ça se passe</h3>
+          <ol>
+            <li>Vous envoyez votre demande (aucun paiement en ligne).</li>
+            <li>On vous rappelle par WhatsApp ou SMS, en général dans la journée.</li>
+            <li>Un acompte de <span data-acompte></span> % confirme la réservation, le reste se règle sur place.</li>
+          </ol>
         </div>
       </div>
     </aside>
@@ -169,7 +173,7 @@
   <button class="drawer-close" id="drawer-close" type="button" aria-label="Fermer">×</button>
 
   <div id="d-form-view">
-    <p class="eyebrow" id="d-zone"></p>
+    <p class="d-kicker" id="d-zone"></p>
     <h3 id="d-title">Table 01</h3>
     <div class="d-facts">
       <div><span>Par personne</span><strong id="d-price"></strong></div>
@@ -195,8 +199,8 @@
       <input name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
       <label class="check"><input type="checkbox" name="cgv" required> <span>J’ai compris qu’un acompte de <span data-acompte></span> % me sera demandé après validation de ma demande, et j’accepte les <a href="/conditions" target="_blank" rel="noopener">conditions de réservation</a>.</span></label>
       <p class="error" id="d-error" role="alert" hidden></p>
-      <button class="btn-red" type="submit" id="d-submit">Envoyer ma demande <span>→</span></button>
-      <p class="fine">Aucun paiement maintenant. L’organisation vous recontacte pour confirmer.</p>
+      <button class="btn-red" type="submit" id="d-submit">Envoyer ma demande</button>
+      <p class="fine">Aucun paiement maintenant. On vous recontacte pour confirmer.</p>
     </form>
   </div>
 

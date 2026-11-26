@@ -9,7 +9,7 @@ const P = {
     <h2>Propriété intellectuelle</h2><p>Les visuels, logos et textes de ce site appartiennent à ${EDITEUR.societe} ou à leurs auteurs. Toute reproduction sans autorisation est interdite.</p>
     <h2>Alcool et accès</h2><p>Soirée réservée aux personnes majeures. L’abus d’alcool est dangereux pour la santé, à consommer avec modération.</p>`],
   confidentialite: ['Confidentialité', `
-    <p>Ce site sert uniquement à recevoir des demandes de réservation pour ${EVENT.theme} du ${date}.</p>
+    <p>Ce site sert uniquement à recevoir des demandes de réservation pour le ${EVENT.theme.replace(/^Le /, '')} du ${date}.</p>
     <h2>Données collectées</h2><p>Prénom, nom, téléphone, e-mail (facultatif), zone et ligne choisies, nombre de personnes, mode de contact préféré, message éventuel.
     Rien d’autre : pas de compte, pas de paiement en ligne.</p>
     <h2>Pourquoi</h2><p>Traiter votre demande, vous recontacter par SMS ou WhatsApp et vous attribuer une table (mesures précontractuelles à votre demande).</p>

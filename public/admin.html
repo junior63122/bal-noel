@@ -14,7 +14,8 @@
     header { display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1px solid var(--line); gap: 12px; flex-wrap: wrap; }
     h1 { font-family: 'Cormorant Garamond', serif; font-weight: 500; margin: 0; font-size: 30px; }
     h2 { font-family: 'Cormorant Garamond', serif; font-weight: 500; font-size: 26px; margin: 0 0 14px; }
-    main { padding: 24px; display: grid; gap: 30px; max-width: 1300px; margin: auto; }
+    main { padding: 24px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 30px; max-width: 1300px; margin: auto; }
+    @media (max-width: 700px) { main { padding: 14px; } .stat { min-width: 0; flex: 1 1 45%; } .chip { min-width: 40px; min-height: 40px; } header { padding: 14px; } }
     button, input, select { font: inherit; }
     button { cursor: pointer; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 8px 12px; }
     button.gold { background: var(--gold); color: #1d1608; border: 0; font-weight: 700; }
@@ -109,13 +110,16 @@ $('#login').onsubmit = async (e) => {
 $('#refresh').onclick = async () => { db = await call('data'); render(); };
 
 function phoneIntl(tel) {
-  let d = tel.replace(/\D/g, '');
-  if (d.startsWith('00')) d = d.slice(2); else if (d.startsWith('0')) d = '33' + d.slice(1);
+  let d = String(tel).replace(/\(0\)/g, '').replace(/\D/g, '');
+  if (d.startsWith('00')) d = d.slice(2);
+  else if (d.startsWith('0')) d = '33' + d.slice(1);
+  else if (d.length === 9 && /^[67]/.test(d)) d = '33' + d;
+  if (d.startsWith('330')) d = '33' + d.slice(3);
   return d;
 }
 function msg(d) {
   const l = ligneById(d.ligne); const n = d.personnes || 1;
-  return `Bonjour ${d.prenom}, ici l’organisation du ${EVENT.marque} — ${EVENT.theme} (${EVENT.dateCourte.toLowerCase()}, ${EVENT.lieu}). ` +
+  return `Bonjour ${d.prenom}, ici l’organisation du Bal des Fous — ${EVENT.theme} (${EVENT.dateCourte.toLowerCase()}, ${EVENT.lieu}). ` +
     `Nous avons bien reçu votre demande en ${VIP_NOM}, ${l.nom} (${n} pers. × ${prixD(d)} € = ${euros(totalD(d))})${d.tables && d.tables.length ? `, table${d.tables.length > 1 ? 's' : ''} ${d.tables.join(', ')}` : ''}. ` +
     `Pour la confirmer, un acompte de ${EVENT.acomptePct} % soit ${euros(Math.round(totalD(d) * EVENT.acomptePct / 100))} est demandé.`;
 }
@@ -153,7 +157,7 @@ function render() {
       <td><span class="badge b-${d.statut}">${d.statut.replace('ee', 'ée')}</span></td>
       <td><div class="act">
         <a class="wa" target="_blank" rel="noopener" href="https://wa.me/${phoneIntl(d.tel)}?text=${text}">WhatsApp</a>
-        <a class="sms" href="sms:${esc(d.tel)}?&body=${text}">SMS</a>
+        <a class="sms" href="sms:+${phoneIntl(d.tel)}?&body=${text}">SMS</a>
         <button data-id="${d.id}" data-s="contactee">Contactée</button>
         <button data-id="${d.id}" data-s="validee">Valider</button>
         <button data-id="${d.id}" data-s="refusee">Refuser</button>
@@ -167,7 +171,7 @@ function render() {
   }));
   $('#rows').querySelectorAll('button[data-id]').forEach((b) => (b.onclick = async () => {
     if (b.dataset.s === 'supprimer' && !confirm('Supprimer cette demande ?')) return;
-    try { db = await call('demande', { id: b.dataset.id, statut: b.dataset.s }); render(); } catch (e) { alert(e.message); }
+    try { db = await call('demande', { id: b.dataset.id, statut: b.dataset.s }); render(); if (db.avertissement) alert(db.avertissement); } catch (e) { alert(e.message); }
   }));
 
   $('#tables').innerHTML = TABLES.map((t) => {
@@ -181,13 +185,14 @@ function render() {
 }
 $('#csv').onclick = () => {
   const head = ['date', 'ligne', 'tables', 'prix_par_personne', 'total', 'prenom', 'nom', 'tel', 'email', 'personnes', 'contact', 'statut', 'message'];
-  const rows = db.demandes.map((d) => { return [d.date, ligneById(d.ligne)?.nom, (d.tables || []).join(' '), prixD(d), totalD(d), d.prenom, d.nom, d.tel, d.email, d.personnes, d.contact, d.statut, d.message]; });
-  const csv = [head, ...rows].map((r) => r.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')).join('\n');
+  const rows = db.demandes.map((d) => { return [new Date(d.date).toLocaleString('fr-FR', { timeZone: 'Europe/Paris' }), ligneById(d.ligne)?.nom, (d.tables || []).join(' '), prixD(d), totalD(d), d.prenom, d.nom, d.tel, d.email, d.personnes, d.contact, d.statut, d.message]; });
+  const sur = (v) => { const t = String(v ?? ''); return /^[=+\-@\t\r]/.test(t) ? "'" + t : t; }; // pas de formule exécutée à l'ouverture dans Excel
+  const csv = [head, ...rows].map((r) => r.map((v) => `"${sur(v).replace(/"/g, '""')}"`).join(';')).join('\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv' })); a.download = 'demandes-bal-noel.csv'; a.click();
 };
 function show() { $('#login').hidden = true; $('#contenu').hidden = true; $('#app').hidden = false; render(); }
 if (pw) call('data').then((d) => { db = d; show(); }).catch(() => {});
-setInterval(async () => { if (pw && !document.hidden) { db = await call('data'); render(); } }, 30000);
+setInterval(async () => { if (pw && !document.hidden) { try { db = await call('data'); render(); } catch {} } }, 30000);
 </script>
 </body>
 </html>

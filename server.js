@@ -183,8 +183,8 @@ function limited(ip) {
   return false;
 }
 
-async function enregistrer(res, db) {
-  try { await save(db); return send(res, 200, db); }
+async function enregistrer(res, db, avertissement) {
+  try { await save(db); return send(res, 200, avertissement ? { ...db, avertissement } : db); }
   catch { return send(res, 503, { error: 'Modification NON enregistrée (écriture impossible sur le disque). Réessayez ; si cela persiste, contactez le support de l’hébergeur.' }); }
 }
 async function api(req, res, url) {
@@ -233,7 +233,7 @@ async function api(req, res, url) {
     if (d.personnes < 1 || d.personnes > maxi) { METRICS.rejets++; return send(res, 400, { error: `Indiquez entre 1 et ${maxi} personnes.` }); }
     // double clic ou renvoi : même téléphone, même ligne, moins de 30 min → on renvoie la demande existante
     d.prixPers = ligne.prixPers;
-    const dup = db.demandes.find((x) => x.statut !== 'refusee' && x.personnes === d.personnes && (x.message || '') === d.message && x.ligne === d.ligne && String(x.tel || '').replace(/\D/g, '') === digits && Date.now() - Date.parse(x.date) < 1800000);
+    const dup = db.demandes.find((x) => x.statut !== 'refusee' && x.personnes === d.personnes && (x.message || '') === d.message && x.prenom === d.prenom && x.nom === d.nom && x.contact === d.contact && (x.email || '') === d.email && x.ligne === d.ligne && String(x.tel || '').replace(/\D/g, '') === digits && Date.now() - Date.parse(x.date) < 1800000);
     if (dup) {
       try { await (ECRITS.get(dup.id) || Promise.resolve()); } catch { return send(res, 503, { error: 'Enregistrement impossible pour le moment : votre demande n’a pas été enregistrée. Réessayez dans un instant.' }); }
       if (!DBMEM.demandes.includes(dup)) return send(res, 503, { error: 'Enregistrement impossible pour le moment. Réessayez dans un instant.' });
@@ -277,7 +277,7 @@ async function api(req, res, url) {
       return enregistrer(res, db);
     }
     if (req.method === 'POST' && url.pathname === '/api/admin/demande') {
-      const { id, statut } = await readBody(req);
+      const { id, statut } = await readBody(req); let avertissement = null;
       const d = db.demandes.find((x) => x.id === id);
       if (!d) return send(res, 404, { error: 'Demande introuvable.' });
       if (statut === 'supprimer') db.demandes = db.demandes.filter((x) => x.id !== id);
@@ -290,11 +290,11 @@ async function api(req, res, url) {
         if (d.statut === 'refusee' && statut !== 'refusee') {
           const prises = tablesPrises(db, d.id);
           const perdues = (d.tables || []).filter((t) => prises.has(t));
-          if (perdues.length) d.tables = d.tables.filter((t) => !prises.has(t));
+          if (perdues.length) { d.tables = d.tables.filter((t) => !prises.has(t)); avertissement = `Table${perdues.length > 1 ? 's' : ''} ${perdues.join(', ')} retirée${perdues.length > 1 ? 's' : ''} de cette demande : attribuée${perdues.length > 1 ? 's' : ''} entre-temps à un autre client.`; }
         }
         d.statut = statut;
       }
-      return enregistrer(res, db);
+      return enregistrer(res, db, avertissement);
     }
   }
   return send(res, 404, { error: 'Introuvable' });

@@ -72,3 +72,40 @@
 | R1 | — | Régression introduite par ma propre correction (écriture bloquée après la 1re) | corrigée | attrapée par 6 tests serveur avant tout déploiement |
 
 Non corrigé (risque jugé faible) : fenêtre très étroite entre la purge RGPD et une requête admin en cours ; mémoire des compteurs anti-spam bornée par nettoyage toutes les 5 min.
+
+## 6. Cycle 2 (26/11) — deux contre-audits indépendants + refonte visuelle
+### Serveur (2e auditeur) — tous corrigés, chacun couvert par un test
+| ID | Gravité | Constat | Correction |
+|---|---|---|---|
+| A1 | CRITIQUE | `GET http://[` arrêtait le serveur | URL analysée dans le `try` ; filet global |
+| A2 | ÉLEVÉE | Base restaurée gardée en mémoire seulement (perdue au redémarrage suivant) | réécrite sur disque au démarrage |
+| A3 | ÉLEVÉE | Actions admin « 200 » sans écriture réelle ; santé « ok » malgré l'échec | 503 si non écrit ; santé compare le fichier octet par octet + état de la dernière écriture |
+| A4 | MOYENNE | Doublon simultané « ok » pour une demande non enregistrée | le doublon attend l'écriture de l'original |
+| A5/A6 | MOYENNE | Purge RGPD annulable par une requête en cours ; sauvegardes non purgées | purge sur place + effacement des copies |
+| A7 | MOYENNE | `{"demandes":[null]}` bloquait le démarrage en boucle | validation complète → chemin « abîmé » |
+| A8–A11 | FAIBLE | accents coupés, anti-spam qui s'alourdit, santé trop bavarde, compteur faux | corrigés |
+### Interface (3e auditeur) — corrigés sauf U13 (informations légales à fournir)
+| ID | Gravité | Constat | Preuve après correction (`tests/interface.cjs`) |
+|---|---|---|---|
+| U1 | CRITIQUE | Piège clavier dans le formulaire fermé | 0 arrêt sur 60 Tab |
+| U2 | ÉLEVÉE | Sans WebGL : réservation impossible | réservation enregistrée sans 3D |
+| U3/U4 | MOYENNE | Liens WhatsApp faux (+33 (0)6…, 6 12…) ; « du Le Bal des Fous » | 5 formats corrects |
+| U5 | MOYENNE | CSV : formules exécutées dans Excel ; dates UTC | préfixe « ' », heure de Paris |
+| U6 | MOYENNE | Admin inutilisable sur téléphone | largeur 390/390 |
+| U7 | MOYENNE | Retour avec formulaire ouvert → accueil ; ligne perdue à l'actualisation | Retour ferme le formulaire ; ligne retrouvée |
+| U8 | MOYENNE | Mobile : boutons masqués sous l'en-tête | visibles |
+| U9–U12 | FAIBLE | chevauchements 320 px, doublon trop large, table retirée sans message, focus perdu | corrigés |
+| U13 | ÉLEVÉE (légal) | Mentions « à compléter » | **attend les informations de l'organisateur** |
+### Refonte « non-IA »
+Supprimé : capitales espacées, dégradés dorés, verre givré, auréoles, pulsations, coins décoratifs, duo Cormorant/Manrope,
+phrases creuses. Ajouté : une seule famille (Archivo, titres condensés), aplats tirés des visuels, étapes 1-2-3,
+étiquettes de prix claires, textes directs. Accessibilité après refonte : **0 violation axe** sur 10 écrans.
+### Mesures
+| Mesure | Cycle 1 | Cycle 2 |
+|---|---|---|
+| LCP mobile 4G simulé | 3 212 ms | **2 316 ms** (objectif < 2 500 atteint) |
+| LCP ordinateur | non mesurable | 88 ms |
+| CLS mobile | 0,01 | 0,01 |
+| Tests serveur | 23 | **28** |
+| Vérifications d'interface | — | **10/10** |
+| Anti-faux-succès | 10/10 | 10/10 |
