@@ -148,6 +148,7 @@ if (body.dataset.view === 'plan') chargerImagesPlan();
 
 /* ================================================================ scène 3D */
 // plan Deco Flamme : coordonnées en mètres, origine au centre de la piste (voir plan.js)
+const DESSUS = new URLSearchParams(location.search).has('dessus'); // vue de contrôle
 const PX = 1;
 const CX = 0, CY = 0;
 const V = (x, y, h = 0) => new THREE.Vector3((x - CX) / PX, h, (y - CY) / PX);
@@ -389,22 +390,59 @@ const floaters = [];
   dj.position.copy(V(PLAN.DJ[0], PLAN.DJ[1], H)); scene.add(dj);
 }
 
-// bars : comptoir en U de 5,30 × 3 m (ouvert vers l'extérieur de la salle) et arrière-bar de 2 × 0,5 m
-PLAN.BARS.forEach(({ x, z, a, cote }) => {
-  const g = new THREE.Group();
-  const L = 5.3, W = 3, E = .6, HB = 1.1;
-  const piece = (w, d, px, pz) => {
-    const b = new THREE.Mesh(new THREE.BoxGeometry(w, HB, d), M.bar); b.position.set(px, HB / 2, pz); g.add(b);
-    const t = new THREE.Mesh(new THREE.BoxGeometry(w + .1, .07, d + .1), M.barTop); t.position.set(px, HB + .035, pz); g.add(t);
+// bars : comptoir en U de 5,30 × 3 m (ouvert vers l'extérieur de la salle) et arrière-bar de 2 × 0,5 m au centre.
+// Façade noire + plateau marbre, bande LED, étagères de bouteilles éclairées,
+// suspensions au-dessus du comptoir et enseigne « BAR ».
+{
+  const facade = new THREE.MeshStandardMaterial({ color: '#15151b', roughness: .45, metalness: .35 });
+  const marbre = new THREE.MeshStandardMaterial({ color: '#efe9df', roughness: .18, metalness: .05 });
+  const laiton = new THREE.MeshStandardMaterial({ color: '#d4a64a', roughness: .3, metalness: .9 });
+  const led = new THREE.MeshBasicMaterial({ color: '#ffcf7a', toneMapped: false });
+  const fond = new THREE.MeshStandardMaterial({ color: '#2a1608', emissive: '#ff9d3a', emissiveIntensity: .55, roughness: .6 });
+  const enseigne = canvasTex(512, 160, (c, w, h) => {
+    c.fillStyle = '#0d0d12'; c.fillRect(0, 0, w, h);
+    c.strokeStyle = '#d4a64a'; c.lineWidth = 6; c.strokeRect(8, 8, w - 16, h - 16);
+    c.fillStyle = '#ffd27a'; c.font = '700 104px Archivo, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('BAR', w / 2, h / 2 + 6);
+  });
+  const enseigneMat = new THREE.MeshBasicMaterial({ map: enseigne, toneMapped: false });
+  const bottles = [], pendants = [];
+  const BOTTLE_COLORS = ['#1f5a3a', '#6b3a12', '#d9d2c0', '#2c3d6b', '#7a1424', '#c99a2e'].map((c) => new THREE.Color(c));
+  PLAN.BARS.forEach(({ x, z, a, cote }) => {
+    const g = new THREE.Group();
+    const L = 5.3, W = 3, E = .6, HB = 1.1;
+    const comptoir = (w, d, px, pz) => {
+      const b = new THREE.Mesh(new THREE.BoxGeometry(w, HB - .05, d), facade); b.position.set(px, (HB - .05) / 2, pz); g.add(b);
+      const t = new THREE.Mesh(new THREE.BoxGeometry(w + .24, .06, d + .24), marbre); t.position.set(px, HB, pz); g.add(t); // plateau qui déborde côté clients
+      const r = new THREE.Mesh(new THREE.BoxGeometry(w + .02, .03, d + .02), led); r.position.set(px, .06, pz); g.add(r);    // LED au pied
+      const p = new THREE.Mesh(new THREE.BoxGeometry(w + .04, .035, d + .04), laiton); p.position.set(px, .28, pz); g.add(p); // repose-pieds laiton
+    };
+    comptoir(L, E, 0, -(W - E) / 2); comptoir(L, E, 0, (W - E) / 2); comptoir(E, W - 2 * E, cote * (L - E) / 2, 0);
+    // arrière-bar : meuble bas, deux faces d'étagères éclairées, enseigne au-dessus
+    const meuble = new THREE.Mesh(new THREE.BoxGeometry(2, .95, .5), facade); meuble.position.y = .475; g.add(meuble);
+    const vitrine = new THREE.Mesh(new THREE.BoxGeometry(2, 1.15, .36), fond); vitrine.position.y = .95 + .575; g.add(vitrine);
+    for (const y of [1.08, 1.46, 1.84]) {
+      const et = new THREE.Mesh(new THREE.BoxGeometry(2.02, .03, .5), laiton); et.position.y = y - .02; g.add(et);
+      for (const face of [-1, 1]) for (let k = 0; k < 9; k++) bottles.push({ g, p: new THREE.Vector3(-.88 + k * .22, y, face * .2), c: BOTTLE_COLORS[(k * 7 + Math.round(y * 10) + (face > 0 ? 2 : 0)) % BOTTLE_COLORS.length] });
+    }
+    const top = new THREE.Mesh(new THREE.BoxGeometry(2.06, .05, .52), laiton); top.position.y = 2.12; g.add(top);
+    for (const face of [-1, 1]) {
+      const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.6, .5), enseigneMat); sign.position.set(0, 2.5, face * .02); if (face < 0) sign.rotation.y = Math.PI; g.add(sign);
+    }
+    const signBack = new THREE.Mesh(new THREE.BoxGeometry(1.64, .54, .03), facade); signBack.position.y = 2.5; g.add(signBack);
+    // suspensions au-dessus du comptoir (pas de tabourets)
+    for (const sz of [-1, 1]) for (let k = 0; k < 4; k++) pendants.push({ g, p: new THREE.Vector3(-1.8 + k * 1.2, 2.55, sz * (W - E) / 2) });
+    g.position.copy(V(x, z)); g.rotation.y = -THREE.MathUtils.degToRad(a); scene.add(g); g.updateMatrixWorld(true);
+  });
+  const inst = (geo, mat, list, colors) => {
+    const im = new THREE.InstancedMesh(geo, mat, list.length), m = new THREE.Matrix4(), q = new THREE.Quaternion(), one = new THREE.Vector3(1, 1, 1);
+    list.forEach((o, i) => { im.setMatrixAt(i, m.compose(o.p, q, one).premultiply(o.g.matrixWorld)); if (colors) im.setColorAt(i, o.c); });
+    im.raycast = () => {}; scene.add(im);
   };
-  piece(L, E, 0, -(W - E) / 2); piece(L, E, 0, (W - E) / 2); piece(E, W - 2 * E, cote * (L - E) / 2, 0);
-  const back = new THREE.Mesh(new THREE.BoxGeometry(2, 1.9, .5), M.barTop); back.position.set(0, .95, 0); g.add(back);
-  for (let i = 0; i < 9; i++) {
-    const b = new THREE.Mesh(new THREE.CylinderGeometry(.06, .06, .34, 8), new THREE.MeshStandardMaterial({ color: '#000', emissive: i % 2 ? '#ffcc66' : '#9fd0ff', emissiveIntensity: .9 }));
-    b.position.set(-.85 + i * .21, 2.05, 0); g.add(b);
-  }
-  g.position.copy(V(x, z)); g.rotation.y = -THREE.MathUtils.degToRad(a); scene.add(g);
-});
+  const bottleGeo = new THREE.LatheGeometry([[0, 0], [.035, 0], [.036, .17], [.014, .23], [.012, .29], [0, .29]].map(([u, v]) => new THREE.Vector2(u, v)), 10);
+  inst(bottleGeo, new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: .15, metalness: .2, emissive: '#3a2410', emissiveIntensity: .4 }), bottles, true);
+  inst(new THREE.SphereGeometry(.075, 14, 10), new THREE.MeshBasicMaterial({ color: '#ffd9a0', toneMapped: false }), pendants);
+  inst(new THREE.CylinderGeometry(.006, .006, 1.4, 4).translate(0, .75, 0), laiton, pendants);
+}
 
 // deux sapins de Noël 4 m, hors des zones du plan (près des bars) avec guirlandes clignotantes
 [[-23, 2.5, 4], [23, 2.5, 4]].forEach(([x, y, h]) => {
@@ -441,8 +479,8 @@ let frameNo = 0;
 // salons : banquettes le long du tracé du plan (dossier du côté opposé aux tables),
 // loges rondes de la scène, et une table basse par emplacement
 const TABLE_OBJ = new Map();
-const lowGeo = new THREE.BoxGeometry(.6, .36, .6);
-const lowTopGeo = new THREE.BoxGeometry(.66, .04, .66);
+const lowGeo = new THREE.BoxGeometry(.64, .36, .64); // tables du plan : carrés d'environ 0,75 m
+const lowTopGeo = new THREE.BoxGeometry(.72, .04, .72);
 const roundGeo = new THREE.CylinderGeometry(.42, .42, .5, 28);
 const roundTopGeo = new THREE.CylinderGeometry(.48, .48, .04, 32);
 const LOW_MAT = new THREE.MeshStandardMaterial({ color: '#1d2235', roughness: .4, metalness: .3 });
@@ -461,25 +499,42 @@ function arc(cx, cz, r, a0, a1, n) { const pts = []; for (let i = 0; i <= n; i++
 SALONS.forEach((s, si) => {
   const ts = TABLES.filter((t) => t.salon === si);
   const mat = LINE_MAT.get(s.ligne);
-  const pts = s.type === 'loge' ? arc(s.tables[0][0], s.tables[0][1], 1.05, 5, 175, 6) : s.sofa;
-  const cx = s.tables.reduce((a, p) => a + p[0], 0) / s.tables.length, cz = s.tables.reduce((a, p) => a + p[1], 0) / s.tables.length;
-  const ext = s.type === 'loge' ? .12 : .38; // les modules se rejoignent dans les angles
-  for (let i = 0; i < pts.length - 1; i++) {
-    const [ax, az] = pts[i], [bx, bz] = pts[i + 1];
-    const len = Math.hypot(bx - ax, bz - az), mx = (ax + bx) / 2, mz = (az + bz) / 2;
-    let nx = -(bz - az) / len, nz = (bx - ax) / len;
-    if (nx * (cx - mx) + nz * (cz - mz) > 0) { nx = -nx; nz = -nz; } // dossier vers l'extérieur du salon
-    const h = heightAt(mx, mz), rot = -Math.atan2(bz - az, bx - ax);
-    boxAt(s.ligne, ts[0].id, V(mx, mz, h + .21), rot, len + ext, .42, .72); // assise
-    boxAt(s.ligne, ts[0].id, V(mx + nx * .36, mz + nz * .36, h + .62), rot, len + ext, .5, .16); // dossier
+  if (s.type === 'salon' && s.ligne !== 'scene') {
+    // zones VIP : canapés modulaires relevés module par module sur le PDF (plan.js → SOFAS)
+    for (const [x, z, w, d, a, backs, li] of PLAN.SOFAS) {
+      if (li !== si) continue;
+      const ux = Math.cos(a), uz = Math.sin(a), vx = -uz, vz = ux, h = heightAt(x, z);
+      const at = (ox, oz, y) => V(x + ox * ux + oz * vx, z + ox * uz + oz * vz, h + y);
+      boxAt(s.ligne, ts[0].id, at(0, 0, .2), -a, w - .03, .4, d - .03); // assise
+      const T = .16;
+      if (backs & 1) boxAt(s.ligne, ts[0].id, at(w / 2 - T / 2, 0, .62), -a, T, .44, d - .03);
+      if (backs & 2) boxAt(s.ligne, ts[0].id, at(-w / 2 + T / 2, 0, .62), -a, T, .44, d - .03);
+      if (backs & 4) boxAt(s.ligne, ts[0].id, at(0, d / 2 - T / 2, .62), -a, w - .03, .44, T);
+      if (backs & 8) boxAt(s.ligne, ts[0].id, at(0, -d / 2 + T / 2, .62), -a, w - .03, .44, T);
+    }
+  } else {
+    // loges rondes et banquettes de la scène : tracé du plan, profondeur 0,65 m dossier compris
+    const pts = s.type === 'loge' ? arc(s.tables[0][0], s.tables[0][1], 1.05, 5, 175, 6) : s.sofa;
+    const cx = s.tables.reduce((q, p) => q + p[0], 0) / s.tables.length, cz = s.tables.reduce((q, p) => q + p[1], 0) / s.tables.length;
+    const ext = s.type === 'loge' ? .12 : 0;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const [ax, az] = pts[i], [bx, bz] = pts[i + 1];
+      const len = Math.hypot(bx - ax, bz - az), mx = (ax + bx) / 2, mz = (az + bz) / 2;
+      let nx = -(bz - az) / len, nz = (bx - ax) / len;
+      if (nx * (cx - mx) + nz * (cz - mz) > 0) { nx = -nx; nz = -nz; } // dossier vers l'extérieur du salon
+      const h = heightAt(mx, mz), rot = -Math.atan2(bz - az, bx - ax);
+      boxAt(s.ligne, ts[0].id, V(mx, mz, h + .2), rot, len + ext, .4, .65); // assise
+      boxAt(s.ligne, ts[0].id, V(mx + nx * .245, mz + nz * .245, h + .62), rot, len + ext, .44, .16); // dossier
+    }
   }
-  // orientation des tables : celle du plus long côté de la banquette
+  // orientation des tables : celle du module de canapé le plus proche (VIP) ou de la banquette (scène)
   let rot = 0, best = 0;
   if (s.sofa) for (let i = 0; i < s.sofa.length - 1; i++) { const dx = s.sofa[i + 1][0] - s.sofa[i][0], dz = s.sofa[i + 1][1] - s.sofa[i][1], l = Math.hypot(dx, dz); if (l > best) { best = l; rot = -Math.atan2(dz, dx); } }
+  const rotDe = (t) => { let r = rot, dm = Infinity; for (const m of PLAN.SOFAS) if (m[6] === si) { const dd = Math.hypot(m[0] - t.x, m[1] - t.y); if (dd < dm) { dm = dd; r = -m[4]; } } return r; };
   ts.forEach((t) => {
     const g = new THREE.Group();
     const h = heightAt(t.x, t.y);
-    g.position.copy(V(t.x, t.y, h)); g.rotation.y = rot;
+    g.position.copy(V(t.x, t.y, h)); g.rotation.y = s.ligne !== 'scene' ? rotDe(t) : rot;
     // dalle de couleur sous l'emplacement (matière de la ligne)
     const plate = new THREE.Mesh(t.rond ? plateRond : plateCarre, PLATE_MAT.get(t.zone));
     plate.rotation.x = -Math.PI / 2; plate.position.y = .012; plate.userData.tableId = t.id; g.add(plate);
@@ -556,48 +611,152 @@ scene.add(snowPts);
 // Le client ne choisit pas sa table : on affiche un repère par zone (1 à 4, scène),
 // puis, dans la zone choisie, un repère par ligne (avant / arrière).
 const labels = $('#labels');
+stage.insertAdjacentHTML('beforeend', '<ul class="legende" aria-label="Légende"><li><i class="ok"></i>Disponible</li><li><i class="full"></i>Complet</li><li><i class="soon"></i>Bientôt</li></ul>');
 const MARKS = [];
 function centre(ts, up) { const v = new THREE.Vector3(); ts.forEach((t) => v.add(TABLE_OBJ.get(t.id).base)); v.multiplyScalar(1 / ts.length); v.y += up; return v; }
+const placesTxt = (n) => `${n} place${n > 1 ? 's' : ''}`;
+// état d'une ligne ou d'une zone : disponible (vert), complet (rouge), pas encore en vente (jaune)
+const etatLigne = (l) => (!l.enVente ? 'soon' : restant(l.id) <= 0 ? 'full' : 'ok');
+const etatGroupe = (g) => { const ls = ZONES.filter((l) => l.groupe === g.id); return ls.every((l) => !l.enVente) ? 'soon' : ls.some((l) => etatLigne(l) === 'ok') ? 'ok' : 'full'; };
+
+// --- contours lumineux (zone survolée ou choisie, puis ligne) -------------------------------------------
+function ruban(pts, y, w) { // bande plate centrée sur le contour fermé, angles en onglet
+  const n = pts.length, pos = [];
+  const aire = pts.reduce((s, p, i) => s + p[0] * pts[(i + 1) % n][1] - pts[(i + 1) % n][0] * p[1], 0);
+  const sens = aire > 0 ? 1 : -1;
+  const off = pts.map((p, i) => {
+    const a = pts[(i - 1 + n) % n], b = pts[(i + 1) % n];
+    const n1 = [(p[1] - a[1]), -(p[0] - a[0])], n2 = [(b[1] - p[1]), -(b[0] - p[0])];
+    const l1 = Math.hypot(...n1) || 1, l2 = Math.hypot(...n2) || 1;
+    const m = [n1[0] / l1 + n2[0] / l2, n1[1] / l1 + n2[1] / l2], lm = Math.hypot(...m) || 1;
+    const k = Math.min(3, 1 / Math.max(.3, (m[0] / lm * n1[0] / l1 + m[1] / lm * n1[1] / l1))) * w / 2 * sens;
+    return [[p[0] + m[0] / lm * k, p[1] + m[1] / lm * k], [p[0] - m[0] / lm * k, p[1] - m[1] / lm * k]];
+  });
+  for (let i = 0; i < n; i++) {
+    const [o0, i0] = off[i], [o1, i1] = off[(i + 1) % n];
+    pos.push(o0[0], y, o0[1], i0[0], y, i0[1], o1[0], y, o1[1], i0[0], y, i0[1], i1[0], y, i1[1], o1[0], y, o1[1]);
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); return g;
+}
+const CONTOUR_COEUR = new THREE.MeshBasicMaterial({ color: '#ffffff', side: THREE.DoubleSide, toneMapped: false, depthWrite: false, depthTest: false });
+const CONTOUR_HALO = new THREE.MeshBasicMaterial({ color: '#ffffff', side: THREE.DoubleSide, transparent: true, opacity: .22, toneMapped: false, depthWrite: false, depthTest: false });
+function contour(pts, y) {
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(ruban(pts, y + .02, .5), CONTOUR_HALO), new THREE.Mesh(ruban(pts, y + .03, .16), CONTOUR_COEUR));
+  g.traverse((o) => { o.raycast = () => {}; o.renderOrder = 5; }); g.visible = false; scene.add(g); return g;
+}
+function enveloppe(P) { // enveloppe convexe (chaîne monotone)
+  P = P.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lo = [], hi = [];
+  for (const p of P) { while (lo.length > 1 && cr(lo.at(-2), lo.at(-1), p) <= 0) lo.pop(); lo.push(p); }
+  for (const p of P.slice().reverse()) { while (hi.length > 1 && cr(hi.at(-2), hi.at(-1), p) <= 0) hi.pop(); hi.push(p); }
+  return lo.slice(0, -1).concat(hi.slice(0, -1));
+}
+const ZONE_CONTOUR = new Map(GROUPES.map((g, i) => [g.id, contour(PLAN.PLATFORMS[i], H)]));
+const LIGNE_CONTOUR = new Map();
+ZONES.filter((l) => l.enVente).forEach((l) => {
+  const g = new THREE.Group(); scene.add(g); g.visible = false;
+  SALONS.forEach((s, si) => {
+    if (s.ligne !== l.id) return;
+    const P = [];
+    for (const [x, z, w, d, a, , li] of PLAN.SOFAS) if (li === si) {
+      const ux = Math.cos(a), uz = Math.sin(a);
+      for (const [sx, sz] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) P.push([x + sx * w / 2 * ux - sz * d / 2 * uz + sx * ux * .2, z + sx * w / 2 * uz + sz * d / 2 * ux + sz * ux * .2]);
+    }
+    s.tables.forEach(([x, z]) => P.push([x - .6, z - .6], [x + .6, z + .6], [x - .6, z + .6], [x + .6, z - .6]));
+    const c = contour(enveloppe(P), H + .02); scene.remove(c); c.visible = true; g.add(c);
+  });
+  LIGNE_CONTOUR.set(l.id, g);
+});
+let survolZone = null, survolLigne = null;
+function majContours() {
+  ZONE_CONTOUR.forEach((c, id) => (c.visible = !current && (id === activeGroupe || id === survolZone)));
+  LIGNE_CONTOUR.forEach((c, id) => (c.visible = (current && current.id === id) || id === survolLigne));
+}
+
+// --- étiquettes de prix façon billetterie : carte + tige + pastille d'état -------------------------------
 GROUPES.forEach((g) => {
   const ts = TABLES.filter((t) => zoneOf(t).groupe === g.id);
   const b = document.createElement('button');
-  b.type = 'button'; b.className = 'zmark' + (g.bientot ? ' soon' : '');
-  b.innerHTML = g.bientot ? '<b>Scène</b><small>bientôt</small>' : `<b>${g.num}</b>`;
+  b.type = 'button'; b.className = 'zmark pin' + (g.bientot ? ' soon vedette' : ''); b.dataset.g = g.id;
   b.setAttribute('aria-label', g.bientot ? 'Scène, pas encore en vente' : `${g.nom}, ${g.desc}`);
   b.addEventListener('click', () => selectGroupe(g.id));
-  labels.appendChild(b); MARKS.push({ el: b, pos: centre(ts, 2.4), kind: 'g', id: g.id });
+  b.addEventListener('pointerenter', () => { survolZone = g.id; majContours(); });
+  b.addEventListener('pointerleave', () => { survolZone = null; majContours(); });
+  labels.appendChild(b); MARKS.push({ el: b, pos: centre(ts, .7), kind: 'g', id: g.id, g });
 });
 ZONES.filter((l) => l.enVente).forEach((l) => {
   const b = document.createElement('button');
-  b.type = 'button'; b.className = 'lmark ' + l.type; b.style.setProperty('--zc', l.couleurs[0]);
-  b.innerHTML = `<span>${l.type === 'avant' ? 'Avant' : 'Arrière'}</span><b>${l.prixPers} €</b>`;
+  b.type = 'button'; b.className = 'lmark pin2 ' + l.type;
   b.setAttribute('aria-label', `${l.nom}, ${l.prixPers} euros par personne`);
   b.addEventListener('click', () => selectLigne(l.id));
   b.addEventListener('pointerenter', () => glow(l.id, true));
   b.addEventListener('pointerleave', () => glow(l.id, false));
-  labels.appendChild(b); MARKS.push({ el: b, pos: centre(tablesDe(l.id), 1.3), kind: 'l', id: l.id, groupe: l.groupe });
+  labels.appendChild(b); MARKS.push({ el: b, pos: centre(tablesDe(l.id), 1.1), kind: 'l', id: l.id, groupe: l.groupe, l });
 });
-// surbrillance d'une ligne entière (canapés + dalles)
+// une pastille par table de la zone ouverte (verte : disponible, rouge : complet, jaune : pas en vente)
+TABLES.forEach((t) => {
+  const e = document.createElement('span'); e.className = 'tdot'; e.setAttribute('aria-hidden', 'true');
+  labels.appendChild(e); MARKS.push({ el: e, pos: TABLE_OBJ.get(t.id).base.clone().setY(TABLE_OBJ.get(t.id).base.y + .75), kind: 't', groupe: zoneOf(t).groupe, l: zoneOf(t) });
+});
+// repère DJ
+{
+  const e = document.createElement('span'); e.className = 'djmark'; e.textContent = 'DJ'; e.setAttribute('aria-hidden', 'true');
+  labels.appendChild(e); MARKS.push({ el: e, pos: V(PLAN.DJ[0], PLAN.DJ[1], H + 2.2), kind: 'dj' });
+}
+function majMarques() {
+  for (const m of MARKS) {
+    if (m.kind === 'g') {
+      const ls = ZONES.filter((l) => l.groupe === m.id && l.enVente), et = etatGroupe(m.g);
+      const reste = ls.reduce((s, l) => s + Math.max(0, restant(l.id)), 0);
+      m.el.dataset.etat = et;
+      m.el.innerHTML = m.g.bientot
+        ? '<span class="carte"><b>SCÈNE · AUTOUR DU DJ</b><span class="st">Bientôt disponible</span></span><span class="tige"></span><span class="pastille"></span>'
+        : `<span class="carte"><small class="nm">${m.g.nom}</small><b>Dès ${Math.min(...ls.map((l) => l.prixPers))} € <i>/ pers.</i></b><span class="st"><i></i>${et === 'full' ? 'Complet' : placesTxt(reste) + ' restantes'}</span></span><span class="tige"></span><span class="pastille"></span>`;
+    } else if (m.kind === 'l') {
+      const et = etatLigne(m.l), r = Math.max(0, restant(m.l.id));
+      m.el.dataset.etat = et;
+      m.el.innerHTML = `<span class="pastille"></span><span class="trait"></span><span class="pill"><span class="lg">Ligne ${m.l.type === 'avant' ? 'avant' : 'arrière'}</span><span class="court">${m.l.type === 'avant' ? 'Avant' : 'Arrière'}</span> · <b>${m.l.prixPers} €</b><span class="ext">/pers. | ${et === 'full' ? 'complet' : placesTxt(r)}</span></span>`;
+    } else if (m.kind === 't') m.el.dataset.etat = etatLigne(m.l);
+  }
+  // largeur mesurée une fois ici (et pas à chaque image) ; repositionnement forcé
+  for (const m of MARKS) if (m.kind === 'l') m.w = m.el.offsetWidth;
+  marquesSales = true;
+}
+// surbrillance d'une ligne entière (canapés + contour blanc)
 function glow(ligneId, on) {
   if (!ligneId) return;
   for (const t of tablesDe(ligneId)) {
     const o = TABLE_OBJ.get(t.id);
-    o.mats.forEach((m) => { m.emissive.set(on ? '#ffd98a' : '#000'); m.emissiveIntensity = on ? .35 : 0; });
+    o.mats.forEach((m) => { m.emissive.set(on ? '#ffd98a' : '#000'); m.emissiveIntensity = on ? .25 : 0; });
   }
+  survolLigne = on && ligneById(ligneId)?.enVente ? ligneId : survolLigne === ligneId ? null : survolLigne; majContours();
 }
 const tmp = new THREE.Vector3();
+let marquesSales = true, derniereVue = '';
 function placeLabels() {
   const w = stage.clientWidth, h = stage.clientHeight;
+  // rien à recalculer si la caméra n'a pas bougé et que rien n'a changé
+  const e = camera.matrixWorld.elements, vue = `${w}x${h}|${e[12].toFixed(3)},${e[13].toFixed(3)},${e[14].toFixed(3)},${e[8].toFixed(4)},${e[9].toFixed(4)},${e[10].toFixed(4)}|${camera.fov}|${activeGroupe}|${current?.id}`;
+  if (!marquesSales && vue === derniereVue) return;
+  marquesSales = false; derniereVue = vue;
   for (const m of MARKS) {
-    const show = m.kind === 'g' ? activeGroupe !== m.id : activeGroupe === m.groupe;
+    const show = m.kind === 'g' ? activeGroupe !== m.id : m.kind === 'dj' ? true : activeGroupe === m.groupe;
     if (!show) { m.el.style.visibility = 'hidden'; continue; }
     tmp.copy(m.pos).project(camera);
     const off = tmp.z > 1 || Math.abs(tmp.x) > 1.15 || Math.abs(tmp.y) > 1.15;
     m.el.style.visibility = off ? 'hidden' : '';
     m.el.classList.toggle('dim', m.kind === 'g' && !!activeGroupe);
     m.el.classList.toggle('sel', m.kind === 'l' && current && current.id === m.id);
-    m.el.style.transform = `translate(${(tmp.x * .5 + .5) * w}px, ${(-tmp.y * .5 + .5) * h}px) translate(-50%, -50%)`;
-    m.el.style.zIndex = String(1000 - Math.round(tmp.z * 1000));
+    const x = (tmp.x * .5 + .5) * w, y = (-tmp.y * .5 + .5) * h;
+    // la pastille tombe exactement sur le point 3D : carte au-dessus (zones), étiquette à droite (lignes)
+    // étiquette de ligne : à droite de sa pastille, ou à gauche s'il n'y a pas la place
+    const gauche = m.kind === 'l' && x + (m.w || 0) > w - 8 && x > w - x;
+    if (m.kind === 'l') m.el.classList.toggle('gauche', gauche);
+    m.el.style.transform = m.kind === 'g' ? `translate(${x}px, ${y}px) translate(-50%, calc(-100% + 8px))`
+      : m.kind === 'l' ? (gauche ? `translate(${x}px, ${y}px) translate(calc(-100% + 8px), -50%)` : `translate(${x}px, ${y}px) translate(-8px, -50%)`) : `translate(${x}px, ${y}px) translate(-50%, -50%)`;
+    m.el.style.zIndex = String((m.kind === 'l' ? 2000 : m.kind === 'g' ? 1500 : 0) + 1000 - Math.round(tmp.z * 1000));
   }
 }
 
@@ -614,7 +773,7 @@ function fitHome() {
   if (aspect >= 1.15) { HOME.pos.set(0, 47, 38); HOME.target.set(0, 0, 1.5); return; }
   const hfov = 2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * aspect);
   const d = 25 / Math.tan(hfov / 2);
-  HOME.pos.set(0, d * .93, d * .37); HOME.target.set(0, 0, 1);
+  HOME.pos.set(0, d * .93, d * .37); HOME.target.set(0, 0, -2.5); // salle un peu plus bas : place pour les étiquettes
 }
 function flyHome() { fitHome(); flyTo(HOME.pos.clone(), HOME.target.clone(), 1500); }
 function flyGroupe(gid) { flyBox(TABLES.filter((t) => zoneOf(t).groupe === gid)); }
@@ -702,8 +861,8 @@ canvas.addEventListener('pointermove', (e) => {
   if (e.buttons || pov) return;
   const t = pick(e);
   const l = t ? t.zone : null;
-  if (hovered && hovered !== l) glow(hovered, false);
-  if (l) glow(l, true);
+  if (!activeGroupe) { const gz = t ? zoneOf(t).groupe : null; if (gz !== survolZone) { survolZone = gz; majContours(); } }
+  else { if (hovered && hovered !== l) glow(hovered, false); if (l) glow(l, true); }
   hovered = l; canvas.style.cursor = t ? 'pointer' : '';
 });
 
@@ -722,7 +881,7 @@ new IntersectionObserver((en, obs) => {
 function resize() {
   const w = stage.clientWidth, h = stage.clientHeight;
   renderer.setSize(w, h, false); camera.aspect = w / h;
-  camera.fov = w < 640 ? 55 : 42;
+  camera.fov = DESSUS ? 8 : w < 640 ? 55 : 42;
   camera.updateProjectionMatrix(); applyViewOffset();
 }
 new ResizeObserver(resize).observe(stage); resize();
@@ -788,6 +947,7 @@ function renderZones() {
 }
 // couleurs 3D : ligne choisie en avant, lignes complètes et scène en gris
 function refreshLabels() {
+  majMarques(); majContours(); marquesSales = true;
   for (const l of ZONES) {
     const off = !l.enVente || restant(l.id) <= 0;
     const mine = current ? current.id === l.id : activeGroupe ? l.groupe === activeGroupe : true;
@@ -971,3 +1131,14 @@ renderZones(); refreshLabels();
 setInterval(async () => { if (document.visibilityState === 'visible') { await loadState(); refreshLabels(); renderZones(); } }, 30000);
 // après une actualisation sur le plan, on retrouve la ligne choisie
 try { const l = sessionStorage.getItem('bal-noel-ligne'); if (l && body.dataset.view === 'plan' && ligneById(l)?.enVente) setTimeout(() => selectLigne(l), 400); } catch {}
+// vue de dessus pour vérifier la 3D contre le plan PDF (?dessus dans l'adresse ; aucun effet sinon)
+if (DESSUS) {
+  userMoved = true; fly = null; camera.fov = 8; camera.far = 1000; scene.fog = null; camera.updateProjectionMatrix();
+  camera.position.set(0, 400, .001); controls.target.set(0, 0, 0); controls.maxDistance = 1000; controls.update();
+  labels.style.display = 'none'; snowPts.visible = false; bigStar.visible = false; floaters.forEach((f) => (f.ball.visible = false));
+}
+// caméra imposée pour les captures de contrôle (?cam=x,y,z,cx,cy,cz)
+{
+  const c = new URLSearchParams(location.search).get('cam')?.split(',').map(Number);
+  if (c?.length === 6 && c.every(Number.isFinite)) { userMoved = true; fly = null; camera.position.set(c[0], c[1], c[2]); controls.target.set(c[3], c[4], c[5]); controls.update(); }
+}

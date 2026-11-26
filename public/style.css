@@ -918,3 +918,81 @@ input:focus, select:focus, textarea:focus { border-color: var(--gold) !important
 @media (max-width: 640px) { .table-panel h2 { font-size: 32px; } }
 .info h3 { font: 700 16px/1.2 var(--sans) !important; font-stretch: 100% !important; color: #fff !important; margin: 0 0 10px !important; }
 .tp-line > span:not(.tp-lp) { flex: 1; text-align: left; }
+
+/* ---------------------------------------------------------------- étiquettes de prix (principe billetterie VIP) */
+.legende { position: absolute; top: 16px; right: 16px; z-index: 6; display: flex; gap: 14px; margin: 0; padding: 8px 12px; list-style: none;
+  background: rgba(8,15,34,.78); border: 1px solid rgba(255,255,255,.14); border-radius: 10px; font: 500 13px/1 var(--sans); color: #e6ecf8; pointer-events: none; }
+.legende li { display: flex; align-items: center; gap: 7px; }
+.legende i, .tdot, .pastille { --c: #22c55e; display: inline-block; width: 11px; height: 11px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 28%, transparent); }
+.legende i.full, [data-etat="full"] .pastille, .tdot[data-etat="full"] { --c: #e23b4e; }
+.legende i.soon, [data-etat="soon"] .pastille, .tdot[data-etat="soon"] { --c: #f2c230; }
+
+.labels .zmark.pin { width: auto !important; height: auto !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; background: none !important; box-shadow: none !important;
+  display: flex !important; flex-direction: column; align-items: center; color: #fff !important; animation: none !important; cursor: pointer; }
+.zmark.pin .carte { display: grid; gap: 3px; justify-items: start; padding: 8px 12px 9px; border-radius: 8px; text-align: left; white-space: nowrap;
+  background: rgba(10,18,40,.86); border: 1px solid rgba(255,255,255,.28); box-shadow: 0 8px 20px rgba(0,0,0,.45); transition: background .2s, border-color .2s; }
+.zmark.pin .nm { font: 600 11.5px/1 var(--sans) !important; color: #aab8d6; letter-spacing: 0 !important; text-transform: none !important; margin: 0 !important; }
+.zmark.pin b { font: 700 16px/1.05 var(--sans) !important; color: #fff; }
+.zmark.pin b i { font-style: normal; font-weight: 600; }
+.zmark.pin .st { display: flex; align-items: center; gap: 6px; font: 500 12px/1 var(--sans); color: #dbe4f7; }
+.zmark.pin .st i { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; }
+.zmark.pin[data-etat="full"] .st i { background: #e23b4e; }
+.zmark.pin .tige { width: 2px; height: 30px; background: #fff; }
+.zmark.pin .pastille { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.9); }
+.zmark.pin:hover .carte, .zmark.pin:focus-visible .carte { background: rgba(20,32,66,.96); border-color: #fff; }
+.zmark.pin.vedette .carte { justify-items: center; text-align: center; background: linear-gradient(120deg, #9e1430, #e0284f); border-color: rgba(255,255,255,.45); }
+.zmark.pin.vedette b { font-size: 14px !important; letter-spacing: .02em; }
+.zmark.pin.dim { opacity: .4 !important; }
+
+.labels .lmark.pin2 { display: flex !important; align-items: center; gap: 0; padding: 0 !important; background: none !important; border: 0 !important; box-shadow: none !important; color: #fff !important; cursor: pointer; }
+.lmark.pin2 .pastille { flex: none; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.9); }
+.lmark.pin2 .trait { width: 10px; height: 2px; background: #fff; }
+.lmark.pin2 .pill { padding: 6px 10px; border-radius: 6px; white-space: nowrap; font: 500 13px/1 var(--sans); color: #fff;
+  background: rgba(10,18,40,.88); border: 1px solid rgba(255,255,255,.35); box-shadow: 0 6px 16px rgba(0,0,0,.45); }
+.lmark.pin2 .pill b { font-weight: 800; color: #fff !important; font-size: 14px; }
+.lmark.pin2:hover .pill, .lmark.pin2.sel .pill { background: #fff; color: #0b1630; border-color: #fff; }
+.lmark.pin2:hover .pill b, .lmark.pin2.sel .pill b { color: #0b1630 !important; }
+.tdot { position: absolute; left: 0; top: 0; width: 10px; height: 10px; border: 1.5px solid rgba(255,255,255,.85); pointer-events: none; }
+.djmark { position: absolute; left: 0; top: 0; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; pointer-events: none;
+  font: 800 11px/1 var(--sans); color: #3a2200; background: radial-gradient(circle, #ffc14d 55%, #e08a12); box-shadow: 0 0 0 5px rgba(255,180,60,.3), 0 0 18px rgba(255,170,40,.7); }
+@media (max-width: 640px) {
+  .legende { top: auto; bottom: 12px; left: 12px; right: auto; gap: 10px; font-size: 11.5px; padding: 6px 9px; }
+  .zmark.pin .carte { padding: 6px 9px 7px; } .zmark.pin b { font-size: 13.5px !important; } .zmark.pin .nm, .zmark.pin .st { font-size: 10.5px !important; }
+  .zmark.pin .tige { height: 18px; }
+  .lmark.pin2 .pill { font-size: 11.5px; padding: 5px 8px; } .lmark.pin2 .pill b { font-size: 12.5px; }
+}
+.lmark.pin2 .pill, .lmark.pin2 .pill * { letter-spacing: 0 !important; text-transform: none !important; }
+.lmark.pin2 .pill { font: 500 13px/1 var(--sans) !important; color: #fff !important; }
+.lmark.pin2 .pill b { font: 800 14px/1 var(--sans) !important; }
+.lmark.pin2:hover .pill, .lmark.pin2.sel .pill { color: #0b1630 !important; }
+/* zones 2 et 3 côte à côte : cartes décalées de part et d'autre de leur tige */
+.zmark.pin[data-g="z2"] .carte { transform: translateX(-38%); }
+.zmark.pin[data-g="z3"] .carte { transform: translateX(38%); }
+@media (max-width: 640px) { .lmark.pin2 .pill { font-size: 11.5px !important; } .lmark.pin2 .pill b { font-size: 12.5px !important; } }
+.labels .lmark.pin2.sel .pill, .labels .lmark.pin2:hover .pill { background: #fff !important; border-color: #fff !important; color: #0b1630 !important; }
+.labels .lmark.pin2.sel .pill b, .labels .lmark.pin2:hover .pill b { color: #0b1630 !important; }
+.labels .lmark.pin2 .pastille, .labels .lmark.pin2 .trait { color: inherit !important; }
+/* le rappel de prix de la ligne choisie prend la place de la légende */
+.stage:has(#badge:not([hidden])) .legende { display: none; }
+.lmark.pin2.gauche { flex-direction: row-reverse; }
+/* les étiquettes restent sous les boutons de la scène */
+.stage .labels { z-index: 2; }
+.stage .zoom, .stage .overview, .stage #badge, .stage .legende, .stage .hint { z-index: 4; }
+@media (max-width: 640px) {
+  .legende { top: 66px; bottom: auto; left: 12px; right: auto; }
+  .zmark.pin .st { display: none; }
+  .zmark.pin .carte { gap: 2px; }
+  .zmark.pin[data-g="z1"] .tige, .zmark.pin[data-g="z4"] .tige { height: 10px; }
+  .zmark.pin[data-g="z2"] .tige, .zmark.pin[data-g="z3"] .tige { height: 62px; }
+  .zmark.pin[data-g="z2"] .carte { transform: translateX(-30%); }
+  .zmark.pin[data-g="z3"] .carte { transform: translateX(30%); }
+}
+.lmark.pin2 .lg { text-transform: none; }
+@media (max-width: 640px) {
+  .stage .hint { display: none !important; }
+  .legende { top: auto !important; bottom: 12px !important; left: 12px !important; }
+  .zmark.pin[data-g="z2"] .tige, .zmark.pin[data-g="z3"] .tige { height: 44px; }
+  .lmark.pin2 .ext, .lmark.pin2 .lg { display: none; }
+}
+.lmark.pin2 .court { display: none; }
+@media (max-width: 640px) { .lmark.pin2 .court { display: inline; } }
