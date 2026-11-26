@@ -153,10 +153,14 @@ async function parcours(browser, p) {
 (async () => {
   const srv = spawn(process.execPath, ['server.js'], { cwd: ROOT, env: { ...process.env, PORT: String(PORT), DATA_DIR: DATA, ADMIN_PASSWORD: PW, RENDER: '', TRUST_PROXY: '1' }, stdio: 'ignore' });
   for (let i = 0; i < 50; i++) { try { await fetch(BASE + '/api/health'); break; } catch { await new Promise((r) => setTimeout(r, 100)); } }
-  // on remplit la ligne arrière de la zone 2 (24 places) avec une demande validée, pour tester le cas « complet »
+  // on remplit la ligne arrière de la zone 2 (places lues sur le serveur) avec des demandes validées, pour tester le cas « complet »
   const H = { 'x-admin-password': PW, 'Content-Type': 'application/json' };
-  const r0 = await (await fetch(BASE + '/api/demandes', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-forwarded-for': '127.8.8.8' }, body: JSON.stringify({ ligne: 'z2-ar', personnes: 24, prenom: 'Groupe', nom: 'Complet', tel: '06 00 00 99 99' }) })).json();
-  await fetch(BASE + '/api/admin/demande', { method: 'POST', headers: H, body: JSON.stringify({ id: r0.id, statut: 'validee' }) });
+  for (let reste = (await (await fetch(BASE + '/api/state')).json()).restant['z2-ar'], k = 0; reste > 0; k++) {
+    const n = Math.min(30, reste);
+    const r0 = await (await fetch(BASE + '/api/demandes', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-forwarded-for': '127.8.8.' + (8 + k) }, body: JSON.stringify({ ligne: 'z2-ar', personnes: n, prenom: 'Groupe', nom: 'Complet' + k, tel: '06 00 00 99 9' + k }) })).json();
+    await fetch(BASE + '/api/admin/demande', { method: 'POST', headers: H, body: JSON.stringify({ id: r0.id, statut: 'validee' }) });
+    reste -= n;
+  }
   const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist'] });
   // IDS=3,17,42 : rejouer uniquement certains profils (même appareil/réseau/comportement)
   let list = profils(N); if (process.env.IDS) { const keep = new Set(process.env.IDS.split(',').map(Number)); list = list.filter((p) => keep.has(p.id)); }

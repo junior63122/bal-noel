@@ -29,6 +29,7 @@ const METRICS = { demandes: 0, rejets: 0, erreurs: 0, ecrituresKO: 0, adminKO: 0
 const TABLE_IDS = new Set(TABLES.map((t) => t.id));
 const LIGNES = new Map(ZONES.map((l) => [l.id, l]));
 const LIGNE_DE_TABLE = new Map(TABLES.map((t) => [t.id, t.zone]));
+const PLAN_VERSION = 2; // 2 = plan Deco Flamme « Version 1 » (novembre 2026)
 // places restantes d'une ligne = places de la ligne − personnes des demandes validées
 const restantLigne = (db, id) => placesDe(id) - db.demandes.filter((d) => d.ligne === id && d.statut === 'validee').reduce((s, d) => s + d.personnes, 0);
 // tables prises = tables bloquées à la main + tables attribuées à une demande non refusée
@@ -60,11 +61,21 @@ else {
 // migration des anciennes demandes « par table » : ligne de la table, prix d'origine figé, table gardée seulement si libre
 {
   const anciensPrix = (t) => (Number(t) >= 9 && Number(t) <= 20 ? 200 : Number(t) <= 44 ? 150 : null);
+  // numéros de l'ANCIEN plan (avant le plan Deco Flamme) : ne servent qu'à migrer ces très anciennes demandes
+  const ancienneLigne = (t) => { const n = Number(t); return n <= 4 ? 'z2-ar' : n <= 8 ? 'z3-ar' : n <= 14 ? 'z2-av' : n <= 20 ? 'z3-av' : n <= 26 ? 'z1-ar' : n <= 32 ? 'z1-av' : n <= 38 ? 'z4-ar' : n <= 44 ? 'z4-av' : n <= 64 ? 'scene' : 'inconnue'; };
   const prises = new Set();
+  // passage au plan Deco Flamme : les numéros de table ont changé, les attributions faites sur l'ancien plan sont retirées
+  if (DBMEM.plan !== PLAN_VERSION) {
+    let n = 0;
+    for (const d of DBMEM.demandes) { if (d.tables?.length) { n += d.tables.length; d.tables = []; } if (d.table && d.ligne) delete d.table; }
+    DBMEM.reserved = [];
+    if (n) console.log(`plan ${PLAN_VERSION} : ${n} attribution(s) de table de l'ancien plan retirée(s), à refaire dans l'admin`);
+    DBMEM.plan = PLAN_VERSION;
+  }
   for (const d of DBMEM.demandes) {
     if (!d.ligne && d.table) {
-      d.ligne = LIGNE_DE_TABLE.get(d.table) || 'inconnue'; d.prixPers ??= anciensPrix(d.table);
-      d.tables = d.statut !== 'refusee' && !prises.has(d.table) ? [d.table] : [];
+      d.ligne = ancienneLigne(d.table); d.prixPers ??= anciensPrix(d.table);
+      d.tables = [];
       DBMEM.reserved = DBMEM.reserved.filter((x) => x !== d.table); delete d.table;
     }
     if (d.prixPers === undefined) d.prixPers = LIGNES.get(d.ligne)?.prixPers ?? null;
@@ -129,8 +140,8 @@ function getStatic(file) {
   const ext = path.extname(file);
   const f = { raw, type: MIME[ext] || 'application/octet-stream', etag: '"' + crypto.createHash('sha1').update(raw).digest('base64url').slice(0, 16) + '"',
     // pages : toujours revalidées ; images et librairies : en cache 1 jour
-    cache: ext === '.html' || file.endsWith('app.js') || file.endsWith('config.js') || ext === '.css' ? 'no-cache'
-      : ext === '.woff2' || file.includes(path.sep + 'vendor' + path.sep) ? 'public, max-age=2592000, immutable' : 'public, max-age=86400' };
+    cache: ext === '.woff2' || file.includes(path.sep + 'vendor' + path.sep) ? 'public, max-age=2592000, immutable'
+      : ext === '.html' || ext === '.js' || ext === '.css' ? 'no-cache' : 'public, max-age=86400' }; // code du site (app, config, plan…) toujours revalidé
   if (COMPRESSIBLE.has(ext)) {
     f.gz = zlib.gzipSync(raw, { level: 9 });
     f.br = zlib.brotliCompressSync(raw, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 11 } });

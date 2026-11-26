@@ -29,6 +29,8 @@
     .t { background: var(--panel); border: 1px solid rgba(255,255,255,.12); border-left: 4px solid var(--zc); border-radius: 6px; padding: 10px; text-align: left; }
     .t b { font-size: 18px; } .t small { display: block; color: var(--muted); font-size: 12px; margin: 2px 0 6px; }
     .t.res { opacity: .75; background: #2a1518; }
+    .carte { margin: 0 0 18px; } .carte svg { width: 100%; height: auto; display: block; background: #0d1733; border-radius: 8px; }
+    .carte figcaption { font-size: 13px; margin-top: 6px; }
     .t .st { font-size: 12px; font-weight: 700; } .t.res .st { color: #ff8f9c; } .t:not(.res) .st { color: #7be0a0; }
     .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
     .filters button.on { border-color: var(--gold); color: var(--gold); }
@@ -79,13 +81,16 @@
     <section>
       <h2>Plan des tables</h2>
       <p class="muted">Les clients réservent une ligne. Attribuez les tables dans la liste des demandes (numéros cliquables). Ici, vous pouvez bloquer une table à la main.</p>
+      <figure class="carte"><svg id="carte" role="img" aria-label="Plan de la salle avec les numéros de table"></svg>
+        <figcaption class="muted">Plan Deco Flamme · vert = libre, rouge = attribuée ou bloquée. La piste est au centre, la scène en bas.</figcaption></figure>
       <div class="grid" id="tables"></div>
     </section>
   </main>
 </div>
 
 <script type="module">
-import { EVENT, ZONES, TABLES, VIP_NOM, zoneOf, ligneById as lb, tablesDe, placesDe, euros } from './config.js';
+import { EVENT, ZONES, TABLES, SALONS, VIP_NOM, zoneOf, ligneById as lb, tablesDe, placesDe, euros } from './config.js';
+import { ROOM, PLATFORMS, BARS, DJ } from './plan.js';
 // ligne inconnue (ancienne donnée) : on affiche quand même, sans planter ; le prix figé de la demande prime
 const ligneById = (id) => lb(id) || { id, nom: 'Ligne inconnue', prixPers: 0 };
 const prixD = (d) => d.prixPers ?? ligneById(d.ligne).prixPers ?? 0;
@@ -174,6 +179,17 @@ function render() {
     try { db = await call('demande', { id: b.dataset.id, statut: b.dataset.s }); render(); if (db.avertissement) alert(db.avertissement); } catch (e) { alert(e.message); }
   }));
 
+  // plan 2D numéroté (mêmes coordonnées que la 3D, en mètres)
+  const pts = (a) => a.map(([x, z]) => `${x.toFixed(2)},${z.toFixed(2)}`).join(' ');
+  const pris = (id) => res.has(id) || db.demandes.some((d) => d.statut !== 'refusee' && (d.tables || []).includes(id));
+  $('#carte').setAttribute('viewBox', '-25 -17.6 50 35');
+  $('#carte').innerHTML = `<polygon points="${pts(ROOM)}" fill="#16234a" stroke="#c9a25a" stroke-width=".25"/>`
+    + PLATFORMS.map((p) => `<polygon points="${pts(p)}" fill="#3a1424" stroke="#c9a25a" stroke-width=".1"/>`).join('')
+    + `<circle r="3.75" fill="#26355f" stroke="#ffd27a" stroke-width=".15"/><text y=".5" font-size="1.4" text-anchor="middle" fill="#ffd27a">piste</text>`
+    + `<rect x="${DJ[0] - 2}" y="${DJ[1] - 1}" width="4" height="2" fill="#f1ece2"/><text x="${DJ[0]}" y="${DJ[1] + .45}" font-size="1.1" text-anchor="middle" fill="#0d1733">DJ</text>`
+    + BARS.map((b) => `<rect x="${b.x - 2.65}" y="${b.z - 1.5}" width="5.3" height="3" fill="none" stroke="#d8c08c" stroke-width=".3" transform="rotate(${b.a} ${b.x} ${b.z})"/><text x="${b.x}" y="${b.z + .4}" font-size="1.1" text-anchor="middle" fill="#d8c08c">bar</text>`).join('')
+    + SALONS.filter((s) => s.sofa).map((s) => `<polyline points="${pts(s.sofa)}" fill="none" stroke="#e6dccb" stroke-width=".7" stroke-linejoin="round" opacity=".35"/>`).join('')
+    + TABLES.map((t) => `<g><circle cx="${t.x}" cy="${t.y}" r="${t.rond ? .6 : .42}" fill="${pris(t.id) ? '#c0394b' : '#2f9e5b'}" stroke="${zoneOf(t).couleurs.at(-1)}" stroke-width=".1"/><text x="${t.x}" y="${t.y + .22}" font-size=".6" font-weight="700" text-anchor="middle" fill="#fff">${t.id}</text><title>Table ${t.id} · ${zoneOf(t).nom}</title></g>`).join('');
   $('#tables').innerHTML = TABLES.map((t) => {
     const z = zoneOf(t), r = res.has(t.id), who = db.demandes.find((d) => d.statut !== 'refusee' && (d.tables || []).includes(t.id));
     return `<button class="t ${r || who ? 'res' : ''}" style="--zc:${z.couleurs.at(-1)}" data-t="${t.id}" ${who ? 'disabled' : ''}><b>${t.id}</b><small>${esc(z.nom)}</small>

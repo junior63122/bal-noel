@@ -69,10 +69,14 @@ const SCENARIOS = [
       ligne = 'z4-ar';
       s.route = (p) => p.route('**/api/demandes', async (r) => {
         const H = { 'x-admin-password': PW, 'Content-Type': 'application/json' };
-        const g = await (await fetch(BASE + '/api/demandes', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-forwarded-for': '127.6.6.6' }, body: JSON.stringify({ ligne: 'z4-ar', personnes: 30, prenom: 'G', nom: 'Groupe', tel: '06 00 66 66 66' }) })).json();
-        await fetch(BASE + '/api/admin/demande', { method: 'POST', headers: H, body: JSON.stringify({ id: g.id, statut: 'validee' }) });
-        const g2 = await (await fetch(BASE + '/api/demandes', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-forwarded-for': '127.6.6.7' }, body: JSON.stringify({ ligne: 'z4-ar', personnes: 6, prenom: 'G', nom: 'Groupe2', tel: '06 00 66 66 67' }) })).json();
-        await fetch(BASE + '/api/admin/demande', { method: 'POST', headers: H, body: JSON.stringify({ id: g2.id, statut: 'validee' }) });
+        // on remplit toute la ligne (places lues sur le serveur, par demandes de 30 au plus)
+        let reste = (await (await fetch(BASE + '/api/state')).json()).restant['z4-ar'], k = 0;
+        while (reste > 0) {
+          const n = Math.min(30, reste);
+          const g = await (await fetch(BASE + '/api/demandes', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-forwarded-for': '127.6.6.' + (6 + k) }, body: JSON.stringify({ ligne: 'z4-ar', personnes: n, prenom: 'G', nom: 'Groupe' + k, tel: '06 00 66 66 6' + k }) })).json();
+          await fetch(BASE + '/api/admin/demande', { method: 'POST', headers: H, body: JSON.stringify({ id: g.id, statut: 'validee' }) });
+          reste -= n; k++;
+        }
         r.fallback();
       });
     }

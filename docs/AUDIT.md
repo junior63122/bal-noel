@@ -18,7 +18,7 @@
 | Élément | Rôle |
 |---|---|
 | `public/index.html`, `app.js`, `style.css` | accueil, transition, plan 3D (three.js), fiche table, formulaire |
-| `public/config.js` | événement, 6 zones, 64 tables relevées sur le plan |
+| `public/config.js` + `public/plan.js` | événement, lignes, 62 tables relevées sur le plan Deco Flamme (49 VIP + 13 scène) |
 | `public/admin.html` | demandes, statuts, WhatsApp/SMS, tables, export CSV |
 | `server.js` | serveur Node sans dépendance : fichiers, API, données JSON sur disque persistant |
 | Render (Starter + disque 1 Go) | hébergement, contrôle de santé sur `/api/health` |
@@ -124,3 +124,32 @@ Places par ligne = nombre de tables × 6 (valeur provisoire, `PERS_PAR_TABLE` da
 - Parcours simulés (nouveau parcours zone → ligne → personnes) : **149/150**, le seul échec
   (« mouvement réduit », délai de clic) réussit au rejeu (5/5). Rapport : `tests/rapport-lignes-150.md`.
 - Les anciennes demandes « par table » sont converties automatiquement (ligne de la table + table attribuée).
+
+## Mise à jour : plan Deco Flamme (version 1)
+
+La salle 3D et les tables suivent maintenant le plan « LE BAL DES FOUS - NOËL / PALAIS DES FESTIVALS - VERSION 1 ».
+Relevé fait sur le PDF à 300 dpi (échelle prise sur la piste Ø 7,50 m), puis superposé au plan pour vérification.
+La zone 3 est le miroir exact de la zone 2 ; la zone 4 a une disposition différente de la zone 1 et a été relevée à part.
+
+| Ligne | Tables | Places (× 6, provisoire) |
+|---|---|---|
+| Zone 1 · arrière | 01–07 | 42 |
+| Zone 1 · avant | 08–11 | 24 |
+| Zone 2 · arrière | 12–18 | 42 |
+| Zone 2 · avant | 19–24 | 36 |
+| Zone 3 · arrière | 25–31 | 42 |
+| Zone 3 · avant | 32–37 | 36 |
+| Zone 4 · arrière | 38–45 | 48 |
+| Zone 4 · avant | 46–49 | 24 |
+| Scène (pas en vente) | 50–62 (5 loges rondes + 8 petites tables) | — |
+
+Les numéros de table ont changé : au premier démarrage sur ce plan, les tables déjà attribuées dans l'admin
+sont retirées (les demandes elles-mêmes sont gardées) et doivent être réattribuées. Cela n'arrive qu'une fois.
+
+Vérifications après le changement de plan (serveur de test local, données fictives) :
+- tests serveur 29/29 (dont un nouveau test du passage au nouveau plan) ; anti-faux-succès 10/10 ; interface 10/10 ;
+- 60 parcours simulés, 4 navigateurs en parallèle : 57/60, 57/60 puis 58/60. Chaque échec est un délai de clic dépassé
+  (sur des parcours différents à chaque fois) et réussit au rejeu seul. Dans les mêmes conditions, l'ancienne version
+  fait 60/60 : l'écart est petit mais réel. Mesuré navigateur par navigateur, l'image par seconde est la même qu'avant
+  (rendu logiciel du bac à sable, environ 5,5 i/s pour les deux versions). Les banquettes et tables sont dessinées en
+  InstancedMesh pour limiter le travail sur les petits téléphones. À confirmer sur de vrais appareils.

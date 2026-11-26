@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
-import { EVENT, ZONES, GROUPES, VIP_NOM, MAX_PAR_DEMANDE, TABLES, ROWS, zoneOf, ligneById, groupeOf, tablesDe, placesDe, euros, enVente, totalLigne, acompteLigne, prixLabel } from './config.js';
+import { EVENT, ZONES, GROUPES, VIP_NOM, MAX_PAR_DEMANDE, TABLES, SALONS, zoneOf, ligneById, groupeOf, tablesDe, placesDe, euros, enVente, totalLigne, acompteLigne, prixLabel } from './config.js';
+import * as PLAN from './plan.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -146,11 +147,11 @@ body.dataset.view = location.hash === '#plan' ? 'plan' : 'hero';
 if (body.dataset.view === 'plan') chargerImagesPlan();
 
 /* ================================================================ scène 3D */
-const PX = 17;               // pixels du plan par mètre
-const CX = 627, CY = 389;    // centre de la piste tournante
+// plan Deco Flamme : coordonnées en mètres, origine au centre de la piste (voir plan.js)
+const PX = 1;
+const CX = 0, CY = 0;
 const V = (x, y, h = 0) => new THREE.Vector3((x - CX) / PX, h, (y - CY) / PX);
 const shapeFrom = (pts) => new THREE.Shape(pts.map(([x, y]) => new THREE.Vector2((x - CX) / PX, -(y - CY) / PX)));
-const mirror = (pts) => pts.map(([x, y]) => [2 * CX - x, y]).reverse();
 
 const canvas = $('#scene');
 const stage = $('#stage');
@@ -169,10 +170,10 @@ renderer.toneMappingExposure = 1.05;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#0a1430');
-scene.fog = new THREE.Fog('#0a1430', 70, 150);
+scene.fog = new THREE.Fog('#0a1430', 110, 230);
 
 const camera = new THREE.PerspectiveCamera(42, 1, .1, 400);
-const HOME = { pos: new THREE.Vector3(0, 40, 33), target: new THREE.Vector3(0, 0, 3) };
+const HOME = { pos: new THREE.Vector3(0, 47, 38), target: new THREE.Vector3(0, 0, 1.5) };
 camera.position.copy(HOME.pos);
 
 const controls = new OrbitControls(camera, canvas);
@@ -181,15 +182,15 @@ controls.enableDamping = true;
 controls.dampingFactor = .08;
 controls.zoomToCursor = true;
 controls.minDistance = 3.5;
-controls.maxDistance = 130;
+controls.maxDistance = 170;
 controls.maxPolarAngle = 1.32;
 controls.screenSpacePanning = false;
 
 // lumières : ambiance chaude de salle de bal + touches de couleur de Noël
 scene.add(new THREE.HemisphereLight('#fff1dc', '#3a2a40', 1.7));
 const sun = new THREE.DirectionalLight('#ffd9a3', 1.5); sun.position.set(-20, 40, 25); scene.add(sun);
-[[-14, 7, -4, '#ffb877'], [14, 7, -4, '#ffb877']].forEach(([x, y, z, c]) => {
-  const l = new THREE.PointLight(c, 170, 46, 1.6); l.position.set(x, y, z); scene.add(l);
+[[-15, 9, -3, '#ffb877'], [15, 9, -3, '#ffb877']].forEach(([x, y, z, c]) => { // 2 lumières seulement : chacune coûte sur chaque pixel
+  const l = new THREE.PointLight(c, 210, 56, 1.6); l.position.set(x, y, z); scene.add(l);
 });
 
 // textures procédurales
@@ -197,18 +198,6 @@ function canvasTex(w, h, draw, repeat = 1) {
   const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeat, repeat); t.anisotropy = 4; return t;
 }
-const woodTex = canvasTex(512, 512, (g, w) => {
-  for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) {
-    g.fillStyle = (i + j) % 2 ? '#22304f' : '#1a2541'; g.fillRect(i * 64, j * 64, 64, 64);
-  }
-  g.strokeStyle = 'rgba(201,164,92,.45)'; g.lineWidth = 1.5;
-  for (let i = 0; i <= 8; i++) { g.beginPath(); g.moveTo(i * 64, 0); g.lineTo(i * 64, w); g.moveTo(0, i * 64); g.lineTo(w, i * 64); g.stroke(); }
-}, .09);
-const carpetTex = canvasTex(256, 256, (g, w) => {
-  g.fillStyle = '#4a0c18'; g.fillRect(0, 0, w, w);
-  g.strokeStyle = 'rgba(201,164,92,.22)'; g.lineWidth = 3;
-  for (let i = -w; i < w * 2; i += 32) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i + w, w); g.moveTo(i + w, 0); g.lineTo(i, w); g.stroke(); }
-}, .25);
 const pisteTex = canvasTex(512, 512, (g, w) => {
   const r = w / 2; g.fillStyle = '#101a33'; g.fillRect(0, 0, w, w);
   for (let i = 0; i < 32; i++) { g.fillStyle = i % 2 ? '#1a2848' : '#111c36'; g.beginPath(); g.moveTo(r, r); g.arc(r, r, r, i * Math.PI / 16, (i + 1) * Math.PI / 16); g.fill(); }
@@ -219,8 +208,8 @@ const pisteTex = canvasTex(512, 512, (g, w) => {
   g.fill();
 });
 const M = {
-  floor: new THREE.MeshStandardMaterial({ map: woodTex, roughness: .55, metalness: .1 }),
-  carpet: new THREE.MeshStandardMaterial({ map: carpetTex, roughness: .9 }),
+  floor: new THREE.MeshStandardMaterial({ color: '#16213d', roughness: .6, metalness: .1 }), // sol uni
+  carpet: new THREE.MeshStandardMaterial({ color: '#4a0c18', roughness: .9 }), // estrades unies
   gold: new THREE.MeshStandardMaterial({ color: '#c9a25a', roughness: .35, metalness: .85 }),
   wall: new THREE.MeshStandardMaterial({ color: '#2e0b13', roughness: .55 }),
   wallLow: new THREE.MeshStandardMaterial({ color: '#24090f', roughness: .6 }),
@@ -239,8 +228,8 @@ const M = {
 const bulbSpots = [];
 const BULB_COLORS = ['#ffe3a8', '#fff1d6', '#ffd889', '#fff1d6'];
 
-// sol de la salle (contour relevé sur le plan)
-const ROOM = [[130, 500], [250, 345], [395, 180], [590, 100], [664, 100], [860, 180], [1005, 345], [1125, 500], [1090, 532], [940, 572], [810, 612], [700, 742], [627, 772], [554, 742], [444, 612], [314, 572], [164, 532]];
+// sol de la salle (contour relevé sur le plan Deco Flamme)
+const ROOM = PLAN.ROOM;
 {
   const floor = new THREE.Mesh(new THREE.ShapeGeometry(shapeFrom(ROOM)), M.floor);
   floor.rotation.x = -Math.PI / 2; scene.add(floor);
@@ -253,7 +242,7 @@ ROOM.forEach((p, i) => {
   const q = ROOM[(i + 1) % ROOM.length];
   const a = V(...p), b = V(...q);
   const len = a.distanceTo(b);
-  const back = i < 7;
+  const back = (p[1] + q[1]) / 2 < 1; // fond et côtés VIP : murs hauts ; côté scène et foyers : murets
   const h = back ? 6 : 1.4;
   const wall = new THREE.Mesh(new THREE.BoxGeometry(len, h, .35), back ? M.wall : M.wallLow);
   wall.position.copy(a).lerp(b, .5); wall.position.y = h / 2;
@@ -285,10 +274,7 @@ ROOM.forEach((p, i) => {
 
 // estrades VIP +0,60
 const H = .6;
-const FOND_L = [[445, 205], [505, 160], [615, 160], [615, 258], [540, 258], [468, 258]];
-const WING_L = [[290, 325], [420, 235], [470, 292], [335, 385]];
-const SCENE = [[450, 588], [470, 557], [785, 557], [805, 588], [700, 702], [627, 714], [554, 702]];
-const PLATFORMS = [FOND_L, mirror(FOND_L), WING_L, mirror(WING_L), SCENE];
+const PLATFORMS = PLAN.PLATFORMS; // zones 1 à 4 et scène
 const inPoly = (x, y, pts) => { let c = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; };
 const heightAt = (x, y) => (PLATFORMS.some((p) => inPoly(x, y, p)) ? H : 0);
 PLATFORMS.forEach((pts) => {
@@ -299,10 +285,10 @@ PLATFORMS.forEach((pts) => {
   edge.rotation.x = -Math.PI / 2; scene.add(edge);
 });
 
-// piste tournante Ø 7,30 m
-const piste = new THREE.Mesh(new THREE.CylinderGeometry(3.65, 3.65, .14, 64), [new THREE.MeshStandardMaterial({ color: '#c9a25a', metalness: .8, roughness: .3 }), new THREE.MeshStandardMaterial({ map: pisteTex, roughness: .35, metalness: .3 }), M.dark]);
+// piste tournante Ø 7,50 m
+const piste = new THREE.Mesh(new THREE.CylinderGeometry(3.75, 3.75, .14, 64), [new THREE.MeshStandardMaterial({ color: '#c9a25a', metalness: .8, roughness: .3 }), new THREE.MeshStandardMaterial({ map: pisteTex, roughness: .35, metalness: .3 }), M.dark]);
 piste.position.copy(V(CX, CY, .07)); scene.add(piste);
-const pisteRing = new THREE.Mesh(new THREE.TorusGeometry(3.75, .06, 8, 96), new THREE.MeshBasicMaterial({ color: '#ffd27a' }));
+const pisteRing = new THREE.Mesh(new THREE.TorusGeometry(3.85, .06, 8, 96), new THREE.MeshBasicMaterial({ color: '#ffd27a' }));
 pisteRing.rotation.x = Math.PI / 2; pisteRing.position.copy(V(CX, CY, .15)); scene.add(pisteRing);
 
 // grande étoile et boules de Noël suspendues au-dessus de la salle
@@ -316,7 +302,7 @@ const bigStar = new THREE.Group();
   const glow = new THREE.PointLight('#ffd27a', 110, 24); glow.position.copy(V(CX, CY, 7)); scene.add(glow);
 }
 const floaters = [];
-[[540, 330, 7, '#e8b04a'], [715, 330, 6.6, '#5c7fb8'], [560, 450, 6.2, '#f4f6fb'], [700, 455, 7.2, '#e8b04a'], [460, 400, 7.5, '#7a1424'], [800, 400, 7, '#5c7fb8']].forEach(([x, y, h, c], k) => {
+[[-3, -1.5, 7, '#e8b04a'], [3, -1.5, 6.6, '#5c7fb8'], [-2.5, 3, 6.2, '#f4f6fb'], [2.5, 3, 7.2, '#e8b04a'], [-6, 1, 7.5, '#7a1424'], [6, 1, 7, '#5c7fb8']].forEach(([x, y, h, c], k) => {
   const ball = new THREE.Mesh(new THREE.SphereGeometry(.45, 24, 24), new THREE.MeshStandardMaterial({ color: c, metalness: .7, roughness: .15, emissive: c, emissiveIntensity: .08 }));
   ball.position.copy(V(x, y, h)); scene.add(ball);
   const capB = new THREE.Mesh(new THREE.CylinderGeometry(.12, .12, .16, 12), M.gold); capB.position.y = .5; ball.add(capB);
@@ -397,24 +383,31 @@ const floaters = [];
     const sp = new THREE.Mesh(new THREE.BoxGeometry(.7, 1.6, .7), black); sp.position.set(x, .8, 0); dj.add(sp);
     [.35, 1.0, 1.35].forEach((y, k) => { const cone = new THREE.Mesh(new THREE.CircleGeometry(k ? .12 : .24, 20), steel); cone.position.set(x, y + (k ? .05 : 0), -.352); cone.rotation.y = Math.PI; dj.add(cone); });
   });
-  dj.position.copy(V(627, 566, H)); scene.add(dj);
+  // régie 4 × 2 m à l'avant de la scène, face à la piste, sur son estrade
+  const riser = new THREE.Mesh(new THREE.BoxGeometry(4.4, H, 2.4), [M.gold, M.gold, M.carpet, M.gold, M.gold, M.gold]);
+  riser.position.copy(V(PLAN.DJ[0], PLAN.DJ[1], H / 2)); scene.add(riser);
+  dj.position.copy(V(PLAN.DJ[0], PLAN.DJ[1], H)); scene.add(dj);
 }
 
-// bars
-[[373, 485, -22], [880, 485, 22]].forEach(([x, y, a]) => {
+// bars : comptoir en U de 5,30 × 3 m (ouvert vers l'extérieur de la salle) et arrière-bar de 2 × 0,5 m
+PLAN.BARS.forEach(({ x, z, a, cote }) => {
   const g = new THREE.Group();
-  const outer = new THREE.Mesh(new THREE.BoxGeometry(6, 1.15, 4.8), M.bar); outer.position.y = .58; g.add(outer);
-  const top = new THREE.Mesh(new THREE.BoxGeometry(6.2, .08, 5), M.barTop); top.position.y = 1.18; g.add(top);
-  const inner = new THREE.Mesh(new THREE.BoxGeometry(2.6, 2.2, 1.6), M.barTop); inner.position.y = 1.1; g.add(inner);
-  for (let i = 0; i < 10; i++) {
-    const b = new THREE.Mesh(new THREE.CylinderGeometry(.07, .07, .4, 8), new THREE.MeshStandardMaterial({ color: '#000', emissive: i % 2 ? '#ffcc66' : '#66ffaa', emissiveIntensity: .9 }));
-    b.position.set(-1.1 + i * .245, 2.4, 0); g.add(b);
+  const L = 5.3, W = 3, E = .6, HB = 1.1;
+  const piece = (w, d, px, pz) => {
+    const b = new THREE.Mesh(new THREE.BoxGeometry(w, HB, d), M.bar); b.position.set(px, HB / 2, pz); g.add(b);
+    const t = new THREE.Mesh(new THREE.BoxGeometry(w + .1, .07, d + .1), M.barTop); t.position.set(px, HB + .035, pz); g.add(t);
+  };
+  piece(L, E, 0, -(W - E) / 2); piece(L, E, 0, (W - E) / 2); piece(E, W - 2 * E, cote * (L - E) / 2, 0);
+  const back = new THREE.Mesh(new THREE.BoxGeometry(2, 1.9, .5), M.barTop); back.position.set(0, .95, 0); g.add(back);
+  for (let i = 0; i < 9; i++) {
+    const b = new THREE.Mesh(new THREE.CylinderGeometry(.06, .06, .34, 8), new THREE.MeshStandardMaterial({ color: '#000', emissive: i % 2 ? '#ffcc66' : '#9fd0ff', emissiveIntensity: .9 }));
+    b.position.set(-.85 + i * .21, 2.05, 0); g.add(b);
   }
-  g.position.copy(V(x, y)); g.rotation.y = THREE.MathUtils.degToRad(a); scene.add(g);
+  g.position.copy(V(x, z)); g.rotation.y = -THREE.MathUtils.degToRad(a); scene.add(g);
 });
 
-// sapins de Noël 4 m (S1 → S6 sur le plan) avec guirlandes clignotantes
-[[510, 682, 3], [746, 682, 3], [198, 462, 4], [1053, 462, 4], [440, 553, 4], [818, 553, 4]].forEach(([x, y, h]) => {
+// deux sapins de Noël 4 m, hors des zones du plan (près des bars) avec guirlandes clignotantes
+[[-23, 2.5, 4], [23, 2.5, 4]].forEach(([x, y, h]) => {
   const g = new THREE.Group();
   const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.15, .2, .5, 8), M.trunk); trunk.position.y = .25; g.add(trunk);
   const pot = new THREE.Mesh(new THREE.CylinderGeometry(.6, .45, .55, 16), M.gold); pot.position.y = .27; g.add(pot);
@@ -445,36 +438,68 @@ const bulbs = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 6, 6), new THR
 const tmpColor = new THREE.Color();
 let frameNo = 0;
 
-// tables : une banquette continue par rangée, et une petite table par emplacement
-// (repère local : -z = côté banquette / dos, la table est à l'origine)
+// salons : banquettes le long du tracé du plan (dossier du côté opposé aux tables),
+// loges rondes de la scène, et une table basse par emplacement
 const TABLE_OBJ = new Map();
-const segGeo = new THREE.BoxGeometry(.94, .4, .55);
-const segBackGeo = new THREE.BoxGeometry(.94, .45, .14);
-const lowGeo = new THREE.BoxGeometry(.56, .36, .5);
-const lowTopGeo = new THREE.BoxGeometry(.6, .04, .54);
+const lowGeo = new THREE.BoxGeometry(.6, .36, .6);
+const lowTopGeo = new THREE.BoxGeometry(.66, .04, .66);
+const roundGeo = new THREE.CylinderGeometry(.42, .42, .5, 28);
+const roundTopGeo = new THREE.CylinderGeometry(.48, .48, .04, 32);
 const LOW_MAT = new THREE.MeshStandardMaterial({ color: '#1d2235', roughness: .4, metalness: .3 });
 const TOP_MAT = new THREE.MeshStandardMaterial({ color: '#f6f1e8', roughness: .2, metalness: .1 }); // plateau marbre blanc
-function banquette(g, mat) {
-  const s = new THREE.Mesh(segGeo, mat); s.position.set(0, .2, -.55); g.add(s);
-  const bk = new THREE.Mesh(segBackGeo, mat); bk.position.set(0, .55, -.86); g.add(bk);
-}
-TABLES.forEach((t) => {
-  const g = new THREE.Group();
-  const mat = M.sofa.clone(), mats = [mat];
-  banquette(g, mat);
-  const low = new THREE.Mesh(lowGeo, LOW_MAT); low.position.y = .18; g.add(low);
-  const top = new THREE.Mesh(lowTopGeo, TOP_MAT); top.position.y = .38; g.add(top);
-  const h = heightAt(t.x, t.y);
-  g.position.copy(V(t.x, t.y, h));
-  g.rotation.y = THREE.MathUtils.degToRad(t.rot);
-  // dalle de couleur sous l'emplacement (couleur de la zone, grise si réservée)
-  const zc = zoneOf(t).couleurs.at(-1);
-  const plate = new THREE.Mesh(new THREE.PlaneGeometry(.9, 1.45), new THREE.MeshStandardMaterial({ color: zc, emissive: zc, emissiveIntensity: .3, transparent: true, opacity: .6, roughness: .6 }));
-  plate.rotation.x = -Math.PI / 2; plate.position.set(0, .012, -.35); g.add(plate);
-  g.traverse((o) => { if (o.isMesh) o.userData.tableId = t.id; });
-  scene.add(g);
-  TABLE_OBJ.set(t.id, { group: g, mats, plate, anchor: V(t.x, t.y, h + .95), base: V(t.x, t.y, h) });
+// une matière par ligne (surbrillance d'une ligne entière) ; banquettes et tables dessinées en InstancedMesh
+// pour garder peu d'appels de dessin, même sur un petit téléphone
+const LINE_MAT = new Map(ZONES.map((l) => [l.id, M.sofa.clone()]));
+const PLATE_MAT = new Map(ZONES.map((l) => { const c = l.couleurs.at(-1); return [l.id, new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: .3, transparent: true, opacity: .6, roughness: .6 })]; }));
+const plateCarre = new THREE.PlaneGeometry(1, 1), plateRond = new THREE.CircleGeometry(.75, 32);
+const SOFA_BOX = new Map(); // ligne → [{ m: Matrix4, id }]
+const TABLE_INST = { carre: [], rond: [] }; // { m, id }
+const unitBox = new THREE.BoxGeometry(1, 1, 1);
+const _q = new THREE.Quaternion(), _up = new THREE.Vector3(0, 1, 0);
+const boxAt = (ligne, id, pos, rot, sx, sy, sz) => { (SOFA_BOX.get(ligne) || SOFA_BOX.set(ligne, []).get(ligne)).push({ m: new THREE.Matrix4().compose(pos, _q.setFromAxisAngle(_up, rot).clone(), new THREE.Vector3(sx, sy, sz)), id }); };
+function arc(cx, cz, r, a0, a1, n) { const pts = []; for (let i = 0; i <= n; i++) { const a = THREE.MathUtils.degToRad(a0 + (a1 - a0) * i / n); pts.push([cx + Math.cos(a) * r, cz + Math.sin(a) * r]); } return pts; }
+SALONS.forEach((s, si) => {
+  const ts = TABLES.filter((t) => t.salon === si);
+  const mat = LINE_MAT.get(s.ligne);
+  const pts = s.type === 'loge' ? arc(s.tables[0][0], s.tables[0][1], 1.05, 5, 175, 6) : s.sofa;
+  const cx = s.tables.reduce((a, p) => a + p[0], 0) / s.tables.length, cz = s.tables.reduce((a, p) => a + p[1], 0) / s.tables.length;
+  const ext = s.type === 'loge' ? .12 : .38; // les modules se rejoignent dans les angles
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [ax, az] = pts[i], [bx, bz] = pts[i + 1];
+    const len = Math.hypot(bx - ax, bz - az), mx = (ax + bx) / 2, mz = (az + bz) / 2;
+    let nx = -(bz - az) / len, nz = (bx - ax) / len;
+    if (nx * (cx - mx) + nz * (cz - mz) > 0) { nx = -nx; nz = -nz; } // dossier vers l'extérieur du salon
+    const h = heightAt(mx, mz), rot = -Math.atan2(bz - az, bx - ax);
+    boxAt(s.ligne, ts[0].id, V(mx, mz, h + .21), rot, len + ext, .42, .72); // assise
+    boxAt(s.ligne, ts[0].id, V(mx + nx * .36, mz + nz * .36, h + .62), rot, len + ext, .5, .16); // dossier
+  }
+  // orientation des tables : celle du plus long côté de la banquette
+  let rot = 0, best = 0;
+  if (s.sofa) for (let i = 0; i < s.sofa.length - 1; i++) { const dx = s.sofa[i + 1][0] - s.sofa[i][0], dz = s.sofa[i + 1][1] - s.sofa[i][1], l = Math.hypot(dx, dz); if (l > best) { best = l; rot = -Math.atan2(dz, dx); } }
+  ts.forEach((t) => {
+    const g = new THREE.Group();
+    const h = heightAt(t.x, t.y);
+    g.position.copy(V(t.x, t.y, h)); g.rotation.y = rot;
+    // dalle de couleur sous l'emplacement (matière de la ligne)
+    const plate = new THREE.Mesh(t.rond ? plateRond : plateCarre, PLATE_MAT.get(t.zone));
+    plate.rotation.x = -Math.PI / 2; plate.position.y = .012; plate.userData.tableId = t.id; g.add(plate);
+    scene.add(g); g.updateMatrixWorld(true);
+    TABLE_INST[t.rond ? 'rond' : 'carre'].push({ m: g.matrixWorld.clone(), id: t.id });
+    TABLE_OBJ.set(t.id, { group: g, mats: [mat], plate, anchor: V(t.x, t.y, h + .95), base: V(t.x, t.y, h), top: t.rond ? .54 : .4 });
+  });
 });
+const INST_PICK = [];
+{
+  const make = (geo, mat, list, local) => {
+    const im = new THREE.InstancedMesh(geo, mat, list.length), m = new THREE.Matrix4();
+    list.forEach((b, i) => im.setMatrixAt(i, local ? m.multiplyMatrices(b.m, local) : b.m));
+    im.userData.ids = list.map((b) => b.id); scene.add(im); INST_PICK.push(im); return im;
+  };
+  SOFA_BOX.forEach((list, ligne) => make(unitBox, LINE_MAT.get(ligne), list));
+  const up = (y) => new THREE.Matrix4().makeTranslation(0, y, 0);
+  make(lowGeo, LOW_MAT, TABLE_INST.carre, up(.18)); make(lowTopGeo, TOP_MAT, TABLE_INST.carre, up(.38));
+  make(roundGeo, LOW_MAT, TABLE_INST.rond, up(.25)); make(roundTopGeo, TOP_MAT, TABLE_INST.rond, up(.52));
+}
 // service à table : seau à champagne + bouteille + flûtes sur chaque table (InstancedMesh = 1 appel par type d'objet)
 {
   const lathe = (pts, seg = 16) => new THREE.LatheGeometry(pts.map(([x, y]) => new THREE.Vector2(x, y)), seg);
@@ -494,24 +519,23 @@ TABLES.forEach((t) => {
     flute: new THREE.MeshStandardMaterial({ color: '#dfeaff', metalness: .1, roughness: .05, transparent: true, opacity: .35, depthWrite: false }),
     wine: new THREE.MeshStandardMaterial({ color: '#ffd86b', emissive: '#c98a1c', emissiveIntensity: .35, roughness: .2, transparent: true, opacity: .85 }),
   };
-  // positions locales sur la table basse (dessus à y = .4) : seau au centre, 4 flûtes autour
-  const TOP = .4;
+  // positions locales sur la table (dessus à y = 0) : seau au centre, 4 flûtes autour
   const items = [
-    ['bucket', bucketGeo, [[0, TOP, 0]]], ['ice', iceGeo, [[0, TOP + .165, 0]]],
-    ['bottle', bottleGeo, [[0, TOP + .06, 0]], .38], ['foil', foilGeo, [[0, TOP + .06 + .245, 0]], .38], ['label', labelGeo, [[0, TOP + .06 + .09, 0]], .38],
-    ['flute', fluteGeo, [[.15, TOP, .13], [-.15, TOP, .13], [.16, TOP, -.1], [-.16, TOP, -.1]]],
-    ['wine', wineGeo, [[.15, TOP, .13], [-.15, TOP, .13], [.16, TOP, -.1], [-.16, TOP, -.1]]],
+    ['bucket', bucketGeo, [[0, 0, 0]]], ['ice', iceGeo, [[0, .165, 0]]],
+    ['bottle', bottleGeo, [[0, .06, 0]], .38], ['foil', foilGeo, [[0, .06 + .245, 0]], .38], ['label', labelGeo, [[0, .06 + .09, 0]], .38],
+    ['flute', fluteGeo, [[.15, 0, .13], [-.15, 0, .13], [.16, 0, -.1], [-.16, 0, -.1]]],
+    ['wine', wineGeo, [[.15, 0, .13], [-.15, 0, .13], [.16, 0, -.1], [-.16, 0, -.1]]],
   ];
   const m = new THREE.Matrix4(), local = new THREE.Matrix4(), tilt = new THREE.Quaternion().setFromEuler(new THREE.Euler(.38, 0, .12));
   for (const [key, geo, spots, lean] of items) {
     const im = new THREE.InstancedMesh(geo, mats[key], TABLES.length * spots.length);
     let k = 0;
     TABLES.forEach((t) => {
-      const g = TABLE_OBJ.get(t.id).group; g.updateMatrixWorld(true);
+      const o = TABLE_OBJ.get(t.id); o.group.updateMatrixWorld(true);
       for (const [x, y, z] of spots) {
         // la bouteille est inclinée dans le seau, comme au service
-        local.compose(new THREE.Vector3(x * 1.3, TOP + (y - TOP) * 1.3, z * 1.3), lean ? tilt : new THREE.Quaternion(), new THREE.Vector3(1.3, 1.3, 1.3));
-        m.multiplyMatrices(g.matrixWorld, local); im.setMatrixAt(k++, m);
+        local.compose(new THREE.Vector3(x * 1.3, o.top + y * 1.3, z * 1.3), lean ? tilt : new THREE.Quaternion(), new THREE.Vector3(1.3, 1.3, 1.3));
+        m.multiplyMatrices(o.group.matrixWorld, local); im.setMatrixAt(k++, m);
       }
     });
     im.raycast = () => {}; // ne gêne pas le clic sur les tables
@@ -519,22 +543,11 @@ TABLES.forEach((t) => {
   }
 }
 
-// bouts de banquette (non réservables) aux extrémités de chaque rangée, comme sur le plan
-ROWS.forEach((r) => {
-  const [p0, p1] = [r.pts[0], r.pts.at(-1)];
-  const n = r.pts.length;
-  const step = n > 1 ? [(p1[0] - p0[0]) / (n - 1), (p1[1] - p0[1]) / (n - 1)] : [16, 0];
-  [[p0[0] - step[0], p0[1] - step[1]], [p1[0] + step[0], p1[1] + step[1]]].forEach(([x, y]) => {
-    const g = new THREE.Group(); banquette(g, M.sofa);
-    g.position.copy(V(x, y, heightAt(r.pts[0][0], r.pts[0][1]))); g.rotation.y = THREE.MathUtils.degToRad(r.rot); scene.add(g);
-  });
-});
-
 // neige dans la salle
 const SNOW_N = 450;
 const snowGeo = new THREE.BufferGeometry();
 const sp = new Float32Array(SNOW_N * 3);
-for (let i = 0; i < SNOW_N; i++) { sp[i * 3] = (Math.random() - .5) * 70; sp[i * 3 + 1] = Math.random() * 18; sp[i * 3 + 2] = (Math.random() - .5) * 46; }
+for (let i = 0; i < SNOW_N; i++) { sp[i * 3] = (Math.random() - .5) * 62; sp[i * 3 + 1] = Math.random() * 18; sp[i * 3 + 2] = (Math.random() - .5) * 38 + 1; }
 snowGeo.setAttribute('position', new THREE.BufferAttribute(sp, 3));
 const snowPts = new THREE.Points(snowGeo, new THREE.PointsMaterial({ color: '#ffffff', size: .12, transparent: true, opacity: .8, depthWrite: false }));
 scene.add(snowPts);
@@ -598,10 +611,10 @@ function flyTo(pos, target, ms = 1300, done) {
 // on recule et on passe plus en vue du dessus pour que toute la salle tienne en largeur
 function fitHome() {
   const aspect = stage.clientWidth / Math.max(1, stage.clientHeight);
-  if (aspect >= 1.15) { HOME.pos.set(0, 40, 33); HOME.target.set(0, 0, 3); return; }
+  if (aspect >= 1.15) { HOME.pos.set(0, 47, 38); HOME.target.set(0, 0, 1.5); return; }
   const hfov = 2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * aspect);
-  const d = 22 / Math.tan(hfov / 2);
-  HOME.pos.set(0, d * .93, d * .37); HOME.target.set(0, 0, 2);
+  const d = 25 / Math.tan(hfov / 2);
+  HOME.pos.set(0, d * .93, d * .37); HOME.target.set(0, 0, 1);
 }
 function flyHome() { fitHome(); flyTo(HOME.pos.clone(), HOME.target.clone(), 1500); }
 function flyGroupe(gid) { flyBox(TABLES.filter((t) => zoneOf(t).groupe === gid)); }
@@ -609,7 +622,7 @@ function flyZone(zoneId) { flyBox(tablesDe(zoneId)); }
 function flyBox(ts) {
   const box = new THREE.Box3(); ts.forEach((t) => box.expandByPoint(TABLE_OBJ.get(t.id).anchor));
   const c = box.getCenter(new THREE.Vector3()); const size = box.getSize(new THREE.Vector3()).length();
-  const dist = Math.max(15, size * 1.5);
+  const dist = Math.max(19, size * 1.7);
   const pos = c.clone().add(new THREE.Vector3(0, dist * .85, dist * .75));
   flyTo(pos, c, 1400);
 }
@@ -629,7 +642,7 @@ function enterPov(t) {
   const o = TABLE_OBJ.get(t.id);
   const onStageT = t.zone === 'scene';
   const eye = o.base.clone().setY(o.base.y + (onStageT ? 2.5 : 1.15)); // scène : on regarde par-dessus la cabine du DJ
-  const look = V(CX, CY, .8).lerp(V(627, 566, 1.5), t.zone !== 'scene' ? .15 : 0);
+  const look = V(0, 0, .8).lerp(V(PLAN.DJ[0], PLAN.DJ[1], 1.5), t.zone !== 'scene' ? .15 : 0);
   // regard depuis la table vers la piste ; on recule à peine pour voir ses propres canapés
   const dir = look.clone().sub(eye).setY(0).normalize();
   eye.addScaledVector(dir, -.9);
@@ -670,13 +683,14 @@ const ring = new THREE.Group();
 
 // clic et survol directement sur les tables 3D
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
-const pickables = []; TABLE_OBJ.forEach((o) => o.group.traverse((m) => m.isMesh && pickables.push(m)));
+const pickables = [...INST_PICK]; TABLE_OBJ.forEach((o) => o.group.traverse((m) => m.isMesh && pickables.push(m)));
 function pick(e) {
   const r = canvas.getBoundingClientRect();
   ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
   ray.setFromCamera(ndc, camera);
   const hit = ray.intersectObjects(pickables, false)[0];
-  return hit ? TABLES.find((t) => t.id === hit.object.userData.tableId) : null;
+  const id = hit && (hit.object.userData.ids ? hit.object.userData.ids[hit.instanceId] : hit.object.userData.tableId);
+  return id ? TABLES.find((t) => t.id === id) : null;
 }
 let down = null, hovered = null;
 canvas.addEventListener('pointerdown', (e) => (down = { x: e.clientX, y: e.clientY }));
@@ -696,7 +710,7 @@ canvas.addEventListener('pointermove', (e) => {
 // arrivée dans la salle : survol de la caméra la première fois que le plan est visible
 let userMoved = false;
 controls.addEventListener('start', () => (userMoved = true));
-const INTRO = new THREE.Vector3(-34, 46, -38);
+const INTRO = new THREE.Vector3(-50, 62, -52);
 camera.position.copy(INTRO);
 new IntersectionObserver((en, obs) => {
   if (!en[0].isIntersecting) return; obs.disconnect();
@@ -774,14 +788,14 @@ function renderZones() {
 }
 // couleurs 3D : ligne choisie en avant, lignes complètes et scène en gris
 function refreshLabels() {
-  for (const t of TABLES) {
-    const l = zoneOf(t), o = TABLE_OBJ.get(t.id);
+  for (const l of ZONES) {
     const off = !l.enVente || restant(l.id) <= 0;
     const mine = current ? current.id === l.id : activeGroupe ? l.groupe === activeGroupe : true;
-    o.plate.material.color.set(off ? '#3a3f55' : l.couleurs[0]);
-    o.plate.material.emissiveIntensity = off ? 0 : mine ? (current ? .9 : .4) : .05;
-    o.plate.material.opacity = mine ? .75 : .25;
-    o.mats.forEach((m) => m.color.set(mine || !activeGroupe ? '#e6dccb' : '#7d7a78'));
+    const p = PLATE_MAT.get(l.id);
+    p.color.set(off ? '#3a3f55' : l.couleurs[0]); p.emissive.set(off ? '#000' : l.couleurs[0]);
+    p.emissiveIntensity = off ? 0 : mine ? (current ? .9 : .4) : .05;
+    p.opacity = mine ? .75 : .25;
+    LINE_MAT.get(l.id).color.set(mine || !activeGroupe ? '#e6dccb' : '#7d7a78');
   }
 }
 $('#only-free')?.closest('label')?.remove();

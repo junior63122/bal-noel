@@ -122,13 +122,13 @@ test('admin : statut inconnu refusé (pas d’injection dans le tableau de bord)
 });
 
 test('places : une demande validée décompte ses personnes ; une ligne complète refuse les demandes', async () => {
-  // z2-ar = 4 tables × 6 = 24 places
+  // z2-ar = 7 tables × 6 = 42 places (plan Deco Flamme)
   const st0 = await (await fetch(BASE + '/api/state')).json();
-  assert.equal(st0.restant['z2-ar'], 24);
+  assert.equal(st0.restant['z2-ar'], 42);
   const ids = [];
-  for (const [n, tel] of [[20, '06 24 00 00 01'], [4, '06 24 00 00 02']]) ids.push((await (await post('/api/demandes', valid({ ligne: 'z2-ar', personnes: n, tel }))).json()).id);
+  for (const [n, tel] of [[20, '06 24 00 00 01'], [22, '06 24 00 00 02']]) ids.push((await (await post('/api/demandes', valid({ ligne: 'z2-ar', personnes: n, tel }))).json()).id);
   // non validées : les places ne bougent pas
-  assert.equal((await (await fetch(BASE + '/api/state')).json()).restant['z2-ar'], 24);
+  assert.equal((await (await fetch(BASE + '/api/state')).json()).restant['z2-ar'], 42);
   for (const id of ids) assert.equal((await admin('demande', { id, statut: 'validee' })).status, 200);
   const st = await (await fetch(BASE + '/api/state')).json();
   assert.equal(st.restant['z2-ar'], 0, 'places non décomptées');
@@ -137,25 +137,25 @@ test('places : une demande validée décompte ses personnes ; une ligne complèt
   // demander plus que les places restantes est refusé
   const id3 = (await (await post('/api/demandes', valid({ ligne: 'z3-ar', personnes: 20, tel: '06 24 00 00 04' }))).json()).id;
   await admin('demande', { id: id3, statut: 'validee' });
-  assert.equal((await post('/api/demandes', valid({ ligne: 'z3-ar', personnes: 5, tel: '06 24 00 00 05' }))).status, 400);
-  assert.equal((await post('/api/demandes', valid({ ligne: 'z3-ar', personnes: 4, tel: '06 24 00 00 06' }))).status, 201);
+  assert.equal((await post('/api/demandes', valid({ ligne: 'z3-ar', personnes: 23, tel: '06 24 00 00 05' }))).status, 400);
+  assert.equal((await post('/api/demandes', valid({ ligne: 'z3-ar', personnes: 22, tel: '06 24 00 00 06' }))).status, 201);
 });
 
 test('attribution des tables par l’admin : seulement dans la ligne, jamais deux fois', async () => {
   const a = (await (await post('/api/demandes', valid({ ligne: 'z1-av', tel: '06 31 00 00 01' }))).json()).id;
   const b = (await (await post('/api/demandes', valid({ ligne: 'z1-av', tel: '06 31 00 00 02' }))).json()).id;
-  assert.equal((await admin('attribuer', { id: a, tables: ['27', '28'] })).status, 200);
-  assert.equal((await admin('attribuer', { id: b, tables: ['28'] })).status, 409, 'table attribuée deux fois');
-  assert.equal((await admin('attribuer', { id: b, tables: ['09'] })).status, 400, 'table hors de la ligne');
-  assert.equal((await admin('attribuer', { id: b, tables: '27' })).status, 400);
+  assert.equal((await admin('attribuer', { id: a, tables: ['08', '09'] })).status, 200);
+  assert.equal((await admin('attribuer', { id: b, tables: ['09'] })).status, 409, 'table attribuée deux fois');
+  assert.equal((await admin('attribuer', { id: b, tables: ['12'] })).status, 400, 'table hors de la ligne');
+  assert.equal((await admin('attribuer', { id: b, tables: '08' })).status, 400);
   await wait(150);
-  assert.deepEqual(disk().demandes.find((d) => d.id === a).tables, ['27', '28']);
+  assert.deepEqual(disk().demandes.find((d) => d.id === a).tables, ['08', '09']);
   assert.deepEqual(disk().demandes.find((d) => d.id === b).tables, []);
   const st = await (await fetch(BASE + '/api/state')).json();
-  assert.ok(st.reserved.includes('27') && st.reserved.includes('28'));
+  assert.ok(st.reserved.includes('08') && st.reserved.includes('09'));
   // refuser la demande libère ses tables
   await admin('demande', { id: a, statut: 'refusee' });
-  assert.equal((await admin('attribuer', { id: b, tables: ['28'] })).status, 200);
+  assert.equal((await admin('attribuer', { id: b, tables: ['09'] })).status, 200);
   // sans mot de passe : impossible
   assert.equal((await fetch(BASE + '/api/admin/attribuer', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: b, tables: [] }) })).status, 401);
 });
@@ -215,13 +215,14 @@ test('pages légales, 404, robots et sitemap servis correctement', async () => {
 });
 
 // ---------- défauts trouvés par le contre-audit indépendant (ils ne doivent jamais revenir)
+// z4-ar = 8 tables × 6 = 48 places : 30 validées, il en reste 18
 test('C1 : l’admin ne peut pas valider au-delà des places de la ligne (surréservation)', async () => {
-  const a = (await (await post('/api/demandes', valid({ ligne: 'z4-av', personnes: 30, tel: '06 71 00 00 01' }))).json()).id;
-  const b = (await (await post('/api/demandes', valid({ ligne: 'z4-av', personnes: 30, tel: '06 71 00 00 02' }))).json()).id;
+  const a = (await (await post('/api/demandes', valid({ ligne: 'z4-ar', personnes: 30, tel: '06 71 00 00 01' }))).json()).id;
+  const b = (await (await post('/api/demandes', valid({ ligne: 'z4-ar', personnes: 30, tel: '06 71 00 00 02' }))).json()).id;
   assert.equal((await admin('demande', { id: a, statut: 'validee' })).status, 200);
   const r = await admin('demande', { id: b, statut: 'validee' });
   assert.equal(r.status, 409, 'surréservation acceptée');
-  assert.match((await r.json()).error, /6 place/);
+  assert.match((await r.json()).error, /18 place/);
   await wait(150);
   assert.equal(disk().demandes.find((d) => d.id === b).statut, 'nouvelle');
 });
@@ -229,15 +230,15 @@ test('C1 : l’admin ne peut pas valider au-delà des places de la ligne (surré
 test('C2 : une table ne peut jamais être à deux clients, ni bloquée si attribuée', async () => {
   const a = (await (await post('/api/demandes', valid({ ligne: 'z4-ar', personnes: 2, tel: '06 72 00 00 01' }))).json()).id;
   const b = (await (await post('/api/demandes', valid({ ligne: 'z4-ar', personnes: 2, tel: '06 72 00 00 02' }))).json()).id;
-  await admin('attribuer', { id: a, tables: ['33'] });
+  await admin('attribuer', { id: a, tables: ['40'] });
   await admin('demande', { id: a, statut: 'refusee' });
-  assert.equal((await admin('attribuer', { id: b, tables: ['33'] })).status, 200);
-  await admin('demande', { id: a, statut: 'validee' }); // A revient : il ne doit pas récupérer la 33
+  assert.equal((await admin('attribuer', { id: b, tables: ['40'] })).status, 200);
+  await admin('demande', { id: a, statut: 'validee' }); // A revient : il ne doit pas récupérer la 40
   await wait(150);
   const D = disk().demandes;
-  const avec33 = D.filter((d) => d.statut !== 'refusee' && (d.tables || []).includes('33'));
-  assert.equal(avec33.length, 1, `table 33 attribuée ${avec33.length} fois`);
-  assert.equal((await admin('table', { id: '33', reserved: true })).status, 409, 'blocage d’une table attribuée accepté');
+  const avec40 = D.filter((d) => d.statut !== 'refusee' && (d.tables || []).includes('40'));
+  assert.equal(avec40.length, 1, `table 40 attribuée ${avec40.length} fois`);
+  assert.equal((await admin('table', { id: '40', reserved: true })).status, 409, 'blocage d’une table attribuée accepté');
 });
 
 test('C4 : renvoi MODIFIÉ (autre nombre) = nouvelle demande ; renvoi identique = doublon signalé', async () => {
@@ -269,7 +270,8 @@ test('C3 + C5 : base abîmée → mise de côté et restaurée ; anciennes deman
     const d = await (await fetch(`http://127.0.0.1:${P3}/api/admin/data`, { headers: { 'x-admin-password': PW } })).json();
     assert.equal(d.demandes.length, 2);
     for (const x of d.demandes) { assert.equal(x.ligne, 'z1-av'); assert.equal(x.prixPers, 150, 'ancien prix ailes non conservé'); }
-    assert.equal(d.demandes.filter((x) => x.tables.includes('30')).length, 1, 'table 30 migrée en double');
+    // les numéros de l'ancien plan ne veulent plus rien dire : aucune table n'est reprise, l'admin réattribue
+    assert.ok(d.demandes.every((x) => Array.isArray(x.tables) && x.tables.length === 0), 'table de l’ancien plan reprise');
     assert.ok(!d.reserved.includes('30'), 'table migrée restée bloquée');
   } finally { s3.kill('SIGTERM'); }
 });
@@ -363,4 +365,28 @@ test('A9 : sous une rafale de 20 000 envois, l’anti-spam reste rapide (pas d�
     const t1 = await lot(), t2 = await lot();
     assert.ok(t2 < t1 * 2.5, `ralentissement : ${t1} ms puis ${t2} ms`);
   } finally { s8.kill('SIGTERM'); }
+});
+
+test('changement de plan : les attributions faites sur l’ancien plan sont retirées une seule fois', async () => {
+  const D8 = fs.mkdtempSync(path.join(os.tmpdir(), 'bal-noel-plan-'));
+  const base = (plan) => JSON.stringify({ ...(plan ? { plan } : {}), reserved: ['05'], demandes: [{ id: 'p1', ligne: 'z1-av', personnes: 2, tel: '0600000021', prenom: 'P', nom: 'P', statut: 'validee', tables: ['08'], date: new Date().toISOString() }] });
+  const demarrer = async (P) => {
+    const s = spawn(process.execPath, ['server.js'], { cwd: ROOT, env: { ...process.env, PORT: String(P), DATA_DIR: D8, ADMIN_PASSWORD: PW, RENDER: '' }, stdio: 'ignore' });
+    for (let i = 0; i < 50; i++) { try { await fetch(`http://127.0.0.1:${P}/api/health`); break; } catch { await wait(100); } }
+    return s;
+  };
+  fs.writeFileSync(path.join(D8, 'db.json'), base(null));
+  let s = await demarrer(PORT + 9);
+  try {
+    const d = JSON.parse(fs.readFileSync(path.join(D8, 'db.json'), 'utf8'));
+    assert.equal(d.plan, 2); assert.deepEqual(d.demandes[0].tables, []); assert.deepEqual(d.reserved, []);
+    assert.equal(d.demandes[0].statut, 'validee', 'la demande elle-même doit être conservée');
+  } finally { s.kill('SIGTERM'); await wait(200); }
+  // une base déjà sur le nouveau plan garde ses attributions
+  fs.writeFileSync(path.join(D8, 'db.json'), base(2));
+  s = await demarrer(PORT + 10);
+  try {
+    const d = await (await fetch(`http://127.0.0.1:${PORT + 10}/api/admin/data`, { headers: { 'x-admin-password': PW } })).json();
+    assert.deepEqual(d.demandes[0].tables, ['08']); assert.deepEqual(d.reserved, ['05']);
+  } finally { s.kill('SIGTERM'); }
 });

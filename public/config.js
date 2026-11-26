@@ -2,6 +2,7 @@
 //  CONFIGURATION DE L'ÉVÉNEMENT — tout ce qui se modifie est ici.
 //  (le serveur lit aussi ce fichier pour connaître les tables)
 // =====================================================================
+import { LOUNGES, BOOTHS, BANQUETTES } from './plan.js';
 
 export const EVENT = {
   marque: 'Le Bal des Fous',
@@ -62,36 +63,19 @@ export const ZONES = [
 ];
 ZONES.forEach((l) => { const g = GROUPES.find((x) => x.id === l.groupe); l.nom = l.type === 'scene' ? 'Scène · autour du DJ' : `${g.nom} · ${l.libelle}`; l.desc = g.desc; });
 
-// Tables : une table = un petit carré blanc devant la banquette sur le plan.
-// Chaque rangée : zone, orientation de la banquette (degrés, 0 = banquette au nord / au fond),
-// et le centre de chaque table relevé sur le plan (pixels du plan 1280 × 834, 17 px ≈ 1 m).
-// La piste tournante est au centre (627, 389). Les tables sont numérotées dans l'ordre des rangées.
-export const ROWS = [
-  // VIP Fond — rang du fond (gauche puis droite)
-  { zone: 'z2-ar', rot: 0, pts: [[539, 197], [555, 197], [571, 197], [588, 197]] },
-  { zone: 'z3-ar', rot: 0, pts: [[664, 197], [680, 197], [697, 197], [713, 197]] },
-  // VIP Fond — rang côté piste
-  { zone: 'z2-av', rot: 0, pts: [[479, 240], [496, 240], [512, 240], [528, 240], [545, 240], [561, 240]] },
-  { zone: 'z3-av', rot: 0, pts: [[690, 240], [707, 240], [723, 240], [739, 240], [756, 240], [772, 240]] },
-  // Aile gauche (rangée contre la vitre, puis rangée intérieure)
-  { zone: 'z1-ar', rot: 35.6, pts: [[332, 322.5], [345.5, 313], [358.8, 303.3], [372, 294], [385, 284.3], [398.8, 275]] },
-  { zone: 'z1-av', rot: 35.6, pts: [[366.3, 350], [379.5, 340.8], [393, 331.3], [406.3, 321.8], [419.5, 312.5], [433, 303.3]] },
-  // Aile droite
-  { zone: 'z4-ar', rot: -35.6, pts: [[854, 274.5], [867, 284.3], [880.5, 294], [893.8, 303.8], [907, 313.3], [920.5, 322.5]] },
-  { zone: 'z4-av', rot: -35.6, pts: [[819.5, 302.5], [832.5, 312], [845.8, 321.3], [859.3, 330.5], [872.5, 340.5], [886, 350]] },
-  // Scène — balcons +0,60 de part et d'autre du DJ
-  { zone: 'scene', rot: 180, pts: [[492.3, 575], [508.3, 575]] },
-  { zone: 'scene', rot: 180, pts: [[750, 575], [766, 575]] },
-  // Scène — face au DJ
-  { zone: 'scene', rot: 180, pts: [[588.3, 609], [604.3, 609], [620.3, 609], [637.3, 609], [653.3, 609], [669.7, 609]] },
-  // Scène — diagonales (les 2 plus proches du DJ à 2 500 €)
-  { zone: 'scene', rot: 145.2, pts: [[540, 626.7], [554.3, 635], [568, 644], [581.7, 653.3], [595.3, 662]] },
-  { zone: 'scene', rot: -145.2, pts: [[662.7, 662], [676, 653.3], [690, 644], [704, 635], [717.7, 626.7]] },
+// Tables : relevées sur le plan Deco Flamme (voir plan.js, coordonnées en mètres autour de la piste).
+// Chaque salon = une banquette + ses tables ; une ligne (avant / arrière) regroupe plusieurs salons.
+// Numérotation : zone 1 → zone 4 (ligne arrière puis avant), puis la scène.
+export const SALONS = [
+  ...LOUNGES.map((l) => ({ ...l, type: 'salon' })),
+  ...BOOTHS.map((p) => ({ ligne: 'scene', type: 'loge', tables: [p] })),
+  ...BANQUETTES.map((l) => ({ ...l, type: 'salon' })),
 ];
-
+const ORDRE = ['z1-ar', 'z1-av', 'z2-ar', 'z2-av', 'z3-ar', 'z3-av', 'z4-ar', 'z4-av', 'scene'];
 export const TABLES = [];
-ROWS.forEach((r, ri) => r.pts.forEach(([x, y], k) => {
-  TABLES.push({ id: String(TABLES.length + 1).padStart(2, '0'), zone: r.zone, x, y, rot: r.rot, row: ri });
+ORDRE.forEach((ligne) => SALONS.forEach((s, si) => {
+  if (s.ligne !== ligne) return;
+  s.tables.forEach(([x, y]) => TABLES.push({ id: String(TABLES.length + 1).padStart(2, '0'), zone: ligne, x, y, salon: si, rond: s.type === 'loge' }));
 }));
 
 export const zoneOf = (t) => ZONES.find((z) => z.id === t.zone);   // ligne d'une table
