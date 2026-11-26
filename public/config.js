@@ -16,6 +16,9 @@ export const EVENT = {
   lieuDetail: 'La Terrasse du Palais des Festivals, Cannes',
   tagline: 'LE BAL DE NOËL · CANNES',
   acomptePct: 20,
+  fin: '2026-12-28T00:00:00+01:00',
+  urlPublique: 'https://bal-noel-mgh6.onrender.com',
+  conservationJours: 90,             // les demandes sont effacées 90 jours après la soirée
   personnes: 'prix par personne',
 };
 
@@ -25,6 +28,17 @@ export const EVENT = {
 // Le client réserve une LIGNE (pas une table) et indique le nombre de personnes ;
 // l'organisation attribue ensuite les tables depuis l'administration.
 // ---------------------------------------------------------------------------
+// Informations légales : À COMPLÉTER par l'organisateur (affichées dans les mentions légales)
+export const EDITEUR = {
+  societe: 'SAS LE BAL DES FOUS',
+  adresse: 'à compléter',
+  siret: 'à compléter',
+  directeurPublication: 'à compléter',
+  email: 'à compléter',
+  telephone: 'à compléter',
+};
+export const HEBERGEUR = 'Render Services, Inc. — 525 Brannan Street, Suite 300, San Francisco, CA 94107, États-Unis — render.com';
+
 export const VIP_NOM = 'VIP Croisette';
 export const PERS_PAR_TABLE = 6;      // PROVISOIRE : sert à calculer les places de chaque ligne
 export const MAX_PAR_DEMANDE = 30;    // nombre maximum de personnes dans une seule demande

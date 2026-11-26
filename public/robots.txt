@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /admin
+Disallow: /api/
+Sitemap: https://bal-noel-mgh6.onrender.com/sitemap.xml

@@ -1,0 +1,82 @@
+[
+ {
+  "id": "S1",
+  "titre": "Coupure réseau au chargement (/api/state échoue une fois)",
+  "attendu": "SUCCESS_VERIFIED",
+  "obtenu": "SUCCESS_VERIFIED",
+  "ok": true,
+  "erreurAffichee": ""
+ },
+ {
+  "id": "S2",
+  "titre": "Le serveur répond 200 « ok » mais sans numéro de demande",
+  "attendu": "FAILED",
+  "obtenu": "FAUX_SUCCES",
+  "ok": false,
+  "erreurAffichee": ""
+ },
+ {
+  "id": "S3",
+  "titre": "Réponse 200 non JSON (page d’erreur d’un proxy)",
+  "attendu": "FAILED",
+  "obtenu": "FAUX_SUCCES",
+  "ok": false,
+  "erreurAffichee": ""
+ },
+ {
+  "id": "S4",
+  "titre": "Coupure réseau pendant l’envoi",
+  "attendu": "FAILED",
+  "obtenu": "FAILED",
+  "ok": true,
+  "erreurAffichee": "Connexion impossible : votre demande n’a pas été envoyée. Vérifiez votre connexion internet puis réessayez."
+ },
+ {
+  "id": "S5",
+  "titre": "Erreur serveur 500",
+  "attendu": "FAILED",
+  "obtenu": "FAILED",
+  "ok": true,
+  "erreurAffichee": "panne"
+ },
+ {
+  "id": "S6",
+  "titre": "Le serveur ne répond pas (délai dépassé)",
+  "attendu": "FAILED",
+  "obtenu": "FAILED",
+  "ok": true,
+  "erreurAffichee": "Le serveur n’a pas confirmé la réception de votre demande. Réessayez : si elle était déjà arrivée, elle ne sera pas enregistrée deux fois."
+ },
+ {
+  "id": "S7",
+  "titre": "La demande arrive mais la réponse se perd ; le client réessaie (pas de doublon)",
+  "attendu": "SUCCESS_VERIFIED_UNIQUE",
+  "obtenu": "SUCCESS_VERIFIED_UNIQUE",
+  "ok": true,
+  "erreurAffichee": ""
+ },
+ {
+  "id": "S8",
+  "titre": "Double clic sur « Envoyer »",
+  "attendu": "SUCCESS_VERIFIED_UNIQUE",
+  "obtenu": "SUCCESS_VERIFIED_UNIQUE",
+  "ok": true,
+  "erreurAffichee": ""
+ },
+ {
+  "id": "S9",
+  "titre": "Nom avec émojis et code HTML piégé, message très long",
+  "attendu": "SUCCESS_VERIFIED_SAFE",
+  "obtenu": "SUCCESS_VERIFIED_SAFE",
+  "ok": true,
+  "erreurAffichee": ""
+ },
+ {
+  "id": "S10",
+  "titre": "Ligne complète entre l’ouverture de la page et l’envoi",
+  "attendu": "FAILED",
+  "obtenu": "FAILED",
+  "ok": true,
+  "erreurAffichee": "Cette ligne est complète. Choisissez une autre ligne."
+ }
+]

@@ -8,7 +8,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
-import { TABLES, ZONES, MAX_PAR_DEMANDE, placesDe } from './public/config.js';
+import { TABLES, ZONES, MAX_PAR_DEMANDE, placesDe, EVENT } from './public/config.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUB = path.join(ROOT, 'public');
@@ -57,18 +57,27 @@ function save(db) {
     .catch((e) => { METRICS.ecrituresKO++; METRICS.derniereErreur = 'écriture: ' + e.message; console.error('Écriture impossible', e); })
     .finally(() => { writing = false; if (again) { again = false; save(DBMEM); } });
 }
+// RGPD : effacement automatique des demandes N jours après la soirée (vérifié au démarrage puis toutes les 6 h)
+function purge() {
+  const limite = Date.parse(EVENT.debut) + EVENT.conservationJours * 864e5;
+  if (Date.now() < limite || !DBMEM.demandes.length) return;
+  console.log(`Purge RGPD : ${DBMEM.demandes.length} demande(s) effacée(s)`);
+  save({ ...DBMEM, demandes: [] });
+}
+setTimeout(purge, 5000); setInterval(purge, 6 * 3600e3).unref();
 // sauvegarde synchrone à l'arrêt (redéploiement Render)
 for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, () => { try { fs.writeFileSync(DB, JSON.stringify(DBMEM, null, 2)); } catch {} process.exit(0); });
 
 const STATIC = new Map();
-const COMPRESSIBLE = new Set(['.html', '.js', '.css', '.svg', '.json']);
+const COMPRESSIBLE = new Set(['.html', '.js', '.css', '.svg', '.json', '.xml', '.txt']);
 function getStatic(file) {
   if (STATIC.has(file)) return STATIC.get(file);
   let raw; try { raw = fs.readFileSync(file); } catch { return null; }
   const ext = path.extname(file);
   const f = { raw, type: MIME[ext] || 'application/octet-stream', etag: '"' + crypto.createHash('sha1').update(raw).digest('base64url').slice(0, 16) + '"',
     // pages : toujours revalidées ; images et librairies : en cache 1 jour
-    cache: ext === '.html' || file.endsWith('app.js') || file.endsWith('config.js') || ext === '.css' ? 'no-cache' : 'public, max-age=86400' };
+    cache: ext === '.html' || file.endsWith('app.js') || file.endsWith('config.js') || ext === '.css' ? 'no-cache'
+      : ext === '.woff2' || file.includes(path.sep + 'vendor' + path.sep) ? 'public, max-age=2592000, immutable' : 'public, max-age=86400' };
   if (COMPRESSIBLE.has(ext)) {
     f.gz = zlib.gzipSync(raw, { level: 9 });
     f.br = zlib.brotliCompressSync(raw, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 11 } });
@@ -77,13 +86,13 @@ function getStatic(file) {
   return f;
 }
 const SECURITY_HEADERS = {
-  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
   'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'strict-origin-when-cross-origin',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=()', 'Strict-Transport-Security': 'max-age=31536000',
   'Cross-Origin-Opener-Policy': 'same-origin',
 };
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
-  '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.ico': 'image/x-icon', '.json': 'application/json' };
+  '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.ico': 'image/x-icon', '.json': 'application/json', '.woff2': 'font/woff2', '.xml': 'application/xml; charset=utf-8', '.txt': 'text/plain; charset=utf-8' };
 
 function send(res, code, body) {
   if (code >= 500) METRICS.erreurs++;
@@ -214,16 +223,18 @@ const server = http.createServer(async (req, res) => {
     let p = decodeURIComponent(url.pathname);
     if (p === '/') p = '/index.html';
     if (p === '/admin') p = '/admin.html';
+    if (!path.extname(p) && p !== '/') p += '.html'; // /mentions-legales → mentions-legales.html
     const file = path.join(PUB, path.normalize(p));
-    if (!file.startsWith(PUB)) { res.writeHead(403); return res.end(); }
-    const f = getStatic(file);
+    if (!file.startsWith(PUB + path.sep)) { res.writeHead(403); return res.end(); }
+    let f = getStatic(file), status = 200;
+    if (!f) { f = getStatic(path.join(PUB, '404.html')); status = 404; }
     if (!f) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); return res.end('Page introuvable'); }
     const headers = { 'Content-Type': f.type, 'Cache-Control': f.cache, ETag: f.etag, Vary: 'Accept-Encoding' };
-    if (req.headers['if-none-match'] === f.etag) { res.writeHead(304, headers); return res.end(); }
+    if (status === 200 && req.headers['if-none-match'] === f.etag) { res.writeHead(304, headers); return res.end(); }
     const ae = String(req.headers['accept-encoding'] || '');
-    if (f.br && /\bbr\b/.test(ae)) { headers['Content-Encoding'] = 'br'; res.writeHead(200, headers); return res.end(f.br); }
-    if (f.gz && /\bgzip\b/.test(ae)) { headers['Content-Encoding'] = 'gzip'; res.writeHead(200, headers); return res.end(f.gz); }
-    res.writeHead(200, headers); res.end(f.raw);
+    if (f.br && /\bbr\b/.test(ae)) { headers['Content-Encoding'] = 'br'; res.writeHead(status, headers); return res.end(f.br); }
+    if (f.gz && /\bgzip\b/.test(ae)) { headers['Content-Encoding'] = 'gzip'; res.writeHead(status, headers); return res.end(f.gz); }
+    res.writeHead(status, headers); res.end(f.raw);
   } catch (e) {
     if (!res.headersSent) send(res, e.code === 413 ? 413 : 400, { error: e.code === 413 ? 'Message trop long.' : 'Requête invalide.' });
   }

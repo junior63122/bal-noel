@@ -3,15 +3,28 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Le Bal des Fous · Le Bal de Noël — Réservation de tables · Cannes</title>
+  <title>Le Bal de Noël · VIP Croisette — Le Bal des Fous, Cannes</title>
   <meta name="description" content="Réservez votre table pour le Bal de Noël du Bal des Fous, dimanche 27 décembre sur la Terrasse du Palais des Festivals de Cannes.">
   <meta name="theme-color" content="#0b1428">
   <link rel="icon" type="image/png" href="assets/favicon.png">
-  <link rel="preload" as="image" href="assets/boule.webp">
+  <link rel="canonical" href="https://bal-noel-mgh6.onrender.com/">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="fr_FR">
+  <meta property="og:site_name" content="Le Bal des Fous">
+  <meta property="og:title" content="Le Bal de Noël · VIP Croisette — dimanche 27 décembre, Cannes">
+  <meta property="og:description" content="Réservez votre place en VIP Croisette sur la Terrasse du Palais des Festivals. Ouverture des portes à 16 h, fermeture à minuit.">
+  <meta property="og:url" content="https://bal-noel-mgh6.onrender.com/">
+  <meta property="og:image" content="https://bal-noel-mgh6.onrender.com/assets/partage.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Le Bal de Noël — Cannes, dimanche 27 décembre">
+  <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"Event","name":"Le Bal de Noël — Le Bal des Fous","startDate":"2026-12-27T16:00:00+01:00","endDate":"2026-12-28T00:00:00+01:00","eventStatus":"https://schema.org/EventScheduled","eventAttendanceMode":"https://schema.org/OfflineEventAttendanceMode","location":{"@type":"Place","name":"La Terrasse du Palais des Festivals","address":{"@type":"PostalAddress","streetAddress":"1 boulevard de la Croisette","postalCode":"06400","addressLocality":"Cannes","addressCountry":"FR"}},"image":["https://bal-noel-mgh6.onrender.com/assets/partage.jpg"],"description":"Soirée de Noël du Bal des Fous sur la Terrasse du Palais des Festivals de Cannes. Places VIP Croisette de 150 € à 200 € par personne.","organizer":{"@type":"Organization","name":"Le Bal des Fous"},"offers":[{"@type":"Offer","name":"VIP Croisette · ligne avant","price":"200","priceCurrency":"EUR","url":"https://bal-noel-mgh6.onrender.com/#plan"},{"@type":"Offer","name":"VIP Croisette · ligne arrière","price":"150","priceCurrency":"EUR","url":"https://bal-noel-mgh6.onrender.com/#plan"}]}</script>
+  <link rel="preload" as="image" href="assets/boule.webp" imagesrcset="assets/boule-440.webp 440w, assets/boule.webp 760w" imagesizes="(max-width: 760px) 78vw, 520px" fetchpriority="high">
   <link rel="preload" as="image" href="assets/logo-clair.webp">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Great+Vibes&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preload" as="font" type="font/woff2" href="fonts/manrope.woff2" crossorigin>
+  <link rel="preload" as="font" type="font/woff2" href="fonts/cormorant-500.woff2" crossorigin>
+  <link rel="stylesheet" href="fonts.css">
   <link rel="stylesheet" href="style.css">
   <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
   <script src="vendor/lenis.min.js" defer></script>
@@ -28,6 +41,7 @@
 </div>
 
 <!-- ============================== ACCUEIL ============================== -->
+<main id="contenu">
 <section class="hero" id="accueil">
   <canvas class="hero-snow" id="snow" aria-hidden="true"></canvas>
   <h1 class="sr-only">Le Bal des Fous — Le Bal de Noël, Cannes, dimanche 27 décembre, ouverture des portes à 16 h, fermeture à minuit, La Terrasse du Palais des Festivals</h1>
@@ -36,18 +50,19 @@
     <img class="h-logo in" style="--d:0" src="assets/logo-clair.webp" width="480" height="283" alt="Le Bal des Fous">
 
     <div class="trio">
-      <div class="side-l in" style="--d:3"><img class="h-cannes" src="assets/cannes.webp" width="760" height="362" alt="Cannes"></div>
+      <div class="side-l in" style="--d:3"><img class="h-cannes" src="assets/cannes.webp" srcset="assets/cannes-440.webp 440w, assets/cannes.webp 760w" sizes="(max-width: 760px) 44vw, 400px" width="760" height="362" alt="Cannes"></div>
       <div class="globe-wrap in" style="--d:1">
         <div class="globe-halo" aria-hidden="true"></div>
         <div class="globe">
-          <img class="globe-img" src="assets/boule.webp" width="900" height="853" alt="Le Bal de Noël" fetchpriority="high">
+          <img class="globe-img" src="assets/boule.webp" srcset="assets/boule-440.webp 440w, assets/boule.webp 760w" sizes="(max-width: 760px) 78vw, 520px" width="760" height="720" alt="Le Bal de Noël" fetchpriority="high">
           <canvas class="globe-snow" id="globe-snow" aria-hidden="true"></canvas>
         </div>
       </div>
-      <div class="side-r in" style="--d:3"><img class="h-date" src="assets/date.webp" width="600" height="400" alt="Dimanche 27 décembre"></div>
+      <div class="side-r in" style="--d:3"><img class="h-date" src="assets/date.webp" srcset="assets/date-340.webp 340w, assets/date.webp 600w" sizes="(max-width: 760px) 34vw, 300px" width="600" height="400" alt="Dimanche 27 décembre"></div>
     </div>
 
     <a class="cta in loading" style="--d:5" id="cta-main" href="#reserver"><span class="cta-txt">La salle se prépare…</span></a>
+    <p class="h-legal in" style="--d:7"><a href="/conditions">Conditions</a> · <a href="/confidentialite">Confidentialité</a> · <a href="/mentions-legales">Mentions légales</a></p>
     <p class="h-info in" style="--d:6"><span data-lieudetail></span><span data-horaires-fr></span></p>
   </div>
 </section>
@@ -64,7 +79,7 @@
   </header>
 
   <div class="layout">
-    <main class="plan-col">
+    <div class="plan-col">
       <div class="plan-head">
         <div>
           <p class="eyebrow" data-soustheme-up></p>
@@ -87,6 +102,7 @@
         <div class="loading" id="loading">Chargement de la salle…</div>
       </div>
 
+      <p class="net-warn" id="net-warn" role="alert" hidden>Connexion au serveur impossible : les disponibilités ne sont peut-être pas à jour. Vos demandes ne seront envoyées qu’une fois la connexion rétablie.</p>
       <div class="zone-strip" id="zone-strip" hidden>
         <div class="zs-head"><strong id="zs-name"></strong><span id="zs-meta"></span></div>
         <div class="zs-list" id="zs-list"></div>
@@ -98,9 +114,9 @@
         <span><i class="dot taken"></i>Scène · bientôt</span>
         <label class="only"><input type="checkbox" id="only-free"> Disponibles uniquement</label>
       </div>
-    </main>
+    </div>
 
-    <aside class="side" id="side">
+    <aside class="side" id="side" aria-label="Choix de la zone">
       <div class="side-head">
         <h3>VIP Croisette</h3>
         <button type="button" class="collapse" id="collapse" aria-label="Replier">−</button>
@@ -135,18 +151,21 @@
   </div>
 </section>
 
+</main>
+
 <footer class="footer">
   <img class="footer-sleigh" src="assets/traineau-dos.webp" width="900" height="562" alt="" loading="lazy">
   <img class="footer-logo" src="assets/logo-ligne.webp" width="700" height="103" alt="Le Bal des Fous" loading="lazy">
   <p><span data-theme></span> · <span data-datecourte></span> · <span data-lieu></span></p>
   <p class="fine">Réservation soumise à validation par l’organisation. Acompte de <span data-acompte></span> % à régler après validation,
-    solde sur place. Toute table non confirmée dans les délais indiqués peut être remise en vente. Entrée réservée aux personnes majeures.
+    solde sur place. Les tables sont attribuées par l’organisation. Entrée réservée aux personnes majeures.
     L’abus d’alcool est dangereux pour la santé, à consommer avec modération.</p>
+  <p class="footer-links"><a href="/conditions">Conditions de réservation</a> · <a href="/confidentialite">Confidentialité</a> · <a href="/mentions-legales">Mentions légales</a></p>
 </footer>
 
 <!-- =========================== FICHE TABLE =========================== -->
 <div class="drawer-back" id="drawer-back" hidden></div>
-<aside class="drawer" data-lenis-prevent id="drawer" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="d-title">
+<div class="drawer" data-lenis-prevent id="drawer" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="d-title">
   <button class="drawer-close" id="drawer-close" type="button" aria-label="Fermer">×</button>
 
   <div id="d-form-view">
@@ -174,7 +193,7 @@
       </fieldset>
       <label><span>Message <em>(facultatif)</em></span><textarea name="message" rows="2" placeholder="Anniversaire, bouteilles souhaitées, heure d’arrivée…"></textarea></label>
       <input name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
-      <label class="check"><input type="checkbox" name="cgv" required> <span>J’ai compris qu’un acompte de <span data-acompte></span> % me sera demandé après validation de ma demande.</span></label>
+      <label class="check"><input type="checkbox" name="cgv" required> <span>J’ai compris qu’un acompte de <span data-acompte></span> % me sera demandé après validation de ma demande, et j’accepte les <a href="/conditions" target="_blank" rel="noopener">conditions de réservation</a>.</span></label>
       <p class="error" id="d-error" role="alert" hidden></p>
       <button class="btn-red" type="submit" id="d-submit">Envoyer ma demande <span>→</span></button>
       <p class="fine">Aucun paiement maintenant. L’organisation vous recontacte pour confirmer.</p>
@@ -188,8 +207,13 @@
     <p id="d-ok-text"></p>
     <button class="btn-gold" type="button" id="d-ok-close">Revenir au plan</button>
   </div>
-</aside>
+</div>
 
-<script type="module" src="app.js"></script>
+<script type="module">
+  // l'image principale passe d'abord ; la 3D (plus lourde) se charge juste après
+  const go = () => { if (!window.__app) { window.__app = 1; import('./app.js'); } };
+  const im = document.querySelector('.globe-img');
+  if (location.hash === '#plan' || !im || im.complete) go(); else { im.addEventListener('load', go, { once: true }); im.addEventListener('error', go, { once: true }); setTimeout(go, 2500); }
+</script>
 </body>
 </html>

@@ -23,35 +23,46 @@ fill('[data-acompte]', EVENT.acomptePct);
 fill('[data-personnes]', EVENT.personnes);
 $('#meta-count').textContent = `${VIP_NOM} · 4 zones · lignes avant et arrière`;
 
-/* ================================================================ état (API ou démo) */
+/* ================================================================ état (toujours le serveur, jamais de simulation locale) */
 let reserved = new Set();
 let restants = {};
+let stateOk = false;
 const restant = (id) => (id in restants ? restants[id] : placesDe(id));
-let demo = false;
-const LS = 'bal-noel-demo';
-async function loadState() {
-  try {
-    const r = await fetch('api/state', { cache: 'no-store' });
-    if (!r.ok) throw 0;
-    const j = await r.json(); reserved = new Set(j.reserved); restants = j.restant || {};
-  } catch {
-    demo = true; // hébergement statique : mode démonstration (stockage local)
-    try { reserved = new Set(JSON.parse(localStorage.getItem(LS) || '{}').reserved || []); } catch { reserved = new Set(); }
-  }
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+async function fetchTimeout(url, opts = {}, ms = 15000) {
+  const c = new AbortController(); const t = setTimeout(() => c.abort(), ms);
+  try { return await fetch(url, { ...opts, signal: c.signal }); } finally { clearTimeout(t); }
 }
-async function submitDemande(data) {
-  if (demo) {
-    await new Promise((r) => setTimeout(r, 600));
+// lecture des disponibilités, avec 3 essais espacés ; en cas d'échec on l'indique, on n'invente rien
+async function loadState() {
+  for (let i = 0; i < 3; i++) {
     try {
-      const s = JSON.parse(localStorage.getItem(LS) || '{}');
-      (s.demandes ||= []).unshift({ ...data, date: new Date().toISOString() });
-      localStorage.setItem(LS, JSON.stringify(s));
-    } catch {}
-    return { ok: true };
+      const r = await fetchTimeout('api/state', { cache: 'no-store' }, 8000);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const j = await r.json();
+      if (!Array.isArray(j.reserved) || typeof j.restant !== 'object') throw new Error('réponse incomplète');
+      reserved = new Set(j.reserved); restants = j.restant; stateOk = true;
+      $('#net-warn')?.setAttribute('hidden', '');
+      return true;
+    } catch { await wait(800 * 2 ** i); }
   }
-  const r = await fetch('api/demandes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(j.error || 'Envoi impossible, réessayez.');
+  stateOk = false; $('#net-warn')?.removeAttribute('hidden');
+  return false;
+}
+// Envoi d'une demande. Succès UNIQUEMENT si le serveur confirme avec un numéro de demande.
+// Le serveur ignore les doublons (même téléphone, même ligne, 30 min) : réessayer est donc sans risque.
+async function submitDemande(data) {
+  let r;
+  try {
+    r = await fetchTimeout('api/demandes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }, 15000);
+  } catch (e) {
+    throw new Error(e.name === 'AbortError'
+      ? 'Le serveur n’a pas confirmé la réception de votre demande. Réessayez : si elle était déjà arrivée, elle ne sera pas enregistrée deux fois.'
+      : 'Connexion impossible : votre demande n’a pas été envoyée. Vérifiez votre connexion internet puis réessayez.');
+  }
+  const j = await r.json().catch(() => null);
+  if (!r.ok) throw new Error((j && j.error) || 'Envoi impossible pour le moment. Réessayez dans un instant.');
+  if (!j || j.ok !== true || typeof j.id !== 'string' || !j.id) throw new Error('Réponse du serveur incomplète : votre demande n’est pas confirmée. Réessayez.');
   return j;
 }
 
@@ -92,7 +103,7 @@ function snowTick(t) {
 if (!reduceMotion) requestAnimationFrame(snowTick);
 
 // ouverture : entièrement en CSS (opacity/transform) ; on enlève juste le calque à la fin
-setTimeout(() => { const i = $('#intro'); if (i) i.hidden = true; }, document.documentElement.classList.contains('quick') ? 1500 : 3600);
+setTimeout(() => { const i = $('#intro'); if (i) i.hidden = true; }, document.documentElement.classList.contains('quick') ? 1200 : 2100);
 try { sessionStorage.setItem('bal-noel-intro', '1'); } catch {}
 
 // défilement adouci (Lenis) ; le plan 3D et la fiche gardent la molette pour eux
@@ -896,11 +907,11 @@ form.addEventListener('submit', async (e) => {
   if (problems.length) { err.textContent = 'Merci de vérifier : ' + problems.join(', ') + '.'; err.hidden = false; form[Object.keys(bad).find((k) => bad[k])].focus(); return; }
   const btn = $('#d-submit'); btn.disabled = true;
   try {
-    await submitDemande({ ligne: current.id, prenom: f.prenom, nom: f.nom, tel: f.tel, email: f.email, personnes: f.personnes, contact: f.contact, message: f.message, website: f.website });
+    const rep = await submitDemande({ ligne: current.id, prenom: f.prenom, nom: f.nom, tel: f.tel, email: f.email, personnes: f.personnes, contact: f.contact, message: f.message, website: f.website });
     const n = Number(f.personnes) || 1, dep = euros(acompteLigne(current, n));
     $('#d-ok-text').innerHTML = `Merci ${escapeHtml(f.prenom)} ! Votre demande en <strong>${current.nom}</strong> (${VIP_NOM}) est bien enregistrée.<br><br>
       L’organisation vous attribue votre table et vous contacte par <strong>${f.contact === 'sms' ? 'SMS' : 'WhatsApp'}</strong> au ${escapeHtml(f.tel)} dans les heures qui suivent.
-      Pour ${n} personne${n > 1 ? 's' : ''} (${euros(totalLigne(current, n))}), un acompte de ${EVENT.acomptePct} % (${dep}) vous sera demandé après validation.`;
+      Pour ${n} personne${n > 1 ? 's' : ''} (${euros(totalLigne(current, n))}), un acompte de ${EVENT.acomptePct} % (${dep}) vous sera demandé après validation.<br><br><small>Numéro de demande : <strong>${escapeHtml(rep.id)}</strong></small>`;
     $('#d-form-view').hidden = true; $('#d-ok-view').hidden = false;
     form.reset();
   } catch (x) {
@@ -913,4 +924,4 @@ const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', 
 /* ================================================================ démarrage */
 await loadState();
 renderZones(); refreshLabels();
-setInterval(async () => { if (!demo && document.visibilityState === 'visible') { await loadState(); refreshLabels(); renderZones(); } }, 30000);
+setInterval(async () => { if (document.visibilityState === 'visible') { await loadState(); refreshLabels(); renderZones(); } }, 30000);

@@ -186,3 +186,30 @@ test('scène : pas encore en vente, aucune demande enregistrée', async () => {
   await wait(150);
   assert.equal(disk().demandes.length, before);
 });
+
+test('sauvegarde : la copie du jour existe et se RESTAURE réellement sur un serveur neuf', async () => {
+  await wait(300);
+  const dir = path.join(DATA, 'sauvegardes');
+  const f = fs.readdirSync(dir).filter((x) => x.startsWith('db-')).sort().at(-1);
+  assert.ok(f, 'aucune sauvegarde');
+  const copie = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
+  assert.ok(copie.demandes.length > 0);
+  // restauration : un second serveur démarre avec la sauvegarde comme base
+  const D2 = fs.mkdtempSync(path.join(os.tmpdir(), 'bal-noel-restore-'));
+  fs.copyFileSync(path.join(dir, f), path.join(D2, 'db.json'));
+  const P2 = PORT + 1, s2 = spawn(process.execPath, ['server.js'], { cwd: ROOT, env: { ...process.env, PORT: String(P2), DATA_DIR: D2, ADMIN_PASSWORD: PW, RENDER: '' }, stdio: 'ignore' });
+  try {
+    let h; for (let i = 0; i < 50; i++) { try { h = await (await fetch(`http://127.0.0.1:${P2}/api/health`)).json(); break; } catch { await wait(100); } }
+    assert.equal(h.ok, true);
+    const d = await (await fetch(`http://127.0.0.1:${P2}/api/admin/data`, { headers: { 'x-admin-password': PW } })).json();
+    assert.equal(d.demandes.length, copie.demandes.length, 'restauration incomplète');
+  } finally { s2.kill('SIGTERM'); }
+});
+
+test('pages légales, 404, robots et sitemap servis correctement', async () => {
+  for (const p of ['/conditions', '/confidentialite', '/mentions-legales', '/robots.txt', '/sitemap.xml', '/assets/partage.jpg', '/fonts/manrope.woff2']) assert.equal((await fetch(BASE + p)).status, 200, p);
+  const r = await fetch(BASE + '/page-qui-nexiste-pas'); assert.equal(r.status, 404); assert.match(await r.text(), /legal\.js/);
+  const csp = (await fetch(BASE + '/')).headers.get('content-security-policy');
+  assert.doesNotMatch(csp, /googleapis|gstatic/, 'des ressources Google restent autorisées');
+  assert.doesNotMatch(await (await fetch(BASE + '/')).text(), /fonts\.googleapis/, 'polices Google encore chargées');
+});
