@@ -8,7 +8,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
-import { TABLES, ZONES } from './public/config.js';
+import { TABLES, ZONES, MAX_PAR_DEMANDE, placesDe } from './public/config.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUB = path.join(ROOT, 'public');
@@ -26,13 +26,18 @@ const STARTED = Date.now();
 const METRICS = { demandes: 0, rejets: 0, erreurs: 0, ecrituresKO: 0, adminKO: 0, derniereErreur: null };
 
 const TABLE_IDS = new Set(TABLES.map((t) => t.id));
-const EN_VENTE = new Set(TABLES.filter((t) => ZONES.find((z) => z.id === t.zone).enVente).map((t) => t.id));
-const CAPACITE = new Map(TABLES.map((t) => [t.id, ZONES.find((z) => z.id === t.zone).capacite]));
+const LIGNES = new Map(ZONES.map((l) => [l.id, l]));
+const LIGNE_DE_TABLE = new Map(TABLES.map((t) => [t.id, t.zone]));
+// places restantes d'une ligne = places de la ligne − personnes des demandes validées
+const restantLigne = (db, id) => placesDe(id) - db.demandes.filter((d) => d.ligne === id && d.statut === 'validee').reduce((s, d) => s + d.personnes, 0);
+// tables prises = tables bloquées à la main + tables attribuées à une demande non refusée
+const tablesPrises = (db, sauf) => new Set([...db.reserved, ...db.demandes.filter((d) => d.id !== sauf && d.statut !== 'refusee').flatMap((d) => d.tables || [])]);
 fs.mkdirSync(DATA_DIR, { recursive: true });
 
 // la base est gardée en mémoire (lecture instantanée), et écrite sur disque après chaque changement
 let DBMEM;
 try { DBMEM = JSON.parse(fs.readFileSync(DB, 'utf8')); } catch { DBMEM = { reserved: [], demandes: [] }; }
+for (const d of DBMEM.demandes) if (!d.ligne && d.table) { d.ligne = LIGNE_DE_TABLE.get(d.table); d.tables = [d.table]; delete d.table; }
 let stateCache = null;
 const load = () => DBMEM;
 let writing = false, again = false, lastBackup = '';
@@ -122,9 +127,9 @@ async function api(req, res, url) {
     catch (e) { disque = fs.existsSync(DB) ? 'illisible' : (DBMEM.demandes.length ? 'absent' : 'vide'); }
     const ok = disque === 'ok' || disque === 'vide';
     return send(res, ok ? 200 : 503, { ok, disque, adminActive: ADMIN_PASSWORD.length >= 10, uptimeMin: Math.round((Date.now() - STARTED) / 60000),
-      tables: TABLES.length, reservees: db.reserved.length, demandes: db.demandes.length, ...METRICS });
+      tables: TABLES.length, reservees: tablesPrises(db).size, demandes: db.demandes.length, ...METRICS });
   }
-  if (req.method === 'GET' && url.pathname === '/api/state') { stateCache ||= JSON.stringify({ reserved: db.reserved }); res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); return res.end(stateCache); }
+  if (req.method === 'GET' && url.pathname === '/api/state') { stateCache ||= JSON.stringify({ reserved: [...tablesPrises(db)], restant: Object.fromEntries(ZONES.filter((l) => l.enVente).map((l) => [l.id, Math.max(0, restantLigne(db, l.id))])) }); res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); return res.end(stateCache); }
 
   if (req.method === 'POST' && url.pathname === '/api/demandes') {
     // derrière le proxy Render, la dernière adresse ajoutée est la seule fiable
@@ -136,23 +141,26 @@ async function api(req, res, url) {
     const d = {
       id: crypto.randomUUID().slice(0, 8),
       date: new Date().toISOString(),
-      table: clean(b.table, 4), prenom: clean(b.prenom, 60), nom: clean(b.nom, 60),
+      ligne: clean(b.ligne, 10), tables: [], prenom: clean(b.prenom, 60), nom: clean(b.nom, 60),
       tel: clean(b.tel, 30), email: clean(b.email, 120), personnes: Math.round(Number(b.personnes)) || 0,
       contact: b.contact === 'sms' ? 'sms' : 'whatsapp', message: clean(b.message, 1000), statut: 'nouvelle',
     };
-    if (!TABLE_IDS.has(d.table)) return send(res, 400, { error: 'Table inconnue.' });
-    if (!EN_VENTE.has(d.table)) { METRICS.rejets++; return send(res, 409, { error: 'Cette table n’est pas encore en vente.' }); }
+    const ligne = LIGNES.get(d.ligne);
+    if (!ligne) return send(res, 400, { error: 'Ligne inconnue.' });
+    if (!ligne.enVente) { METRICS.rejets++; return send(res, 409, { error: 'Cette zone n’est pas encore en vente.' }); }
     const digits = d.tel.replace(/\D/g, '');
     if (!d.prenom || !d.nom || digits.length < 8 || digits.length > 15 || /[^\d\s+().-]/.test(d.tel)) { METRICS.rejets++; return send(res, 400, { error: 'Nom, prénom et un numéro de téléphone valide sont obligatoires.' }); }
     if (d.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(d.email)) { METRICS.rejets++; return send(res, 400, { error: 'L’adresse e-mail semble incorrecte.' }); }
-    if (d.personnes < 1 || d.personnes > CAPACITE.get(d.table)) { METRICS.rejets++; return send(res, 400, { error: `Cette table accueille de 1 à ${CAPACITE.get(d.table)} personnes.` }); }
-    // double clic ou renvoi : même téléphone, même table, moins de 30 min → on renvoie la demande existante
-    const dup = db.demandes.find((x) => x.table === d.table && x.tel.replace(/\D/g, '') === digits && Date.now() - Date.parse(x.date) < 1800000);
+    const reste = restantLigne(db, d.ligne);
+    if (reste <= 0) { METRICS.rejets++; return send(res, 409, { error: 'Cette ligne est complète. Choisissez une autre ligne.' }); }
+    const maxi = Math.min(reste, MAX_PAR_DEMANDE);
+    if (d.personnes < 1 || d.personnes > maxi) { METRICS.rejets++; return send(res, 400, { error: `Indiquez entre 1 et ${maxi} personnes.` }); }
+    // double clic ou renvoi : même téléphone, même ligne, moins de 30 min → on renvoie la demande existante
+    const dup = db.demandes.find((x) => x.ligne === d.ligne && x.tel.replace(/\D/g, '') === digits && Date.now() - Date.parse(x.date) < 1800000);
     if (dup) return send(res, 200, { ok: true, id: dup.id, doublon: true });
-    if (db.reserved.includes(d.table)) return send(res, 409, { error: 'Cette table vient d’être réservée. Choisissez-en une autre.' });
     db.demandes.unshift(d); save(db);
     METRICS.demandes++;
-    console.log(`Nouvelle demande ${d.id} — table ${d.table}`); // pas de données personnelles dans les journaux
+    console.log(`Nouvelle demande ${d.id} — ${d.ligne} — ${d.personnes} pers.`); // pas de données personnelles dans les journaux
     return send(res, 201, { ok: true, id: d.id });
   }
 
@@ -169,6 +177,20 @@ async function api(req, res, url) {
       if (reserved) db.reserved.push(id);
       save(db); return send(res, 200, db);
     }
+    // l'organisation attribue une ou plusieurs tables de la ligne à une demande
+    if (req.method === 'POST' && url.pathname === '/api/admin/attribuer') {
+      const { id, tables } = await readBody(req);
+      const d = db.demandes.find((x) => x.id === id);
+      if (!d) return send(res, 404, { error: 'Demande introuvable.' });
+      if (!Array.isArray(tables) || tables.length > 20) return send(res, 400, { error: 'Liste de tables invalide.' });
+      const prises = tablesPrises(db, d.id);
+      for (const t of tables) {
+        if (LIGNE_DE_TABLE.get(t) !== d.ligne) return send(res, 400, { error: `La table ${t} n’est pas dans cette ligne.` });
+        if (prises.has(t)) return send(res, 409, { error: `La table ${t} est déjà attribuée.` });
+      }
+      d.tables = [...new Set(tables)].sort();
+      save(db); return send(res, 200, db);
+    }
     if (req.method === 'POST' && url.pathname === '/api/admin/demande') {
       const { id, statut } = await readBody(req);
       const d = db.demandes.find((x) => x.id === id);
@@ -177,8 +199,6 @@ async function api(req, res, url) {
       else {
         if (!STATUTS.has(statut)) return send(res, 400, { error: 'Statut inconnu.' });
         d.statut = statut;
-        // une demande validée bloque la table automatiquement
-        if (d.statut === 'validee' && !db.reserved.includes(d.table)) db.reserved.push(d.table);
       }
       save(db); return send(res, 200, db);
     }

@@ -669,3 +669,37 @@ body[data-view="hero"] { overflow: auto; }
 .tlabel.soon { color: #8e97ad; border-color: #4b5670; background: rgba(18,26,48,.85); }
 .labels.compact .tlabel.soon { background: #4b5670; box-shadow: none; }
 .zone .zp small { white-space: nowrap; }
+
+/* ===================== réservation par zone et par ligne (VIP Croisette) */
+.zmark { position: absolute; left: 0; top: 0; pointer-events: auto; display: grid; place-items: center; width: 58px; height: 58px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff3d0, #f2b84b 55%, #c98a1c); color: #2a1503; border: 2px solid rgba(255,255,255,.85);
+  box-shadow: 0 8px 22px rgba(0,0,0,.5), 0 0 0 6px rgba(242,184,75,.22); font-family: var(--serif); transition: opacity .3s, box-shadow .2s; will-change: transform; animation: zpulse 2.4s ease-in-out infinite; }
+.zmark b { font-size: 26px; line-height: .9; font-weight: 600; }
+.zmark small { font: 700 8px/1 var(--sans); letter-spacing: .18em; text-transform: uppercase; margin-top: -10px; }
+.zmark:hover { box-shadow: 0 8px 22px rgba(0,0,0,.5), 0 0 0 10px rgba(242,184,75,.35); }
+.zmark.soon { width: auto; height: auto; padding: 8px 14px; border-radius: 30px; background: rgba(18,26,48,.9); color: #b3c0da; border: 1px solid #4b5670; animation: none; }
+.zmark.soon b { font-size: 15px; } .zmark.soon small { margin: 2px 0 0; }
+.zmark.dim { opacity: .45; animation: none; }
+@keyframes zpulse { 50% { box-shadow: 0 8px 22px rgba(0,0,0,.5), 0 0 0 12px rgba(242,184,75,.08); } }
+.lmark { position: absolute; left: 0; top: 0; pointer-events: auto; display: grid; justify-items: center; gap: 2px; padding: 8px 14px; border-radius: 10px;
+  background: rgba(10,19,40,.92); color: var(--ink); border: 1.5px solid var(--zc); box-shadow: 0 6px 18px rgba(0,0,0,.5); will-change: transform; transition: background .2s, color .2s; }
+.lmark span { font: 700 9.5px/1 var(--sans); letter-spacing: .18em; text-transform: uppercase; color: var(--zc); }
+.lmark b { font-family: var(--serif); font-size: 20px; font-weight: 500; line-height: 1; }
+.lmark b small { font-family: var(--sans); font-size: 10px; color: var(--muted); }
+.lmark:hover, .lmark.sel { background: var(--zc); color: #1b1203; }
+.lmark:hover span, .lmark.sel span, .lmark:hover b small, .lmark.sel b small { color: #1b1203; }
+.zone .zn { align-items: flex-start; }
+.znum { display: grid; place-items: center; flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%; background: var(--goldgrad); color: #2a1503; font-family: var(--serif); font-size: 17px; font-weight: 600; }
+.zone.full .znum { background: #3a3f55; color: #9aa6c0; }
+.zdesc { display: block; font-weight: 400; font-size: 12px; color: var(--muted); margin-top: 2px; }
+.tp-step { margin: 18px 0 10px; font-size: 10.5px; font-weight: 700; letter-spacing: .26em; text-transform: uppercase; color: var(--gold); }
+.tp-lines { display: grid; gap: 10px; }
+.tp-line { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 18px 16px; color: var(--ink);
+  background: rgba(159,185,230,.05); border: 1px solid rgba(159,185,230,.22); border-left: 3px solid var(--zc); transition: background .2s, transform .15s; min-height: 64px; }
+.tp-line:hover:not(:disabled) { background: rgba(232,176,74,.1); transform: translateX(3px); }
+.tp-line b { display: block; font-family: var(--serif); font-weight: 500; font-size: 22px; }
+.tp-line small { color: var(--muted); font-size: 12px; }
+.tp-lp { text-align: right; } .tp-lp b { color: var(--zc); font-size: 26px; }
+.tp-line.full { opacity: .45; cursor: not-allowed; }
+.tp-back { background: none; border: 0; color: var(--ice); padding: 10px 0; font-size: 13px; min-height: 44px; }
+.tp-price:empty, .tp-sub:empty { display: none; }

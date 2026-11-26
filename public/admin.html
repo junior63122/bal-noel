@@ -42,6 +42,14 @@
     .b-validee { background: #154a2c; color: #7be0a0; } .b-refusee { background: #4a1a20; color: #ff8f9c; }
     .wrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; }
     .muted { color: var(--muted); }
+      .lignes { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; width: 100%; }
+    .lg { position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px 14px; overflow: hidden; }
+    .lg b { display: block; font-size: 14px; } .lg span { color: var(--muted); font-size: 12px; }
+    .lg i { position: absolute; left: 0; bottom: 0; height: 4px; background: var(--gold); }
+    .chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+    .chip { padding: 4px 7px; font-size: 12px; border-radius: 4px; }
+    .chip.on { background: var(--gold); color: #1d1608; border-color: var(--gold); font-weight: 700; }
+    .chip:disabled { opacity: .3; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -63,18 +71,18 @@
     <section>
       <h2>Demandes</h2>
       <div class="filters" id="filters"></div>
-      <div class="wrap"><table><thead><tr><th>Date</th><th>Table</th><th>Client</th><th>Pers.</th><th>Message</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="rows"></tbody></table></div>
+      <div class="wrap"><table><thead><tr><th>Date</th><th>Ligne · tables attribuées</th><th>Client</th><th>Pers.</th><th>Message</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="rows"></tbody></table></div>
     </section>
     <section>
       <h2>Plan des tables</h2>
-      <p class="muted">Cliquez sur une table pour la passer en « réservée » ou « disponible ». Une demande validée réserve automatiquement sa table.</p>
+      <p class="muted">Les clients réservent une ligne. Attribuez les tables dans la liste des demandes (numéros cliquables). Ici, vous pouvez bloquer une table à la main.</p>
       <div class="grid" id="tables"></div>
     </section>
   </main>
 </div>
 
 <script type="module">
-import { EVENT, ZONES, TABLES, zoneOf, euros, prixLabel, totalTable, acompte } from './config.js';
+import { EVENT, ZONES, TABLES, VIP_NOM, zoneOf, ligneById, tablesDe, placesDe, euros, totalLigne, acompteLigne } from './config.js';
 const $ = (s) => document.querySelector(s);
 let pw = sessionStorage.getItem('adm') || '';
 let db = { reserved: [], demandes: [] };
@@ -100,21 +108,24 @@ function phoneIntl(tel) {
   return d;
 }
 function msg(d) {
-  const t = TABLES.find((x) => x.id === d.table); const n = d.personnes || 1;
+  const l = ligneById(d.ligne); const n = d.personnes || 1;
   return `Bonjour ${d.prenom}, ici l’organisation du ${EVENT.marque} — ${EVENT.theme} (${EVENT.dateCourte.toLowerCase()}, ${EVENT.lieu}). ` +
-    `Nous avons bien reçu votre demande pour la table ${d.table} (${zoneOf(t).nom}, ${d.personnes} pers., ${euros(totalTable(t, n))}). ` +
-    `Pour la confirmer, un acompte de ${EVENT.acomptePct} % soit ${euros(acompte(t, n))} est demandé.`;
+    `Nous avons bien reçu votre demande en ${VIP_NOM}, ${l.nom} (${n} pers. × ${l.prixPers} € = ${euros(totalLigne(l, n))})${d.tables && d.tables.length ? `, table${d.tables.length > 1 ? 's' : ''} ${d.tables.join(', ')}` : ''}. ` +
+    `Pour la confirmer, un acompte de ${EVENT.acomptePct} % soit ${euros(acompteLigne(l, n))} est demandé.`;
 }
 
 function render() {
-  const res = new Set(db.reserved);
-  // chiffre d'affaires = demandes validées × nombre de personnes × prix par personne
-  const ca = db.demandes.filter((d) => d.statut === 'validee').reduce((s, d) => s + totalTable(TABLES.find((t) => t.id === d.table), d.personnes || 0), 0);
+  const res = new Set(db.reserved); // tables bloquées à la main
+  const prises = new Set([...db.reserved, ...db.demandes.filter((d) => d.statut !== 'refusee').flatMap((d) => d.tables || [])]);
+  const val = db.demandes.filter((d) => d.statut === 'validee');
+  const ca = val.reduce((s, d) => s + totalLigne(ligneById(d.ligne), d.personnes || 0), 0);
   const nb = (s) => db.demandes.filter((d) => d.statut === s).length;
+  const vendus = (id) => val.filter((d) => d.ligne === id).reduce((s, d) => s + d.personnes, 0);
   $('#stats').innerHTML = [
-    [`${res.size} / ${TABLES.length}`, 'tables réservées'], [euros(ca), 'CA des demandes validées'],
+    [val.reduce((s, d) => s + d.personnes, 0), 'personnes validées'], [euros(ca), 'CA des demandes validées'],
     [euros(Math.round(ca * EVENT.acomptePct / 100)), `acomptes (${EVENT.acomptePct} %)`], [nb('nouvelle'), 'nouvelles demandes'], [db.demandes.length, 'demandes au total'],
-  ].map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join('');
+  ].map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join('') +
+    `<div class="lignes">${ZONES.filter((l) => l.enVente).map((l) => { const v = vendus(l.id), p = placesDe(l.id); return `<div class="lg"><b>${l.nom}</b><span>${v} / ${p} places · ${l.prixPers} €/pers.</span><i style="width:${Math.min(100, v / p * 100)}%"></i></div>`; }).join('')}</div>`;
 
   const F = ['toutes', 'nouvelle', 'contactee', 'validee', 'refusee'];
   $('#filters').innerHTML = F.map((f) => `<button class="${f === filter ? 'on' : ''}" data-f="${f}">${f === 'toutes' ? 'Toutes' : f[0].toUpperCase() + f.slice(1).replace('ee', 'ée')} (${f === 'toutes' ? db.demandes.length : nb(f)})</button>`).join('');
@@ -122,11 +133,14 @@ function render() {
 
   const list = db.demandes.filter((d) => filter === 'toutes' || d.statut === filter);
   $('#rows').innerHTML = list.length ? list.map((d) => {
-    const t = TABLES.find((x) => x.id === d.table);
+    const l = ligneById(d.ligne) || { nom: '?', prixPers: 0 };
     const text = encodeURIComponent(msg(d));
+    const chips = tablesDe(d.ligne).map((t) => { const mine = (d.tables || []).includes(t.id), pr = !mine && prises.has(t.id);
+      return `<button class="chip ${mine ? 'on' : ''}" data-d="${d.id}" data-t="${t.id}" ${pr ? 'disabled title="déjà attribuée"' : ''}>${t.id}</button>`; }).join('');
     return `<tr>
       <td>${new Date(d.date).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}</td>
-      <td><b>${d.table}</b><br><span class="muted">${esc(zoneOf(t).nom)}<br>${prixLabel(t)} · total ${euros(totalTable(t, d.personnes || 0))}</span>${res.has(d.table) ? '<br><span class="badge b-refusee">table prise</span>' : ''}</td>
+      <td><b>${esc(l.nom)}</b><br><span class="muted">${d.personnes} pers. × ${l.prixPers} € = ${euros(totalLigne(l, d.personnes || 0))}</span>
+        <div class="chips" title="Attribuer une ou plusieurs tables">${chips}</div></td>
       <td><b>${esc(d.prenom)} ${esc(d.nom)}</b><br>${esc(d.tel)}<br><span class="muted">${esc(d.email)}</span><br><span class="muted">préfère : ${d.contact === 'sms' ? 'SMS' : 'WhatsApp'}</span></td>
       <td>${d.personnes}</td>
       <td style="max-width:240px">${esc(d.message)}</td>
@@ -140,23 +154,28 @@ function render() {
         <button data-id="${d.id}" data-s="supprimer" title="Supprimer">🗑</button>
       </div></td></tr>`;
   }).join('') : '<tr><td colspan="7" class="muted">Aucune demande.</td></tr>';
+  $('#rows').querySelectorAll('.chip[data-d]').forEach((b) => (b.onclick = async () => {
+    const d = db.demandes.find((x) => x.id === b.dataset.d), cur = new Set(d.tables || []);
+    cur.has(b.dataset.t) ? cur.delete(b.dataset.t) : cur.add(b.dataset.t);
+    try { db = await call('attribuer', { id: d.id, tables: [...cur] }); render(); } catch (e) { alert(e.message); }
+  }));
   $('#rows').querySelectorAll('button[data-id]').forEach((b) => (b.onclick = async () => {
     if (b.dataset.s === 'supprimer' && !confirm('Supprimer cette demande ?')) return;
     db = await call('demande', { id: b.dataset.id, statut: b.dataset.s }); render();
   }));
 
   $('#tables').innerHTML = TABLES.map((t) => {
-    const z = zoneOf(t), r = res.has(t.id), n = db.demandes.filter((d) => d.table === t.id && d.statut !== 'refusee').length;
-    return `<button class="t ${r ? 'res' : ''}" style="--zc:${z.couleurs.at(-1)}" data-t="${t.id}"><b>${t.id}</b><small>${esc(z.nom)} · ${prixLabel(t)}</small>
-      <span class="st">${r ? 'Réservée' : 'Disponible'}</span>${n ? ` <span class="muted" style="font-size:12px">· ${n} demande${n > 1 ? 's' : ''}</span>` : ''}</button>`;
+    const z = zoneOf(t), r = res.has(t.id), who = db.demandes.find((d) => d.statut !== 'refusee' && (d.tables || []).includes(t.id));
+    return `<button class="t ${r || who ? 'res' : ''}" style="--zc:${z.couleurs.at(-1)}" data-t="${t.id}" ${who ? 'disabled' : ''}><b>${t.id}</b><small>${esc(z.nom)}</small>
+      <span class="st">${who ? `Attribuée · ${esc(who.prenom)} ${esc(who.nom)}` : r ? 'Bloquée' : 'Libre'}</span></button>`;
   }).join('');
   $('#tables').querySelectorAll('[data-t]').forEach((b) => (b.onclick = async () => {
     db = await call('table', { id: b.dataset.t, reserved: !res.has(b.dataset.t) }); render();
   }));
 }
 $('#csv').onclick = () => {
-  const head = ['date', 'table', 'zone', 'prix_par_personne', 'total', 'prenom', 'nom', 'tel', 'email', 'personnes', 'contact', 'statut', 'message'];
-  const rows = db.demandes.map((d) => { const t = TABLES.find((x) => x.id === d.table); return [d.date, d.table, zoneOf(t).nom, zoneOf(t).prixPers ?? '', totalTable(t, d.personnes || 0), d.prenom, d.nom, d.tel, d.email, d.personnes, d.contact, d.statut, d.message]; });
+  const head = ['date', 'ligne', 'tables', 'prix_par_personne', 'total', 'prenom', 'nom', 'tel', 'email', 'personnes', 'contact', 'statut', 'message'];
+  const rows = db.demandes.map((d) => { return [d.date, ligneById(d.ligne)?.nom, (d.tables || []).join(' '), ligneById(d.ligne)?.prixPers ?? '', totalLigne(ligneById(d.ligne) || {}, d.personnes || 0), d.prenom, d.nom, d.tel, d.email, d.personnes, d.contact, d.statut, d.message]; });
   const csv = [head, ...rows].map((r) => r.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')).join('\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv' })); a.download = 'demandes-bal-noel.csv'; a.click();
 };

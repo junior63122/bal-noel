@@ -112,3 +112,15 @@ Non couvert : pas de test d'intrusion externe ; les polices Google restent charg
 2. Un essai sur un vrai iPhone et un vrai Android (la 3D réelle dépend du téléphone).
 3. Quelques personnes réelles qui réservent une table de test, puis suppression dans l'admin.
 4. Donner accès au dépôt des bots Instagram pour en faire l'audit.
+
+## Mise à jour du 26 novembre : réservation par ligne (VIP Croisette)
+
+Le client ne choisit plus une table : il choisit une zone (1 à 4), puis la ligne avant (200 €/pers.) ou arrière
+(150 €/pers.), et indique le nombre de personnes. L'organisation attribue les tables dans l'administration.
+Places par ligne = nombre de tables × 6 (valeur provisoire, `PERS_PAR_TABLE` dans `public/config.js`).
+
+- Tests serveur : **15/15** ; test par mutation sur les nouvelles règles : **6/6 défauts détectés**
+  (places décomptées, ligne complète, table attribuée deux fois, table hors ligne, scène hors vente, libération au refus).
+- Parcours simulés (nouveau parcours zone → ligne → personnes) : **149/150**, le seul échec
+  (« mouvement réduit », délai de clic) réussit au rejeu (5/5). Rapport : `tests/rapport-lignes-150.md`.
+- Les anciennes demandes « par table » sont converties automatiquement (ligne de la table + table attribuée).

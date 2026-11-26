@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
-import { EVENT, ZONES, TABLES, ROWS, zoneOf, euros, enVente, prixPers, totalTable, acompte, prixLabel } from './config.js';
+import { EVENT, ZONES, GROUPES, VIP_NOM, MAX_PAR_DEMANDE, TABLES, ROWS, zoneOf, ligneById, groupeOf, tablesDe, placesDe, euros, enVente, totalLigne, acompteLigne, prixLabel } from './config.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -21,17 +21,19 @@ fill('[data-lieu-up]', EVENT.lieu.toUpperCase());
 fill('[data-tagline]', EVENT.tagline);
 fill('[data-acompte]', EVENT.acomptePct);
 fill('[data-personnes]', EVENT.personnes);
-$('#meta-count').textContent = `${TABLES.filter(enVente).length} tables en vente · prix par personne`;
+$('#meta-count').textContent = `${VIP_NOM} · 4 zones · lignes avant et arrière`;
 
 /* ================================================================ état (API ou démo) */
 let reserved = new Set();
+let restants = {};
+const restant = (id) => (id in restants ? restants[id] : placesDe(id));
 let demo = false;
 const LS = 'bal-noel-demo';
 async function loadState() {
   try {
     const r = await fetch('api/state', { cache: 'no-store' });
     if (!r.ok) throw 0;
-    reserved = new Set((await r.json()).reserved);
+    const j = await r.json(); reserved = new Set(j.reserved); restants = j.restant || {};
   } catch {
     demo = true; // hébergement statique : mode démonstration (stockage local)
     try { reserved = new Set(JSON.parse(localStorage.getItem(LS) || '{}').reserved || []); } catch { reserved = new Set(); }
@@ -509,34 +511,52 @@ snowGeo.setAttribute('position', new THREE.BufferAttribute(sp, 3));
 const snowPts = new THREE.Points(snowGeo, new THREE.PointsMaterial({ color: '#ffffff', size: .12, transparent: true, opacity: .8, depthWrite: false }));
 scene.add(snowPts);
 
-/* ================================================================ étiquettes */
+/* ================================================================ repères de zones et de lignes */
+// Le client ne choisit pas sa table : on affiche un repère par zone (1 à 4, scène),
+// puis, dans la zone choisie, un repère par ligne (avant / arrière).
 const labels = $('#labels');
-const LABEL = new Map();
-TABLES.forEach((t) => {
+const MARKS = [];
+function centre(ts, up) { const v = new THREE.Vector3(); ts.forEach((t) => v.add(TABLE_OBJ.get(t.id).base)); v.multiplyScalar(1 / ts.length); v.y += up; return v; }
+GROUPES.forEach((g) => {
+  const ts = TABLES.filter((t) => zoneOf(t).groupe === g.id);
   const b = document.createElement('button');
-  b.type = 'button'; b.className = 'tlabel'; b.textContent = t.id;
-  b.style.setProperty('--zc', zoneOf(t).couleurs.at(-1));
-  b.title = `Table ${t.id} · ${zoneOf(t).nom} · ${prixLabel(t)}`;
-  b.setAttribute('aria-label', b.title);
-  b.addEventListener('click', () => selectTable(t));
-  b.addEventListener('pointerenter', () => highlight(t.id, true));
-  b.addEventListener('pointerleave', () => highlight(t.id, false));
-  labels.appendChild(b); LABEL.set(t.id, b);
+  b.type = 'button'; b.className = 'zmark' + (g.bientot ? ' soon' : '');
+  b.innerHTML = g.bientot ? '<b>Scène</b><small>bientôt</small>' : `<b>${g.num}</b><small>Zone</small>`;
+  b.setAttribute('aria-label', g.bientot ? 'Scène, pas encore en vente' : `${g.nom}, ${g.desc}`);
+  b.addEventListener('click', () => selectGroupe(g.id));
+  labels.appendChild(b); MARKS.push({ el: b, pos: centre(ts, 2.4), kind: 'g', id: g.id });
 });
-function highlight(id, on) {
-  const o = TABLE_OBJ.get(id);
-  o.mats.forEach((m) => { m.emissive.set(on ? '#d9b878' : '#000'); m.emissiveIntensity = on ? .5 : 0; });
+ZONES.filter((l) => l.enVente).forEach((l) => {
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'lmark ' + l.type; b.style.setProperty('--zc', l.couleurs[0]);
+  b.innerHTML = `<span>${l.libelle}</span><b>${l.prixPers} €<small> / pers.</small></b>`;
+  b.setAttribute('aria-label', `${l.nom}, ${l.prixPers} euros par personne`);
+  b.addEventListener('click', () => selectLigne(l.id));
+  b.addEventListener('pointerenter', () => glow(l.id, true));
+  b.addEventListener('pointerleave', () => glow(l.id, false));
+  labels.appendChild(b); MARKS.push({ el: b, pos: centre(tablesDe(l.id), 1.3), kind: 'l', id: l.id, groupe: l.groupe });
+});
+// surbrillance d'une ligne entière (canapés + dalles)
+function glow(ligneId, on) {
+  if (!ligneId) return;
+  for (const t of tablesDe(ligneId)) {
+    const o = TABLE_OBJ.get(t.id);
+    o.mats.forEach((m) => { m.emissive.set(on ? '#ffd98a' : '#000'); m.emissiveIntensity = on ? .35 : 0; });
+  }
 }
 const tmp = new THREE.Vector3();
 function placeLabels() {
   const w = stage.clientWidth, h = stage.clientHeight;
-  labels.classList.toggle('compact', camera.position.distanceTo(controls.target) > 26);
-  for (const [id, b] of LABEL) {
-    tmp.copy(TABLE_OBJ.get(id).anchor).project(camera);
-    const off = tmp.z > 1 || Math.abs(tmp.x) > 1.2 || Math.abs(tmp.y) > 1.2;
-    b.style.visibility = off ? 'hidden' : '';
-    b.style.transform = `translate(${(tmp.x * .5 + .5) * w}px, ${(-tmp.y * .5 + .5) * h}px) translate(-50%, -50%)`;
-    b.style.zIndex = String(1000 - Math.round(tmp.z * 1000));
+  for (const m of MARKS) {
+    const show = m.kind === 'g' ? activeGroupe !== m.id : activeGroupe === m.groupe;
+    if (!show) { m.el.style.visibility = 'hidden'; continue; }
+    tmp.copy(m.pos).project(camera);
+    const off = tmp.z > 1 || Math.abs(tmp.x) > 1.15 || Math.abs(tmp.y) > 1.15;
+    m.el.style.visibility = off ? 'hidden' : '';
+    m.el.classList.toggle('dim', m.kind === 'g' && !!activeGroupe);
+    m.el.classList.toggle('sel', m.kind === 'l' && current && current.id === m.id);
+    m.el.style.transform = `translate(${(tmp.x * .5 + .5) * w}px, ${(-tmp.y * .5 + .5) * h}px) translate(-50%, -50%)`;
+    m.el.style.zIndex = String(1000 - Math.round(tmp.z * 1000));
   }
 }
 
@@ -556,8 +576,9 @@ function fitHome() {
   HOME.pos.set(0, d * .93, d * .37); HOME.target.set(0, 0, 2);
 }
 function flyHome() { fitHome(); flyTo(HOME.pos.clone(), HOME.target.clone(), 1500); }
-function flyZone(zoneId) {
-  const ts = TABLES.filter((t) => t.zone === zoneId);
+function flyGroupe(gid) { flyBox(TABLES.filter((t) => zoneOf(t).groupe === gid)); }
+function flyZone(zoneId) { flyBox(tablesDe(zoneId)); }
+function flyBox(ts) {
   const box = new THREE.Box3(); ts.forEach((t) => box.expandByPoint(TABLE_OBJ.get(t.id).anchor));
   const c = box.getCenter(new THREE.Vector3()); const size = box.getSize(new THREE.Vector3()).length();
   const dist = Math.max(15, size * 1.5);
@@ -570,7 +591,7 @@ function flyTable(t) {
   const target = o.base.clone().setY(o.base.y + .3);
   const out = o.base.clone().setY(0).sub(new THREE.Vector3(0, 0, 0)).normalize(); // du centre vers la table
   if (out.lengthSq() < .01) out.set(0, 0, 1);
-  const stageSide = !t.zone.startsWith('fond') && t.zone !== 'ailes'; // scène : murs bas derrière, on arrive par l'arrière
+  const stageSide = t.zone === 'scene'; // scène : murs bas derrière, on arrive par l'arrière
   const pos = target.clone().addScaledVector(out, stageSide ? 4.6 : -3.8).add(new THREE.Vector3(0, stageSide ? 5.8 : 6.8, 0));
   // on garde un peu l'angle courant pour une trajectoire naturelle
   flyTo(pos, target, 1500);
@@ -578,9 +599,9 @@ function flyTable(t) {
 let pov = false;
 function enterPov(t) {
   const o = TABLE_OBJ.get(t.id);
-  const onStageT = !t.zone.startsWith('fond') && t.zone !== 'ailes';
+  const onStageT = t.zone === 'scene';
   const eye = o.base.clone().setY(o.base.y + (onStageT ? 2.5 : 1.15)); // scène : on regarde par-dessus la cabine du DJ
-  const look = V(CX, CY, .8).lerp(V(627, 566, 1.5), t.zone === 'fond1' || t.zone === 'fond2' || t.zone === 'ailes' ? .15 : 0);
+  const look = V(CX, CY, .8).lerp(V(627, 566, 1.5), t.zone !== 'scene' ? .15 : 0);
   // regard depuis la table vers la piste ; on recule à peine pour voir ses propres canapés
   const dir = look.clone().sub(eye).setY(0).normalize();
   eye.addScaledVector(dir, -.9);
@@ -588,14 +609,14 @@ function enterPov(t) {
   document.body.classList.add('pov-mode'); applyViewOffset();
   controls.enabled = false;
   flyTo(eye, look, 1800);
-  $('#pov-txt').textContent = `Vue depuis la table ${t.id}`;
+  $('#pov-txt').textContent = `Vue depuis la ${zoneOf(t).nom.toLowerCase()}`;
   $('#pov-bar').hidden = false; stage.classList.add('pov');
 }
 function exitPov(goHome = false) {
   if (!pov) return;
   pov = false; controls.enabled = true; $('#pov-bar').hidden = true; stage.classList.remove('pov');
   document.body.classList.remove('pov-mode'); applyViewOffset();
-  if (current && !goHome) { ring.visible = true; flyTable(current); } else flyHome();
+  if (current && !goHome) flyZone(current.id); else flyHome();
 }
 function zoomBy(f) {
   const d = camera.position.clone().sub(controls.target);
@@ -604,7 +625,7 @@ function zoomBy(f) {
 }
 $('#zoom-in').onclick = () => zoomBy(.72);
 $('#zoom-out').onclick = () => zoomBy(1.38);
-$('#btn-overview').onclick = () => { exitPov(true); deselectTable(); selectZone(null); };
+$('#btn-overview').onclick = () => { exitPov(true); selectGroupe(null); };
 $('#pov-exit').onclick = () => exitPov();
 controls.addEventListener('start', () => (fly = null));
 
@@ -633,14 +654,15 @@ let down = null, hovered = null;
 canvas.addEventListener('pointerdown', (e) => (down = { x: e.clientX, y: e.clientY }));
 canvas.addEventListener('pointerup', (e) => {
   if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6 || pov) return;
-  const t = pick(e); if (t) selectTable(t);
+  const t = pick(e); if (!t) return; const l = zoneOf(t); l.enVente ? selectLigne(l.id) : selectGroupe(l.groupe);
 });
 canvas.addEventListener('pointermove', (e) => {
   if (e.buttons || pov) return;
   const t = pick(e);
-  if (hovered && hovered !== t) highlight(hovered.id, false);
-  if (t) highlight(t.id, true);
-  hovered = t; canvas.style.cursor = t ? 'pointer' : '';
+  const l = t ? t.zone : null;
+  if (hovered && hovered !== l) glow(hovered, false);
+  if (l) glow(l, true);
+  hovered = l; canvas.style.cursor = t ? 'pointer' : '';
 });
 
 // arrivée dans la salle : survol de la caméra la première fois que le plan est visible
@@ -650,7 +672,7 @@ const INTRO = new THREE.Vector3(-34, 46, -38);
 camera.position.copy(INTRO);
 new IntersectionObserver((en, obs) => {
   if (!en[0].isIntersecting) return; obs.disconnect();
-  if (current || userMoved) return; // l'utilisateur a déjà choisi une table ou bougé la vue : on ne l'interrompt pas
+  if (current || activeGroupe || userMoved) return; // l'utilisateur a déjà choisi ou bougé la vue : on ne l'interrompt pas
   fitHome(); flyTo(HOME.pos.clone(), HOME.target.clone(), 2600);
 }, { threshold: .35 }).observe(stage);
 
@@ -693,7 +715,7 @@ renderer.setAnimationLoop(() => {
 $('#loading').remove();
 {
   const hint = $('.hint');
-  if (matchMedia('(pointer: coarse)').matches) hint.textContent = 'Glissez pour tourner · Pincez pour zoomer · Touchez une table';
+  if (matchMedia('(pointer: coarse)').matches) hint.textContent = 'Glissez pour tourner · Pincez pour zoomer · Touchez une zone';
   const hide = () => hint.classList.add('gone');
   canvas.addEventListener('pointerdown', hide, { once: true });
   setTimeout(hide, 9000);
@@ -701,79 +723,107 @@ $('#loading').remove();
 // le bouton de l'accueil devient actif quand la salle est prête
 requestAnimationFrame(() => { const c = $('#cta-main'); c.classList.remove('loading'); c.querySelector('.cta-txt').textContent = 'Choisir ma table'; c.insertAdjacentHTML('beforeend', '<span class="arrow">→</span>'); });
 
-/* ================================================================ zones */
-let activeZone = null;
-let current = null;
+/* ================================================================ zones et lignes */
+let activeGroupe = null;
+let current = null; // ligne sélectionnée
 const zonesEl = $('#zones');
+const lignesDe = (gid) => ZONES.filter((l) => l.groupe === gid && l.enVente);
 function renderZones() {
-  const free = (z) => TABLES.filter((t) => t.zone === z.id && !reserved.has(t.id)).length;
-  const fmt = (z) => (z.enVente ? `${z.prixPers} € / pers.` : 'Bientôt');
   zonesEl.innerHTML = '';
   const all = document.createElement('li');
-  all.innerHTML = `<button type="button" class="zone all ${activeZone ? '' : 'active'}"><span class="zn">Toute la salle</span><small>${TABLES.length} tables ↗</small></button>`;
-  all.firstChild.onclick = () => selectZone(null);
+  all.innerHTML = `<button type="button" class="zone all ${activeGroupe ? '' : 'active'}"><span class="zn">Toute la salle</span><small>vue d’ensemble ↗</small></button>`;
+  all.firstChild.onclick = () => selectGroupe(null);
   zonesEl.appendChild(all);
-  ZONES.forEach((z) => {
-    const n = free(z);
+  GROUPES.forEach((g) => {
+    const ls = lignesDe(g.id), libres = ls.reduce((s, l) => s + restant(l.id), 0);
     const li = document.createElement('li');
-    li.innerHTML = `<button type="button" class="zone ${activeZone === z.id ? 'active' : ''} ${n ? '' : 'full'}">
-      <span class="zn">${z.nom} <span class="sw">${z.couleurs.map((c) => `<i style="background:${c}"></i>`).join('')}</span></span>
-      <span class="zp"><strong>${fmt(z)}</strong><small>${z.enVente ? `${n} disponible${n > 1 ? 's' : ''} · jusqu’à ${z.capacite} pers.` : 'pas encore en vente'}</small></span></button>`;
-    li.firstChild.onclick = () => selectZone(z.id);
+    li.innerHTML = `<button type="button" class="zone ${activeGroupe === g.id ? 'active' : ''} ${g.bientot || !libres ? 'full' : ''}" data-g="${g.id}">
+      <span class="zn"><span class="znum">${g.num || '★'}</span><span>${g.bientot ? 'Scène' : g.nom}<small class="zdesc">${g.desc}</small></span></span>
+      <span class="zp"><strong>${g.bientot ? 'Bientôt' : `dès ${Math.min(...ls.map((l) => l.prixPers))} €`}</strong><small>${g.bientot ? 'pas encore en vente' : libres ? 'par personne' : 'complet'}</small></span></button>`;
+    li.firstChild.onclick = () => selectGroupe(g.id);
     zonesEl.appendChild(li);
   });
 }
-function selectZone(id) {
-  activeZone = id;
-  if (current && current.zone !== id) deselectTable();
-  renderZones(); refreshLabels(); renderStrip();
-  id ? flyZone(id) : flyHome();
-  if (id && innerWidth <= 1100) scrollToEl(stage, -80);
-}
+// couleurs 3D : ligne choisie en avant, lignes complètes et scène en gris
 function refreshLabels() {
-  const only = $('#only-free').checked;
   for (const t of TABLES) {
-    const b = LABEL.get(t.id), taken = reserved.has(t.id);
-    b.classList.toggle('taken', taken);
-    b.classList.toggle('soon', !enVente(t));
-    b.setAttribute('aria-label', `Table ${t.id}, ${zoneOf(t).nom}, ${prixLabel(t)}, ${!enVente(t) ? 'pas encore en vente' : taken ? 'réservée' : 'disponible'}`);
-    b.classList.toggle('hide', only && taken);
-    b.classList.toggle('dim', !!activeZone && t.zone !== activeZone);
-    const o = TABLE_OBJ.get(t.id);
-    o.mats.forEach((m) => m.color.set(taken ? '#3a3234' : '#e6dccb'));
-    const off = taken || !enVente(t);
-    o.plate.material.color.set(off ? '#3a3f55' : zoneOf(t).couleurs.at(-1));
-    o.plate.material.emissiveIntensity = off ? 0 : .25;
+    const l = zoneOf(t), o = TABLE_OBJ.get(t.id);
+    const off = !l.enVente || restant(l.id) <= 0;
+    const mine = current ? current.id === l.id : activeGroupe ? l.groupe === activeGroupe : true;
+    o.plate.material.color.set(off ? '#3a3f55' : l.couleurs[0]);
+    o.plate.material.emissiveIntensity = off ? 0 : mine ? (current ? .9 : .4) : .05;
+    o.plate.material.opacity = mine ? .75 : .25;
+    o.mats.forEach((m) => m.color.set(mine || !activeGroupe ? '#e6dccb' : '#7d7a78'));
   }
-  renderStrip();
 }
+$('#only-free')?.closest('label')?.remove();
 
-/* ================================================================ sélection d'une table */
-function selectTable(t) {
-  exitPov(true);
-  current = t;
-  activeZone = t.zone;
-  LABEL.forEach((b) => b.classList.remove('sel')); LABEL.get(t.id).classList.add('sel');
-  const o = TABLE_OBJ.get(t.id);
-  ring.position.copy(o.base).setY(o.base.y + .03);
-  ring.scale.set(.2, 1, .2); ring.visible = true;
-  const z = zoneOf(t), taken = reserved.has(t.id), soon = !enVente(t);
-  const badge = $('#badge'); badge.textContent = `Table ${t.id} · ${prixLabel(t)}`; badge.hidden = false;
-  badge.classList.remove('pop'); void badge.offsetWidth; badge.classList.add('pop');
-  $('#tp-title').textContent = `Table ${t.id}`;
-  $('#tp-zone').textContent = `${z.nom} · ${z.desc}`;
-  $('#tp-price').textContent = soon ? 'Bientôt disponible' : `${euros(prixPers(t))} / personne`;
-  $('#tp-sub').textContent = soon ? 'Les tables de la scène ne sont pas encore proposées à la vente.' : `Jusqu’à ${z.capacite} personnes · exemple : ${euros(totalTable(t, z.capacite))} pour ${z.capacite} · acompte ${EVENT.acomptePct} %`;
-  $('#tp-status').className = 'tp-status ' + (taken || soon ? 'taken' : 'free');
-  $('#tp-status').innerHTML = soon ? '<strong>Pas encore en vente</strong>Revenez bientôt, ou choisissez une table VIP face au DJ.' : taken ? '<strong>Réservée</strong>Choisissez une autre table sur le plan ou dans la liste.' : '<strong>Disponible</strong>Envoyez votre demande : l’organisation vous recontacte rapidement.';
-  $('#tp-ask').disabled = taken || soon;
+function openPanel() {
   const side = $('#side'); side.classList.add('closed', 'has-table'); $('#collapse').textContent = '+';
   const panel = $('#tpanel'); panel.hidden = false; panel.classList.remove('enter'); void panel.offsetWidth; panel.classList.add('enter');
-  renderZones(); refreshLabels();
-  flyTable(t);
   if (isSheet()) { document.body.classList.add('sheet-open'); scrollToEl(stage, -64); }
   applyViewOffset();
 }
+// 1) le client choisit une zone : on zoome et on propose ses deux lignes
+function selectGroupe(gid) {
+  exitPov(true);
+  if (current) glow(current.id, false);
+  activeGroupe = gid; current = null; $('#badge').hidden = true;
+  renderZones(); refreshLabels();
+  if (!gid) { closePanel(); flyHome(); return; }
+  flyGroupe(gid);
+  const g = GROUPES.find((x) => x.id === gid);
+  $('#tp-eyebrow').textContent = VIP_NOM;
+  $('#tp-title').textContent = g.bientot ? 'Scène' : g.nom;
+  $('#tp-zone').textContent = g.desc;
+  $('#tp-price').textContent = ''; $('#tp-sub').textContent = '';
+  if (g.bientot) {
+    $('#tp-lines').innerHTML = '';
+    $('#tp-status').className = 'tp-status taken';
+    $('#tp-status').innerHTML = '<strong>Pas encore en vente</strong>Les places autour du DJ seront annoncées prochainement. Choisissez une zone du VIP Croisette.';
+    $('#tp-status').hidden = false; $('#tp-actions').hidden = true;
+  } else {
+    $('#tp-status').hidden = true; $('#tp-actions').hidden = true;
+    $('#tp-lines').innerHTML = `<p class="tp-step">Choisissez votre ligne</p>` + lignesDe(gid).map((l) => {
+      const r = restant(l.id);
+      return `<button type="button" class="tp-line ${l.type} ${r ? '' : 'full'}" data-l="${l.id}" style="--zc:${l.couleurs[0]}" ${r ? '' : 'disabled'}>
+        <span><b>${l.libelle}</b><small>${l.type === 'avant' ? 'au plus près de la piste' : 'juste derrière, en surplomb'}</small></span>
+        <span class="tp-lp"><b>${l.prixPers} €</b><small>${r ? 'par personne' : 'complet'}</small></span></button>`;
+    }).join('');
+    $('#tp-lines').querySelectorAll('[data-l]').forEach((b) => (b.onclick = () => selectLigne(b.dataset.l)));
+  }
+  openPanel();
+}
+// 2) le client choisit une ligne : prix par personne, puis demande
+function selectLigne(id) {
+  exitPov(true);
+  const l = ligneById(id); if (!l) return;
+  if (current) glow(current.id, false);
+  activeGroupe = l.groupe; current = l;
+  const r = restant(l.id), g = groupeOf(l);
+  renderZones(); refreshLabels(); flyZone(l.id);
+  const badge = $('#badge'); badge.textContent = `${g.nom} · ${l.libelle} · ${l.prixPers} € / pers.`; badge.hidden = false;
+  badge.classList.remove('pop'); void badge.offsetWidth; badge.classList.add('pop');
+  $('#tp-eyebrow').textContent = `${VIP_NOM} · ${g.nom}`;
+  $('#tp-title').textContent = l.libelle;
+  $('#tp-zone').textContent = `${g.desc} · ${tablesDe(l.id).length} tables`;
+  $('#tp-price').textContent = `${euros(l.prixPers)} / personne`;
+  $('#tp-sub').textContent = `Exemple : ${euros(totalLigne(l, 10))} pour 10 personnes · acompte ${EVENT.acomptePct} % · l’organisation vous attribue votre table`;
+  $('#tp-lines').innerHTML = `<button type="button" class="tp-back" id="tp-back">← Changer de ligne</button>`;
+  $('#tp-back').onclick = () => selectGroupe(l.groupe);
+  $('#tp-status').hidden = false;
+  $('#tp-status').className = 'tp-status ' + (r ? 'free' : 'taken');
+  $('#tp-status').innerHTML = r ? '<strong>Disponible</strong>Indiquez combien vous serez : l’organisation vous recontacte et vous attribue votre table.' : '<strong>Complet</strong>Cette ligne est complète. Essayez l’autre ligne ou une autre zone.';
+  $('#tp-actions').hidden = false; $('#tp-ask').disabled = !r;
+  openPanel();
+}
+function closePanel() {
+  if (current) glow(current.id, false);
+  current = null; $('#badge').hidden = true; $('#tpanel').hidden = true;
+  document.body.classList.remove('sheet-open'); applyViewOffset();
+  const side = $('#side'); side.classList.remove('closed', 'has-table'); $('#collapse').textContent = '−';
+}
+const midTable = (l) => { const ts = tablesDe(l.id); return ts[Math.floor(ts.length / 2)]; };
 // mobile / tablette : la fiche de la table s'ouvre en panneau bas, le plan reste visible au-dessus
 function isSheet() { return innerWidth <= 1100; }
 function applyViewOffset() {
@@ -782,63 +832,36 @@ function applyViewOffset() {
   else camera.clearViewOffset();
 }
 addEventListener('resize', applyViewOffset, { passive: true });
-function deselectTable() {
-  current = null; ring.visible = false; $('#badge').hidden = true; $('#tpanel').hidden = true;
-  document.body.classList.remove('sheet-open'); applyViewOffset();
-  const side = $('#side'); side.classList.remove('closed', 'has-table'); $('#collapse').textContent = '−';
-  LABEL.forEach((b) => b.classList.remove('sel'));
-}
-function renderStrip() {
-  const el = $('#zone-strip');
-  if (!activeZone) { el.hidden = true; return; }
-  const z = ZONES.find((x) => x.id === activeZone), ts = TABLES.filter((t) => t.zone === activeZone);
-  $('#zs-name').textContent = z.nom;
-  $('#zs-meta').textContent = `${ts.length} tables · ${z.enVente ? z.prixPers + ' € / pers.' : 'bientôt disponible'}`;
-  $('#zs-list').innerHTML = ts.map((t) => {
-    const taken = reserved.has(t.id) || !z.enVente;
-    return `<button type="button" class="zs-card ${taken ? 'taken' : ''} ${current && current.id === t.id ? 'sel' : ''}" data-id="${t.id}" style="--zc:${z.couleurs.at(-1)}">
-      <b>Table ${t.id}</b><span>${z.enVente ? z.prixPers + ' € / pers.' : 'Bientôt'}</span><small>${!z.enVente ? 'Pas en vente' : taken ? 'Réservée' : 'Disponible'}</small></button>`;
-  }).join('');
-  $('#zs-list').querySelectorAll('button').forEach((b) => (b.onclick = () => selectTable(TABLES.find((t) => t.id === b.dataset.id))));
-  el.hidden = false;
-}
-{
-  let y0 = null;
-  $('#tpanel').addEventListener('touchstart', (e) => { if ($('#tpanel').scrollTop <= 0) y0 = e.touches[0].clientY; }, { passive: true });
-  $('#tpanel').addEventListener('touchend', (e) => { if (y0 !== null && e.changedTouches[0].clientY - y0 > 70) $('#tp-close').click(); y0 = null; }, { passive: true });
-}
-$('#tp-close').onclick = () => { exitPov(true); deselectTable(); selectZone(activeZone); };
-$('#tp-pov').onclick = () => current && enterPov(current);
+function renderStrip() { $('#zone-strip').hidden = true; }
+$('#tp-close').onclick = () => { exitPov(true); current ? selectGroupe(current.groupe) : selectGroupe(null); };
+$('#tp-pov').onclick = () => current && enterPov(midTable(current));
 $('#tp-ask').onclick = () => current && openDrawer(current);
-$('#only-free').onchange = refreshLabels;
 const toggleZones = () => { const c = $('#side').classList.toggle('closed'); $('#collapse').textContent = c ? '+' : '−'; };
 $('#collapse').onclick = (e) => { e.stopPropagation(); toggleZones(); };
 $('.side-head').onclick = toggleZones;
 
 /* ================================================================ fiche table + formulaire */
 const drawer = $('#drawer'), back = $('#drawer-back'), form = $('#form');
-function openDrawer(t) {
-  current = t;
-  const z = zoneOf(t), taken = reserved.has(t.id) || !enVente(t);
-  LABEL.forEach((b) => b.classList.remove('sel')); LABEL.get(t.id).classList.add('sel');
-  $('#d-zone').textContent = z.nom;
-  $('#d-title').textContent = `Table ${t.id}`;
-  $('#d-price').textContent = `${euros(prixPers(t) || 0)}`;
-  $('#d-pers').innerHTML = Array.from({ length: z.capacite }, (_, i) => `<option ${i + 1 === z.capacite ? 'selected' : ''}>${i + 1}</option>`).join('');
+function openDrawer(l) {
+  const r = restant(l.id), max = Math.min(r, MAX_PAR_DEMANDE), g = groupeOf(l);
+  $('#d-zone').textContent = `${VIP_NOM} · ${g.nom}`;
+  $('#d-title').textContent = l.libelle;
+  $('#d-price').textContent = euros(l.prixPers);
+  $('#d-pers').innerHTML = `<option value="" selected disabled>Combien serez-vous ?</option>` + Array.from({ length: max }, (_, i) => `<option value="${i + 1}">${i + 1} personne${i ? 's' : ''}</option>`).join('');
   majTotal();
-  $('#d-taken').hidden = !taken; form.hidden = taken;
+  $('#d-taken').hidden = r > 0; form.hidden = r <= 0;
   $('#d-error').hidden = true;
   $('#d-form-view').hidden = false; $('#d-ok-view').hidden = true;
   lastFocus = document.activeElement;
   drawer.classList.add('open'); drawer.setAttribute('aria-hidden', 'false'); back.hidden = false;
-  setTimeout(() => (taken ? $('#drawer-close') : form.prenom).focus({ preventScroll: true }), 350);
+  setTimeout(() => (r > 0 ? $('#d-pers') : $('#drawer-close')).focus({ preventScroll: true }), 350);
 }
 // total et acompte recalculés selon le nombre de personnes choisi
 function majTotal() {
   if (!current) return;
-  const n = Number($('#d-pers').value) || 1;
-  $('#d-cap').textContent = euros(totalTable(current, n));
-  $('#d-dep').textContent = euros(acompte(current, n));
+  const n = Number($('#d-pers').value) || 0;
+  $('#d-cap').textContent = n ? euros(totalLigne(current, n)) : '—';
+  $('#d-dep').textContent = n ? euros(acompteLigne(current, n)) : '—';
 }
 $('#d-pers').addEventListener('change', majTotal);
 let lastFocus = null;
@@ -866,22 +889,23 @@ form.addEventListener('submit', async (e) => {
   if (!f.prenom.trim() || !f.nom.trim()) problems.push('indiquez votre prénom et votre nom');
   if (f.tel.replace(/\D/g, '').length < 8) problems.push('indiquez un numéro de téléphone valide');
   if (f.email && !/^\S+@\S+\.\S+$/.test(f.email)) problems.push('l’e-mail semble incorrect');
+  if (!Number(f.personnes)) problems.push('indiquez le nombre de personnes');
   if (!f.cgv) problems.push('cochez la case concernant l’acompte');
-  const bad = { prenom: !f.prenom.trim(), nom: !f.nom.trim(), tel: f.tel.replace(/\D/g, '').length < 8, email: !!f.email && !/^\S+@\S+\.\S+$/.test(f.email), cgv: !f.cgv };
+  const bad = { personnes: !Number(f.personnes), prenom: !f.prenom.trim(), nom: !f.nom.trim(), tel: f.tel.replace(/\D/g, '').length < 8, email: !!f.email && !/^\S+@\S+\.\S+$/.test(f.email), cgv: !f.cgv };
   Object.entries(bad).forEach(([k, v]) => form[k].setAttribute('aria-invalid', v ? 'true' : 'false'));
   if (problems.length) { err.textContent = 'Merci de vérifier : ' + problems.join(', ') + '.'; err.hidden = false; form[Object.keys(bad).find((k) => bad[k])].focus(); return; }
   const btn = $('#d-submit'); btn.disabled = true;
   try {
-    await submitDemande({ table: current.id, prenom: f.prenom, nom: f.nom, tel: f.tel, email: f.email, personnes: f.personnes, contact: f.contact, message: f.message, website: f.website });
-    const n = Number(f.personnes) || 1, dep = euros(acompte(current, n));
-    $('#d-ok-text').innerHTML = `Merci ${escapeHtml(f.prenom)} ! Votre demande pour la <strong>table ${current.id}</strong> (${zoneOf(current).nom}) est bien enregistrée.<br><br>
-      L’organisation vous contacte par <strong>${f.contact === 'sms' ? 'SMS' : 'WhatsApp'}</strong> au ${escapeHtml(f.tel)} dans les heures qui suivent.
-      Pour ${n} personne${n > 1 ? 's' : ''} (${euros(totalTable(current, n))}), un acompte de ${EVENT.acomptePct} % (${dep}) vous sera demandé après validation.`;
+    await submitDemande({ ligne: current.id, prenom: f.prenom, nom: f.nom, tel: f.tel, email: f.email, personnes: f.personnes, contact: f.contact, message: f.message, website: f.website });
+    const n = Number(f.personnes) || 1, dep = euros(acompteLigne(current, n));
+    $('#d-ok-text').innerHTML = `Merci ${escapeHtml(f.prenom)} ! Votre demande en <strong>${current.nom}</strong> (${VIP_NOM}) est bien enregistrée.<br><br>
+      L’organisation vous attribue votre table et vous contacte par <strong>${f.contact === 'sms' ? 'SMS' : 'WhatsApp'}</strong> au ${escapeHtml(f.tel)} dans les heures qui suivent.
+      Pour ${n} personne${n > 1 ? 's' : ''} (${euros(totalLigne(current, n))}), un acompte de ${EVENT.acomptePct} % (${dep}) vous sera demandé après validation.`;
     $('#d-form-view').hidden = true; $('#d-ok-view').hidden = false;
     form.reset();
   } catch (x) {
     err.textContent = x.message; err.hidden = false;
-    await loadState(); refreshLabels(); renderZones();
+    await loadState(); refreshLabels(); renderZones(); if (current) selectLigne(current.id);
   } finally { btn.disabled = false; }
 });
 const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);

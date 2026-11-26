@@ -28,18 +28,18 @@ const APPAREILS = [
 ];
 const RESEAUX = { rapide: null, '4G': { latency: 60, down: 4e6 / 8, up: 1e6 / 8 }, '3G lente': { latency: 400, down: 400e3 / 8, up: 400e3 / 8 } };
 const COMPORTEMENTS = [
-  'direct',          // choisit une table et envoie
-  'zones',           // explore les zones puis réserve
-  'liste',           // choisit dans la liste sous le plan
+  'direct',          // touche un repère de zone sur le plan, choisit sa ligne, envoie
+  'zones',           // choisit la zone dans la liste « VIP Croisette »
+  'marqueur-ligne',  // touche directement l'étiquette d'une ligne sur le plan
   'erreurs',         // fait des erreurs de saisie, lit les messages, corrige
   'double-clic',     // clique deux fois sur « envoyer »
   'retour',          // revient à l'accueil avec le bouton retour puis recommence
   'actualise',       // actualise la page en plein parcours
-  'reservee',        // tombe sur une table déjà réservée
+  'complete',        // choisit une ligne complète (aucune demande possible)
   'clavier',         // navigue uniquement au clavier
-  'vue-table',       // regarde « depuis la table » puis réserve
-  'filtre',          // coche « disponibles uniquement »
-  'hesitant',        // ouvre plusieurs tables, ferme, change d'avis
+  'vue-ligne',       // regarde « depuis cette ligne » puis réserve
+  'change-ligne',    // choisit une ligne, « Changer de ligne », prend l'autre
+  'hesitant',        // ouvre plusieurs zones, ferme, change d'avis
   'abandon',         // ouvre le formulaire puis ferme sans envoyer (aucune demande ne doit être créée)
   'lien-direct',     // arrive directement sur /#plan (lien partagé)
   'mouvement-reduit',// préférence « réduire les animations »
@@ -55,7 +55,6 @@ function profils(n) {
   return out;
 }
 
-const RESERVEES = ['03', '17', '30', '41'];
 async function adminData() { return (await fetch(BASE + '/api/admin/data', { headers: { 'x-admin-password': PW, 'x-forwarded-for': '127.9.9.9' } })).json(); }
 
 async function parcours(browser, p) {
@@ -69,16 +68,18 @@ async function parcours(browser, p) {
   if (RESEAUX[p.reseau]) { const c = await ctx.newCDPSession(page); await c.send('Network.emulateNetworkConditions', { offline: false, latency: RESEAUX[p.reseau].latency, downloadThroughput: RESEAUX[p.reseau].down, uploadThroughput: RESEAUX[p.reseau].up }); }
   const tel = `06 ${String(10 + (p.id % 89)).padStart(2, '0')} ${String(p.id).padStart(4, '0').replace(/(..)(..)/, '$1 $2')} 1${p.id % 10}`;
   const prenom = `Profil${p.id}`;
-  let attendu = 'demande', table = null;
+  let attendu = 'demande', table = null, personnes = 1 + (p.id % 12);
   const click = async (sel, opts) => { steps.clics++; await page.click(sel, { timeout: 15000, ...opts }); };
-  const choisirTable = async (id) => { steps.clics++; await page.locator(`.tlabel[title^="Table ${id} "]`).dispatchEvent('click'); await page.waitForTimeout(p.rapide ? 700 : 1400); table = id; };
+  const LIGNES = ['z1-av', 'z1-ar', 'z2-av', 'z3-av', 'z3-ar', 'z4-av', 'z4-ar']; // z2-ar est complète (voir plus bas)
+  const zoneDe = (l) => l.split('-')[0];
+  const ouvrirZone = async (g) => { steps.clics++; await page.locator('.zmark').nth(Number(g.slice(1)) - 1).dispatchEvent('click'); await page.waitForTimeout(p.rapide ? 700 : 1300); };
+  const choisirLigne = async (l) => { await ouvrirZone(zoneDe(l)); await click(`.tp-line[data-l="${l}"]`); await page.waitForTimeout(p.rapide ? 700 : 1300); table = l; };
   const remplir = async () => {
+    await page.selectOption('#d-pers', String(personnes));
     await page.fill('[name=prenom]', prenom); await page.fill('[name=nom]', 'Test');
-    await page.fill('[name=tel]', tel); await page.check('[name=cgv]'); steps.clics += 4;
+    await page.fill('[name=tel]', tel); await page.check('[name=cgv]'); steps.clics += 5;
   };
-  // seules les tables 01 à 44 sont en vente
-  const libre = () => String(1 + (p.id * 7) % 44).padStart(2, '0');
-  let tid = libre(); while (RESERVEES.includes(tid)) tid = String((Number(tid) % 44) + 1).padStart(2, '0');
+  let tid = LIGNES[p.id % LIGNES.length];
   try {
     const t1 = Date.now();
     await page.goto(BASE + (p.comportement === 'lien-direct' ? '/#plan' : '/'), { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -96,23 +97,22 @@ async function parcours(browser, p) {
     log.push(['plan visible', Date.now() - t1]);
 
     switch (p.comportement) {
-      case 'zones': { steps.clics++; await page.locator('.zone').nth(1 + (p.id % 3)).click(); await page.waitForTimeout(1200);
-        const first = await page.locator('.zs-card:not(.taken)').first().getAttribute('data-id'); tid = first; await choisirTable(tid); break; }
-      case 'liste': { steps.clics++; await page.locator('.zone').nth(2).click(); await page.waitForTimeout(1000);
-        tid = await page.locator('.zs-card:not(.taken)').nth(p.id % 4).getAttribute('data-id'); steps.clics++; await page.locator(`.zs-card[data-id="${tid}"]`).click(); await page.waitForTimeout(1200); table = tid; break; }
-      case 'reservee': { await choisirTable(pick(RESERVEES)); attendu = 'refus'; break; }
-      case 'filtre': { steps.clics++; await page.check('#only-free'); const hidden = await page.locator('.tlabel.hide').count(); if (hidden !== RESERVEES.length) // les tables hors vente restent visibles (grisées)
- throw new Error(`filtre : ${hidden} tables masquées au lieu de ${RESERVEES.length}`); await choisirTable(tid); break; }
-      case 'hesitant': { for (const x of ['08', '25', '49']) { await choisirTable(x); await click('#tp-close'); await page.waitForTimeout(400); } await choisirTable(tid); break; }
-      case 'vue-table': { await choisirTable(tid); await click('#tp-pov'); await page.waitForTimeout(1600); if (!(await page.isVisible('#pov-bar'))) throw new Error('vue depuis la table absente'); await click('#pov-exit'); await page.waitForTimeout(1200); break; }
-      default: await choisirTable(tid);
+      case 'zones': { await click(`.zone[data-g="${zoneDe(tid)}"]`); await page.waitForTimeout(1200); await click(`.tp-line[data-l="${tid}"]`); await page.waitForTimeout(1200); table = tid; break; }
+      case 'marqueur-ligne': { await ouvrirZone(zoneDe(tid)); steps.clics++; await page.locator(`.lmark[aria-label^="Zone ${tid[1]} · Ligne ${tid.endsWith('av') ? 'avant' : 'arrière'}"]`).dispatchEvent('click'); await page.waitForTimeout(1300); table = tid; break; }
+      case 'complete': { await ouvrirZone('z2'); if (!(await page.isDisabled('.tp-line[data-l="z2-ar"]'))) throw new Error('une ligne complète peut être choisie');
+        await page.locator('.lmark[aria-label^="Zone 2 · Ligne arrière"]').dispatchEvent('click'); await page.waitForTimeout(1000); table = 'z2-ar'; attendu = 'refus'; break; }
+      case 'change-ligne': { const autre = tid.endsWith('av') ? tid.replace('-av', '-ar') : tid.replace('-ar', '-av'); const first = autre === 'z2-ar' ? 'z2-av' : autre;
+        await choisirLigne(first); await click('#tp-back'); await page.waitForTimeout(900); await click(`.tp-line[data-l="${tid}"]`); await page.waitForTimeout(1200); table = tid; break; }
+      case 'hesitant': { for (const g of ['z1', 'z3', 'z4']) { await ouvrirZone(g); await click('#tp-close'); await page.waitForTimeout(400); } await choisirLigne(tid); break; }
+      case 'vue-ligne': { await choisirLigne(tid); await click('#tp-pov'); await page.waitForTimeout(1600); if (!(await page.isVisible('#pov-bar'))) throw new Error('vue depuis la ligne absente'); await click('#pov-exit'); await page.waitForTimeout(1200); break; }
+      default: await choisirLigne(tid);
     }
-    if (!(await page.isVisible('#tpanel'))) throw new Error('la fiche de la table ne s’ouvre pas');
-    const prix = await page.textContent('#tp-price'); if (!/€/.test(prix)) throw new Error('prix absent');
+    if (!(await page.isVisible('#tpanel'))) throw new Error('la fiche de la ligne ne s’ouvre pas');
     if (attendu === 'refus') {
-      if (!(await page.isDisabled('#tp-ask'))) throw new Error('une table réservée peut être demandée');
-      return { ok: true, attendu, table, duree: Date.now() - t0, log, steps, consoleErr };
+      if (!(await page.isDisabled('#tp-ask'))) throw new Error('une ligne complète peut être demandée');
+      return { ok: true, attendu, table, duree: Date.now() - t0, log, steps, consoleErr, tel };
     }
+    const prix = await page.textContent('#tp-price'); if (!/(200|150) €/.test(prix)) throw new Error('prix par personne absent : ' + prix);
     // ouvrir le formulaire
     if (p.comportement === 'clavier') { await page.focus('#tp-ask'); await page.keyboard.press('Enter'); steps.clics++; } else await click('#tp-ask');
     await page.waitForSelector('#drawer.open', { timeout: 5000 }); await page.waitForTimeout(450);
@@ -121,26 +121,27 @@ async function parcours(browser, p) {
       await page.waitForTimeout(300); if (await page.isVisible('#drawer.open')) throw new Error('Échap ne ferme pas le formulaire');
       return { ok: true, attendu, table, duree: Date.now() - t0, log, steps, consoleErr, tel }; }
     if (p.comportement === 'erreurs') {
-      await click('#d-submit'); const e1 = await page.textContent('#d-error'); if (!/prénom/.test(e1)) throw new Error('message d’erreur vide/incompréhensible : ' + e1);
+      await click('#d-submit'); const e1 = await page.textContent('#d-error'); if (!/prénom/.test(e1) || !/nombre de personnes/.test(e1)) throw new Error('message d’erreur vide/incompréhensible : ' + e1);
       await page.fill('[name=prenom]', prenom); await page.fill('[name=nom]', 'Test'); await page.fill('[name=tel]', '12'); await page.fill('[name=email]', 'pas-un-mail');
       await click('#d-submit'); const e2 = await page.textContent('#d-error'); if (!/téléphone/.test(e2) || !/e-mail/.test(e2) || !/acompte/.test(e2)) throw new Error('erreurs non signalées : ' + e2);
       await page.fill('[name=email]', '');
     }
     if (p.comportement === 'actualise') { await page.reload({ waitUntil: 'domcontentloaded' }); await page.waitForFunction(() => { const v = (e) => e && e.offsetParent !== null; return v(document.querySelector('#stage')) || (v(document.querySelector('#cta-main')) && !document.querySelector('#cta-main').classList.contains('loading')); }, null, { timeout: 60000 });
       if (await page.isVisible('#cta-main')) await click('#cta-main'); await page.waitForSelector('#stage', { state: 'visible' }); await page.waitForTimeout(1500);
-      await choisirTable(tid); await click('#tp-ask'); await page.waitForSelector('#drawer.open'); await page.waitForTimeout(450); }
+      await choisirLigne(tid); await click('#tp-ask'); await page.waitForSelector('#drawer.open'); await page.waitForTimeout(450); }
     if (p.comportement === 'retour') { await page.keyboard.press('Escape'); await page.goBack(); await page.waitForTimeout(800);
       if (!(await page.isVisible('#cta-main'))) throw new Error('le retour ne ramène pas à l’accueil');
       await click('#cta-main'); await page.waitForSelector('#stage', { state: 'visible' }); await page.waitForTimeout(1500);
-      await choisirTable(tid); await click('#tp-ask'); await page.waitForSelector('#drawer.open'); await page.waitForTimeout(450); }
+      await choisirLigne(tid); await click('#tp-ask'); await page.waitForSelector('#drawer.open'); await page.waitForTimeout(450); }
     await remplir();
     if (p.comportement === 'clavier') { await page.focus('#d-submit'); await page.keyboard.press('Enter'); }
     else if (p.comportement === 'double-clic') { await page.dblclick('#d-submit'); }
     else await click('#d-submit');
     await page.waitForSelector('#d-ok-view:not([hidden])', { timeout: 20000 });
     const txt = await page.textContent('#d-ok-text');
-    if (!txt.includes(`table ${table}`)) throw new Error('confirmation incohérente : ' + txt.slice(0, 80));
-    return { ok: true, attendu, table, duree: Date.now() - t0, log, steps, consoleErr, tel, prenom };
+    const nomLigne = `Zone ${table[1]} · Ligne ${table.endsWith('av') ? 'avant' : 'arrière'}`;
+    if (!txt.includes(nomLigne) || !txt.includes(`Pour ${personnes} personne`)) throw new Error('confirmation incohérente : ' + txt.slice(0, 120));
+    return { ok: true, attendu, table, personnes, duree: Date.now() - t0, log, steps, consoleErr, tel, prenom };
   } catch (e) {
     const shot = path.join(__dirname, 'echecs', `p${p.id}.png`); fs.mkdirSync(path.dirname(shot), { recursive: true });
     await page.screenshot({ path: shot }).catch(() => {});
@@ -152,7 +153,10 @@ async function parcours(browser, p) {
 (async () => {
   const srv = spawn(process.execPath, ['server.js'], { cwd: ROOT, env: { ...process.env, PORT: String(PORT), DATA_DIR: DATA, ADMIN_PASSWORD: PW, RENDER: '' }, stdio: 'ignore' });
   for (let i = 0; i < 50; i++) { try { await fetch(BASE + '/api/health'); break; } catch { await new Promise((r) => setTimeout(r, 100)); } }
-  for (const id of RESERVEES) await fetch(BASE + '/api/admin/table', { method: 'POST', headers: { 'x-admin-password': PW, 'Content-Type': 'application/json' }, body: JSON.stringify({ id, reserved: true }) });
+  // on remplit la ligne arrière de la zone 2 (24 places) avec une demande validée, pour tester le cas « complet »
+  const H = { 'x-admin-password': PW, 'Content-Type': 'application/json' };
+  const r0 = await (await fetch(BASE + '/api/demandes', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-forwarded-for': '127.8.8.8' }, body: JSON.stringify({ ligne: 'z2-ar', personnes: 24, prenom: 'Groupe', nom: 'Complet', tel: '06 00 00 99 99' }) })).json();
+  await fetch(BASE + '/api/admin/demande', { method: 'POST', headers: H, body: JSON.stringify({ id: r0.id, statut: 'validee' }) });
   const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist'] });
   // IDS=3,17,42 : rejouer uniquement certains profils (même appareil/réseau/comportement)
   let list = profils(N); if (process.env.IDS) { const keep = new Set(process.env.IDS.split(',').map(Number)); list = list.filter((p) => keep.has(p.id)); }
@@ -169,7 +173,7 @@ async function parcours(browser, p) {
     const mine = data.demandes.filter((d) => d.tel === r.tel);
     if (r.ok && r.attendu === 'demande') {
       if (mine.length !== 1) { r.ok = false; r.erreur = `vérification admin : ${mine.length} demande(s) au lieu de 1`; }
-      else if (mine[0].table !== r.table) { r.ok = false; r.erreur = `vérification admin : table ${mine[0].table} au lieu de ${r.table}`; }
+      else if (mine[0].ligne !== r.table || mine[0].personnes !== r.personnes) { r.ok = false; r.erreur = `vérification admin : ${mine[0].ligne}/${mine[0].personnes} pers. au lieu de ${r.table}/${r.personnes}`; }
     }
     if (r.attendu !== 'demande' && mine.length) { r.ok = false; r.erreur = `vérification admin : demande créée alors qu’aucune n’était attendue`; }
     if (r.ok && r.consoleErr.length) { r.ok = false; r.erreur = 'erreur JavaScript : ' + r.consoleErr[0]; }

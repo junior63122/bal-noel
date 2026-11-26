@@ -68,13 +68,13 @@
       <div class="plan-head">
         <div>
           <p class="eyebrow" data-soustheme-up></p>
-          <h2 class="title-img"><span>Votre table au</span><img src="assets/titre.webp" width="1100" height="743" alt="Bal de Noël" loading="lazy"></h2>
+          <h2 class="title-img"><span>Votre place au</span><img src="assets/titre.webp" width="1100" height="743" alt="Bal de Noël" loading="lazy"></h2>
         </div>
         <p class="meta" id="meta-count"></p>
       </div>
 
       <div class="stage" id="stage" data-lenis-prevent>
-        <canvas id="scene" role="img" aria-label="Plan 3D de la salle : piste tournante au centre, régie DJ, zones VIP. Les numéros de table sont des boutons."></canvas>
+        <canvas id="scene" role="img" aria-label="Plan 3D de la salle : piste tournante au centre, régie DJ, zones VIP. Les zones 1 à 4 du VIP Croisette sont des boutons."></canvas>
         <div class="labels" id="labels"></div>
         <button class="btn-gold overview" id="btn-overview" type="button">Vue d’ensemble</button>
         <div class="stage-badge" id="badge" hidden></div>
@@ -83,7 +83,7 @@
           <button type="button" id="zoom-in" aria-label="Zoomer">+</button>
           <button type="button" id="zoom-out" aria-label="Dézoomer">−</button>
         </div>
-        <p class="hint">Glissez pour tourner · Zoomez vers le curseur · Choisissez une table</p>
+        <p class="hint">Glissez pour tourner · Zoomez · Choisissez une zone</p>
         <div class="loading" id="loading">Chargement de la salle…</div>
       </div>
 
@@ -93,32 +93,34 @@
       </div>
 
       <div class="legend">
-        <span><i class="dot free"></i>Disponible</span>
-        <span><i class="dot taken"></i>Réservée</span>
+        <span><i class="dot" style="background:#f2b84b"></i>Ligne avant · 200 € / pers.</span>
+        <span><i class="dot" style="background:#8fb8dc"></i>Ligne arrière · 150 € / pers.</span>
+        <span><i class="dot taken"></i>Scène · bientôt</span>
         <label class="only"><input type="checkbox" id="only-free"> Disponibles uniquement</label>
       </div>
     </main>
 
     <aside class="side" id="side">
       <div class="side-head">
-        <h3>Zones &amp; tarifs</h3>
+        <h3>VIP Croisette</h3>
         <button type="button" class="collapse" id="collapse" aria-label="Replier">−</button>
       </div>
       <div class="side-body">
-        <p class="side-sub">Prix par personne · acompte de <span data-acompte></span> % après validation</p>
+        <p class="side-sub">1. Choisissez une zone · 2. votre ligne · 3. le nombre de personnes</p>
         <ul class="zones" id="zones"></ul>
       </div>
-      <div class="table-panel" id="tpanel" hidden role="region" aria-label="Table sélectionnée">
+      <div class="table-panel" id="tpanel" hidden role="region" aria-label="Zone sélectionnée">
         <span class="grab" aria-hidden="true"></span>
-        <div class="tp-head"><p class="eyebrow">Votre table</p><button type="button" class="tp-close" id="tp-close" aria-label="Fermer la fiche de la table">×</button></div>
-        <h3 id="tp-title">Table</h3>
+        <div class="tp-head"><p class="eyebrow" id="tp-eyebrow">VIP Croisette</p><button type="button" class="tp-close" id="tp-close" aria-label="Fermer">×</button></div>
+        <h3 id="tp-title"></h3>
         <p class="tp-zone" id="tp-zone"></p>
+        <div class="tp-lines" id="tp-lines"></div>
         <p class="tp-price" id="tp-price"></p>
         <p class="tp-sub" id="tp-sub"></p>
         <div class="tp-status" id="tp-status"></div>
-        <div class="tp-actions">
-          <button type="button" class="tp-btn ghost" id="tp-pov">Voir depuis cette table <span>↗</span></button>
-          <button type="button" class="tp-btn gold" id="tp-ask">Demander cette table <span>→</span></button>
+        <div class="tp-actions" id="tp-actions">
+          <button type="button" class="tp-btn ghost" id="tp-pov">Voir depuis cette ligne <span>↗</span></button>
+          <button type="button" class="tp-btn gold" id="tp-ask">Réserver dans cette ligne <span>→</span></button>
         </div>
       </div>
       <div class="side-info">
@@ -155,7 +157,7 @@
       <div><span>Total</span><strong id="d-cap"></strong></div>
       <div><span>Acompte</span><strong id="d-dep"></strong></div>
     </div>
-    <p class="d-taken" id="d-taken" hidden>Cette table n’est pas disponible. Choisissez une autre table.</p>
+    <p class="d-taken" id="d-taken" hidden>Cette ligne est complète. Choisissez une autre ligne.</p>
 
     <form id="form" novalidate>
       <div class="row2">
