@@ -119,6 +119,7 @@ const scrollToEl = (el, offset = 0) => (lenis ? lenis.scrollTo(el, { offset, dur
 
 // deux pages : l'accueil, puis le plan (ouvert par « Choisir ma table »)
 const body = document.body;
+const chargerImagesPlan = () => $$('img[data-src]').forEach((i) => { i.src = i.dataset.src; delete i.dataset.src; });
 function showView(v, animate = true) {
   if (body.dataset.view === v) return;
   const go = () => {
@@ -126,7 +127,7 @@ function showView(v, animate = true) {
     if (lenis) lenis.scrollTo(0, { immediate: true }); else scrollTo(0, 0);
     body.classList.remove('leaving');
     if (animate && !reduceMotion) { body.classList.add('entering'); setTimeout(() => body.classList.remove('entering'), 1100); }
-    if (v === 'plan') { lenis && lenis.start(); dispatchEvent(new Event('resize')); } else lenis && lenis.stop();
+    if (v === 'plan') { chargerImagesPlan(); lenis && lenis.start(); dispatchEvent(new Event('resize')); } else lenis && lenis.stop();
   };
   if (animate && !reduceMotion && v === 'plan') { body.classList.add('leaving'); setTimeout(go, 650); } else go();
 }
@@ -134,6 +135,7 @@ $$('a[href="#reserver"]').forEach((a) => a.addEventListener('click', (e) => { e.
 $$('a[href="#accueil"]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); history.pushState({ v: 'hero' }, '', location.pathname); showView('hero'); }));
 addEventListener('popstate', () => showView(location.hash === '#plan' ? 'plan' : 'hero'));
 body.dataset.view = location.hash === '#plan' ? 'plan' : 'hero';
+if (body.dataset.view === 'plan') chargerImagesPlan();
 
 /* ================================================================ scène 3D */
 const PX = 17;               // pixels du plan par mètre

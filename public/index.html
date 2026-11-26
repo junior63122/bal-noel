@@ -20,7 +20,7 @@
   <meta property="og:image:alt" content="Le Bal de Noël — Cannes, dimanche 27 décembre">
   <meta name="twitter:card" content="summary_large_image">
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"Event","name":"Le Bal de Noël — Le Bal des Fous","startDate":"2026-12-27T16:00:00+01:00","endDate":"2026-12-28T00:00:00+01:00","eventStatus":"https://schema.org/EventScheduled","eventAttendanceMode":"https://schema.org/OfflineEventAttendanceMode","location":{"@type":"Place","name":"La Terrasse du Palais des Festivals","address":{"@type":"PostalAddress","streetAddress":"1 boulevard de la Croisette","postalCode":"06400","addressLocality":"Cannes","addressCountry":"FR"}},"image":["https://bal-noel-mgh6.onrender.com/assets/partage.jpg"],"description":"Soirée de Noël du Bal des Fous sur la Terrasse du Palais des Festivals de Cannes. Places VIP Croisette de 150 € à 200 € par personne.","organizer":{"@type":"Organization","name":"Le Bal des Fous"},"offers":[{"@type":"Offer","name":"VIP Croisette · ligne avant","price":"200","priceCurrency":"EUR","url":"https://bal-noel-mgh6.onrender.com/#plan"},{"@type":"Offer","name":"VIP Croisette · ligne arrière","price":"150","priceCurrency":"EUR","url":"https://bal-noel-mgh6.onrender.com/#plan"}]}</script>
-  <link rel="preload" as="image" href="assets/boule.webp" imagesrcset="assets/boule-440.webp 440w, assets/boule.webp 760w" imagesizes="(max-width: 760px) 78vw, 520px" fetchpriority="high">
+  <link rel="preload" as="image" href="assets/boule.webp" imagesrcset="assets/boule-440.webp 440w, assets/boule-600.webp 600w, assets/boule.webp 760w" imagesizes="(max-width: 760px) 54vw, 520px" fetchpriority="high">
   <link rel="preload" as="image" href="assets/logo-clair.webp">
   <link rel="preload" as="font" type="font/woff2" href="fonts/manrope.woff2" crossorigin>
   <link rel="preload" as="font" type="font/woff2" href="fonts/cormorant-500.woff2" crossorigin>
@@ -50,15 +50,15 @@
     <img class="h-logo in" style="--d:0" src="assets/logo-clair.webp" width="480" height="283" alt="Le Bal des Fous">
 
     <div class="trio">
-      <div class="side-l in" style="--d:3"><img class="h-cannes" src="assets/cannes.webp" srcset="assets/cannes-440.webp 440w, assets/cannes.webp 760w" sizes="(max-width: 760px) 44vw, 400px" width="760" height="362" alt="Cannes"></div>
+      <div class="side-l in" style="--d:3"><img class="h-cannes" fetchpriority="low" decoding="async" src="assets/cannes.webp" srcset="assets/cannes-440.webp 440w, assets/cannes-520.webp 520w, assets/cannes.webp 760w" sizes="(max-width: 760px) 30vw, 400px" width="760" height="362" alt="Cannes"></div>
       <div class="globe-wrap in" style="--d:1">
         <div class="globe-halo" aria-hidden="true"></div>
         <div class="globe">
-          <img class="globe-img" src="assets/boule.webp" srcset="assets/boule-440.webp 440w, assets/boule.webp 760w" sizes="(max-width: 760px) 78vw, 520px" width="760" height="720" alt="Le Bal de Noël" fetchpriority="high">
+          <img class="globe-img" src="assets/boule.webp" srcset="assets/boule-440.webp 440w, assets/boule-600.webp 600w, assets/boule.webp 760w" sizes="(max-width: 760px) 54vw, 520px" width="760" height="720" alt="Le Bal de Noël" fetchpriority="high">
           <canvas class="globe-snow" id="globe-snow" aria-hidden="true"></canvas>
         </div>
       </div>
-      <div class="side-r in" style="--d:3"><img class="h-date" src="assets/date.webp" srcset="assets/date-340.webp 340w, assets/date.webp 600w" sizes="(max-width: 760px) 34vw, 300px" width="600" height="400" alt="Dimanche 27 décembre"></div>
+      <div class="side-r in" style="--d:3"><img class="h-date" fetchpriority="low" decoding="async" src="assets/date.webp" srcset="assets/date-340.webp 340w, assets/date-400.webp 400w, assets/date.webp 600w" sizes="(max-width: 760px) 24vw, 300px" width="600" height="400" alt="Dimanche 27 décembre"></div>
     </div>
 
     <a class="cta in loading" style="--d:5" id="cta-main" href="#reserver"><span class="cta-txt">La salle se prépare…</span></a>
@@ -70,7 +70,7 @@
 <!-- ============================ RÉSERVATION ============================ -->
 <section id="reserver" class="booking">
   <header class="topbar">
-    <a class="brand-small" href="#accueil"><img src="assets/logo-ligne.webp" width="700" height="103" alt="Le Bal des Fous"></a>
+    <a class="brand-small" href="#accueil"><img data-src="assets/logo-ligne.webp" width="700" height="103" alt="Le Bal des Fous"></a>
     <div class="topbar-center">
       <span class="kicker" data-lieu-up></span>
       <strong data-datecourte></strong>
@@ -141,7 +141,7 @@
       </div>
       <div class="side-info">
         <div class="info">
-          <img class="info-bunny" src="assets/lapin.webp" width="320" height="464" alt="" loading="lazy">
+          <img class="info-bunny" data-src="assets/lapin.webp" width="320" height="464" alt="" loading="lazy">
           <h4>Une demande, puis un échange.</h4>
           <p>L’organisation vous contactera par SMS ou WhatsApp, selon votre choix, dans les heures qui suivent.
             Acompte de <span data-acompte></span> % après validation.</p>

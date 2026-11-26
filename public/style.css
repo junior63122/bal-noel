@@ -709,3 +709,10 @@ body[data-view="hero"] { overflow: auto; }
 .h-legal { position: absolute; bottom: 12px; left: 0; right: 0; margin: 0; text-align: center; font-size: 11px; letter-spacing: .04em; color: var(--muted); }
 .h-legal a { color: var(--muted); text-decoration: none; padding: 12px 4px; } .h-legal a:hover { color: var(--gold2); }
 .check a { color: var(--gold2); }
+
+/* la boule est peinte dès son arrivée, sous le rideau d'ouverture (affichage principal plus rapide) ;
+   elle « se pose » pendant que le rideau se lève, sans passer par une opacité nulle */
+.globe-wrap.in { opacity: 1; animation-name: inGlobe2; animation-duration: 1.3s; animation-delay: .95s; }
+html.quick .globe-wrap.in { animation-delay: .4s; }
+html.direct-plan .globe-wrap.in { animation-delay: 0s; }
+@keyframes inGlobe2 { 0% { transform: translateY(-26px) scale(.9); } 60% { transform: translateY(4px) scale(1.012); } 100% { transform: none; } }

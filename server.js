@@ -23,7 +23,8 @@ if (!ADMIN_PASSWORD || ADMIN_PASSWORD.length < 10) {
 }
 const STATUTS = new Set(['nouvelle', 'contactee', 'validee', 'refusee']);
 const STARTED = Date.now();
-const METRICS = { demandes: 0, rejets: 0, erreurs: 0, ecrituresKO: 0, adminKO: 0, derniereErreur: null };
+const ECRITS = new Map(); // id → promesse d'écriture (pour les doublons simultanés)
+const METRICS = { demandes: 0, rejets: 0, erreurs: 0, ecrituresKO: 0, adminKO: 0 };
 
 const TABLE_IDS = new Set(TABLES.map((t) => t.id));
 const LIGNES = new Map(ZONES.map((l) => [l.id, l]));
@@ -37,7 +38,13 @@ fs.mkdirSync(DATA_DIR, { recursive: true });
 // la base est gardée en mémoire (lecture instantanée), et écrite sur disque après chaque changement
 let DBMEM, RESTAURE = null;
 const SAUV = path.join(DATA_DIR, 'sauvegardes');
-const lireBase = (f) => { const j = JSON.parse(fs.readFileSync(f, 'utf8')); if (!Array.isArray(j.demandes) || !Array.isArray(j.reserved)) throw new Error('format'); return j; };
+const lireBase = (f) => {
+  const j = JSON.parse(fs.readFileSync(f, 'utf8'));
+  if (!j || !Array.isArray(j.demandes) || !Array.isArray(j.reserved)) throw new Error('format');
+  for (const d of j.demandes) if (!d || typeof d !== 'object' || typeof d.id !== 'string' || typeof d.tel !== 'string' || !Number.isFinite(d.personnes)) throw new Error('demande invalide');
+  if (!j.reserved.every((t) => typeof t === 'string')) throw new Error('tables invalides');
+  return j;
+};
 if (!fs.existsSync(DB)) DBMEM = { reserved: [], demandes: [] };
 else {
   try { DBMEM = lireBase(DB); }
@@ -64,6 +71,12 @@ else {
     (d.tables ||= []).forEach((t) => prises.add(t));
   }
 }
+// la base en mémoire (restaurée, migrée ou normalisée) est réécrite sur disque dès le démarrage
+{
+  const txt = JSON.stringify(DBMEM, null, 2);
+  let actuel = null; try { actuel = fs.readFileSync(DB, 'utf8'); } catch {}
+  if ((actuel !== null || DBMEM.demandes.length) && actuel !== txt) { fs.writeFileSync(DB + '.tmp', txt); fs.renameSync(DB + '.tmp', DB); }
+}
 let stateCache = null;
 const load = () => DBMEM;
 let lastBackup = '';
@@ -74,7 +87,7 @@ function dailyBackup(db) { // une copie par jour (la première de la journée, j
   fs.promises.writeFile(path.join(dir, `db-${day}.json`), JSON.stringify(db), { flag: 'wx' }).catch(() => {});
   fs.promises.readdir(dir).then((f) => f.sort().slice(0, -14).forEach((x) => fs.promises.unlink(path.join(dir, x)).catch(() => {}))).catch(() => {});
 }
-let enCours = null, prochaine = null;
+let enCours = null, prochaine = null, ECRITURE_OK = true;
 function save(db) {
   DBMEM = db; stateCache = null; dailyBackup(db);
   if (prochaine) return prochaine; // une écriture est déjà prévue : elle contiendra ce changement
@@ -82,8 +95,12 @@ function save(db) {
     await null; // laisse l'affectation de « prochaine » se terminer avant de la remettre à zéro
     if (enCours) await enCours.catch(() => {});
     prochaine = null;
-    enCours = fs.promises.writeFile(DB + '.tmp', JSON.stringify(DBMEM, null, 2)).then(() => fs.promises.rename(DB + '.tmp', DB));
-    try { await enCours; } catch (e) { METRICS.ecrituresKO++; METRICS.derniereErreur = 'écriture: ' + e.message; console.error('Écriture impossible', e); throw e; }
+    enCours = (async () => {
+      const fh = await fs.promises.open(DB + '.tmp', 'w');
+      try { await fh.writeFile(JSON.stringify(DBMEM, null, 2)); await fh.sync(); } finally { await fh.close(); }
+      await fs.promises.rename(DB + '.tmp', DB);
+    })();
+    try { await enCours; ECRITURE_OK = true; } catch (e) { ECRITURE_OK = false; METRICS.ecrituresKO++; console.error('Écriture impossible', e.code || e.message); throw e; }
   })();
   prochaine.catch(() => {});
   return prochaine;
@@ -91,9 +108,14 @@ function save(db) {
 // RGPD : effacement automatique des demandes N jours après la soirée (vérifié au démarrage puis toutes les 6 h)
 function purge() {
   const limite = Date.parse(EVENT.debut) + EVENT.conservationJours * 864e5;
-  if (Date.now() < limite || !DBMEM.demandes.length) return;
+  if (Date.now() < limite) return;
+  if (!DBMEM.demandes.length && !(fs.existsSync(SAUV) && fs.readdirSync(SAUV).length)) return;
   console.log(`Purge RGPD : ${DBMEM.demandes.length} demande(s) effacée(s)`);
-  save({ ...DBMEM, demandes: [] });
+  DBMEM.demandes.length = 0;
+  save(DBMEM).then(() => {
+    for (const f of fs.existsSync(SAUV) ? fs.readdirSync(SAUV) : []) fs.rmSync(path.join(SAUV, f), { force: true });
+    for (const f of fs.readdirSync(DATA_DIR)) if (f.startsWith('db.json.corrompu-')) fs.rmSync(path.join(DATA_DIR, f), { force: true });
+  }).catch(() => {});
 }
 setTimeout(purge, 5000); setInterval(purge, 6 * 3600e3).unref();
 // sauvegarde synchrone à l'arrêt (redéploiement Render)
@@ -133,6 +155,8 @@ function send(res, code, body) {
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let s = '', big = false;
+    req.setEncoding('utf8'); // les caractères accentués coupés entre deux paquets restent intacts
+    req.on('aborted', () => reject(Object.assign(new Error('abandon'), { code: 499 })));
     req.on('data', (c) => { if (big) return; s += c; if (s.length > 20000) { big = true; s = ''; } });
     req.on('end', () => { if (big) return reject(Object.assign(new Error('trop gros'), { code: 413 })); try { resolve(s ? JSON.parse(s) : {}); } catch { reject(new Error('JSON invalide')); } });
   });
@@ -150,25 +174,36 @@ const clean = (v, max = 200) => String(v ?? '').trim().slice(0, max);
 
 // anti-spam très simple : 5 demandes / 10 min par IP
 const hits = new Map();
-setInterval(() => { const now = Date.now(); for (const [k, v] of hits) if (!v.some((t) => now - t < 600000)) hits.delete(k); }, 300000).unref();
+setInterval(() => { const now = Date.now(); for (const [k, v] of hits) if (!v.some((t) => now - t < 600000)) hits.delete(k); for (const [k, v] of adminFails) if (!v.some((t) => now - t < 900000)) adminFails.delete(k); }, 300000).unref();
 function limited(ip) {
   const now = Date.now();
   const arr = (hits.get(ip) || []).filter((t) => now - t < 600000);
+  if (arr.length >= 5) { hits.set(ip, arr); return true; } // au-delà du seuil on n'empile plus rien
   arr.push(now); hits.set(ip, arr);
-  return arr.length > 5;
+  return false;
 }
 
+async function enregistrer(res, db) {
+  try { await save(db); return send(res, 200, db); }
+  catch { return send(res, 503, { error: 'Modification NON enregistrée (écriture impossible sur le disque). Réessayez ; si cela persiste, contactez le support de l’hébergeur.' }); }
+}
 async function api(req, res, url) {
   const db = load();
 
-  if (req.method === 'GET' && url.pathname === '/api/health') {
-    // contrôle réel : la base est relue depuis le disque et comparée à la mémoire
+  if (req.method === 'GET' && (url.pathname === '/api/health' || url.pathname === '/api/admin/sante')) {
+    // contrôle réel : la base est relue depuis le disque et comparée OCTET PAR OCTET à la mémoire
     let disque = 'ok';
-    try { await (prochaine || enCours || Promise.resolve()).catch(() => {}); const onDisk = JSON.parse(fs.readFileSync(DB, 'utf8')); if (onDisk.demandes.length !== DBMEM.demandes.length) disque = 'désynchronisé'; }
-    catch (e) { disque = fs.existsSync(DB) ? 'illisible' : (DBMEM.demandes.length ? 'absent' : 'vide'); }
+    try {
+      await (prochaine || enCours || Promise.resolve()).catch(() => {});
+      if (fs.readFileSync(DB, 'utf8') !== JSON.stringify(DBMEM, null, 2)) disque = 'désynchronisé';
+    } catch (e) { disque = fs.existsSync(DB) ? 'illisible' : (DBMEM.demandes.length ? 'absent' : 'vide'); }
+    if (!ECRITURE_OK) disque = 'écriture en échec';
     const ok = disque === 'ok' || disque === 'vide';
-    return send(res, ok ? 200 : 503, { ok, disque, restaureDepuis: RESTAURE, adminActive: ADMIN_PASSWORD.length >= 10, uptimeMin: Math.round((Date.now() - STARTED) / 60000),
-      tables: TABLES.length, reservees: tablesPrises(db).size, demandes: db.demandes.length, ...METRICS });
+    if (url.pathname === '/api/health') return send(res, ok ? 200 : 503, { ok, disque, restaureDepuis: RESTAURE, adminActive: ADMIN_PASSWORD.length >= 10 });
+    if (!isAdmin(req)) return send(res, 401, { error: 'Mot de passe incorrect.' });
+    return send(res, ok ? 200 : 503, { ok, disque, restaureDepuis: RESTAURE, uptimeMin: Math.round((Date.now() - STARTED) / 60000),
+      tables: TABLES.length, tablesPrises: tablesPrises(db).size, demandesEnBase: db.demandes.length, demandesRecuesDepuisDemarrage: METRICS.demandes,
+      rejets: METRICS.rejets, ecrituresKO: METRICS.ecrituresKO, adminKO: METRICS.adminKO });
   }
   if (req.method === 'GET' && url.pathname === '/api/state') { stateCache ||= JSON.stringify({ reserved: [...tablesPrises(db)], restant: Object.fromEntries(ZONES.filter((l) => l.enVente).map((l) => [l.id, Math.max(0, restantLigne(db, l.id))])) }); res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); return res.end(stateCache); }
 
@@ -198,11 +233,16 @@ async function api(req, res, url) {
     if (d.personnes < 1 || d.personnes > maxi) { METRICS.rejets++; return send(res, 400, { error: `Indiquez entre 1 et ${maxi} personnes.` }); }
     // double clic ou renvoi : même téléphone, même ligne, moins de 30 min → on renvoie la demande existante
     d.prixPers = ligne.prixPers;
-    const dup = db.demandes.find((x) => x.statut !== 'refusee' && x.personnes === d.personnes && (x.message || '') === d.message && x.ligne === d.ligne && x.tel.replace(/\D/g, '') === digits && Date.now() - Date.parse(x.date) < 1800000);
-    if (dup) return send(res, 200, { ok: true, id: dup.id, doublon: true });
+    const dup = db.demandes.find((x) => x.statut !== 'refusee' && x.personnes === d.personnes && (x.message || '') === d.message && x.ligne === d.ligne && String(x.tel || '').replace(/\D/g, '') === digits && Date.now() - Date.parse(x.date) < 1800000);
+    if (dup) {
+      try { await (ECRITS.get(dup.id) || Promise.resolve()); } catch { return send(res, 503, { error: 'Enregistrement impossible pour le moment : votre demande n’a pas été enregistrée. Réessayez dans un instant.' }); }
+      if (!DBMEM.demandes.includes(dup)) return send(res, 503, { error: 'Enregistrement impossible pour le moment. Réessayez dans un instant.' });
+      return send(res, 200, { ok: true, id: dup.id, doublon: true });
+    }
     db.demandes.unshift(d);
     // succès renvoyé UNIQUEMENT après écriture réelle sur disque
-    try { await save(db); } catch { DBMEM.demandes = DBMEM.demandes.filter((x) => x.id !== d.id); stateCache = null; return send(res, 503, { error: 'Enregistrement impossible pour le moment : votre demande n’a pas été enregistrée. Réessayez dans un instant.' }); }
+    const ecriture = save(db); ECRITS.set(d.id, ecriture); setTimeout(() => ECRITS.delete(d.id), 60000).unref();
+    try { await ecriture; } catch { const i = DBMEM.demandes.indexOf(d); if (i >= 0) DBMEM.demandes.splice(i, 1); stateCache = null; return send(res, 503, { error: 'Enregistrement impossible pour le moment : votre demande n’a pas été enregistrée. Réessayez dans un instant.' }); }
     METRICS.demandes++;
     console.log(`Nouvelle demande ${d.id} — ${d.ligne} — ${d.personnes} pers.`); // pas de données personnelles dans les journaux
     return send(res, 201, { ok: true, id: d.id });
@@ -220,7 +260,7 @@ async function api(req, res, url) {
       if (reserved && db.demandes.some((d) => d.statut !== 'refusee' && (d.tables || []).includes(id))) return send(res, 409, { error: `La table ${id} est déjà attribuée à une demande.` });
       db.reserved = db.reserved.filter((x) => x !== id);
       if (reserved) db.reserved.push(id);
-      save(db); return send(res, 200, db);
+      return enregistrer(res, db);
     }
     // l'organisation attribue une ou plusieurs tables de la ligne à une demande
     if (req.method === 'POST' && url.pathname === '/api/admin/attribuer') {
@@ -234,7 +274,7 @@ async function api(req, res, url) {
         if (prises.has(t)) return send(res, 409, { error: `La table ${t} est déjà attribuée.` });
       }
       d.tables = [...new Set(tables)].sort();
-      save(db); return send(res, 200, db);
+      return enregistrer(res, db);
     }
     if (req.method === 'POST' && url.pathname === '/api/admin/demande') {
       const { id, statut } = await readBody(req);
@@ -254,16 +294,18 @@ async function api(req, res, url) {
         }
         d.statut = statut;
       }
-      save(db); return send(res, 200, db);
+      return enregistrer(res, db);
     }
   }
   return send(res, 404, { error: 'Introuvable' });
 }
 
+process.on('uncaughtException', (e) => console.error('Erreur inattendue', e)); // le service ne s'arrête jamais sur une requête
 const server = http.createServer(async (req, res) => {
   for (const [k, v] of Object.entries(SECURITY_HEADERS)) res.setHeader(k, v);
-  const url = new URL(req.url, 'http://x');
+  let url;
   try {
+    url = new URL(req.url, 'http://x');
     if (url.pathname.startsWith('/api/')) return await api(req, res, url);
     let p = decodeURIComponent(url.pathname);
     if (p === '/') p = '/index.html';
@@ -281,6 +323,7 @@ const server = http.createServer(async (req, res) => {
     if (f.gz && /\bgzip\b/.test(ae)) { headers['Content-Encoding'] = 'gzip'; res.writeHead(status, headers); return res.end(f.gz); }
     res.writeHead(status, headers); res.end(f.raw);
   } catch (e) {
+    if (e.code === 499) return; // client parti
     if (!res.headersSent) send(res, e.code === 413 ? 413 : 400, { error: e.code === 413 ? 'Message trop long.' : 'Requête invalide.' });
   }
 });

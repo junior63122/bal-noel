@@ -162,7 +162,7 @@ test('attribution des tables par l’admin : seulement dans la ligne, jamais deu
 
 test('santé : /api/health relit réellement le disque', async () => {
   const h = await (await fetch(BASE + '/api/health')).json();
-  assert.equal(h.ok, true); assert.equal(h.disque, 'ok'); assert.equal(h.tables, 64);
+  assert.equal(h.ok, true); assert.equal(h.disque, 'ok'); assert.equal(h.tables, undefined, 'la santé publique ne doit pas exposer le détail');
   // contre-test : si le fichier est corrompu, la santé doit passer en erreur
   const f = path.join(DATA, 'db.json'), keep = fs.readFileSync(f);
   fs.writeFileSync(f, '{corrompu');
@@ -298,4 +298,69 @@ test('C3 bis : un redémarrage n’écrase jamais la sauvegarde déjà faite ce 
     await wait(300);
     assert.equal(fs.readFileSync(f, 'utf8'), avant, 'sauvegarde du jour écrasée');
   } finally { s5.kill('SIGTERM'); }
+});
+
+// ---------- défauts trouvés par le 2e contre-audit (serveur)
+import net from 'node:net';
+test('A1 : une requête à l’URL invalide ne fait pas tomber le serveur', async () => {
+  await new Promise((ok) => { const c = net.connect(PORT, '127.0.0.1', () => c.write('GET http://[ HTTP/1.1\r\nHost: x\r\n\r\n')); c.on('data', () => c.end()); c.on('close', ok); c.on('error', ok); setTimeout(ok, 1500); });
+  await wait(200);
+  assert.equal((await fetch(BASE + '/api/health')).status, 200, 'serveur arrêté');
+});
+
+test('A8 : accents coupés entre deux paquets restent intacts', async () => {
+  const body = Buffer.from(JSON.stringify(valid({ prenom: 'Hélène', tel: '06 81 00 00 01' })));
+  const cut = body.indexOf(Buffer.from('é')) + 1; // au milieu du « é »
+  await new Promise((ok, ko) => {
+    const c = net.connect(PORT, '127.0.0.1', async () => {
+      c.write(`POST /api/demandes HTTP/1.1\r\nHost: x\r\nContent-Type: application/json\r\nX-Forwarded-For: 203.0.113.250\r\nContent-Length: ${body.length}\r\nConnection: close\r\n\r\n`);
+      c.write(body.subarray(0, cut)); await wait(150); c.write(body.subarray(cut));
+    });
+    c.on('data', () => {}); c.on('close', ok); c.on('error', ko);
+  });
+  await wait(150);
+  assert.equal(disk().demandes.find((d) => d.tel === '06 81 00 00 01').prenom, 'Hélène');
+});
+
+test('A3 + A4 : écriture impossible → action admin et demande refusées (503), santé en erreur, aucun faux « ok »', async () => {
+  const D6 = fs.mkdtempSync(path.join(os.tmpdir(), 'bal-noel-a3-'));
+  const P6 = PORT + 5, s6 = spawn(process.execPath, ['server.js'], { cwd: ROOT, env: { ...process.env, PORT: String(P6), DATA_DIR: D6, ADMIN_PASSWORD: PW, RENDER: '', TRUST_PROXY: '1' }, stdio: 'ignore' });
+  const B = `http://127.0.0.1:${P6}`;
+  try {
+    for (let i = 0; i < 50; i++) { try { await fetch(B + '/api/health'); break; } catch { await wait(100); } }
+    const id = (await (await fetch(B + '/api/demandes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(valid({ tel: '06 82 00 00 01' })) })).json()).id;
+    fs.mkdirSync(path.join(D6, 'db.json.tmp')); // l'écriture va échouer
+    const r = await fetch(B + '/api/admin/demande', { method: 'POST', headers: { 'x-admin-password': PW, 'Content-Type': 'application/json' }, body: JSON.stringify({ id, statut: 'validee' }) });
+    assert.equal(r.status, 503, 'action admin annoncée réussie sans écriture');
+    const body = JSON.stringify(valid({ tel: '06 82 00 00 02' }));
+    const [x, y] = await Promise.all([1, 2].map(() => fetch(B + '/api/demandes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body })));
+    assert.deepEqual([x.status, y.status].sort(), [503, 503], 'un doublon a reçu « ok » pour une demande non enregistrée');
+    const h = await fetch(B + '/api/health'); assert.equal(h.status, 503, 'santé « ok » malgré l’échec d’écriture');
+    const hj = await h.json(); assert.equal(hj.ecrituresKO, undefined, 'détail exposé publiquement');
+  } finally { s6.kill('SIGTERM'); }
+});
+
+test('A2 + A7 : base incohérente ({demandes:[null]}) restaurée depuis la sauvegarde ET réécrite sur disque', async () => {
+  const D7 = fs.mkdtempSync(path.join(os.tmpdir(), 'bal-noel-a7-'));
+  fs.mkdirSync(path.join(D7, 'sauvegardes'));
+  fs.writeFileSync(path.join(D7, 'sauvegardes', 'db-2026-11-25.json'), JSON.stringify({ reserved: [], demandes: [{ id: 'r1', ligne: 'z2-av', personnes: 4, tel: '0600000011', prenom: 'R', nom: 'R', statut: 'validee', date: new Date().toISOString() }] }));
+  fs.writeFileSync(path.join(D7, 'db.json'), '{"reserved":[],"demandes":[null]}');
+  const P7 = PORT + 6, s7 = spawn(process.execPath, ['server.js'], { cwd: ROOT, env: { ...process.env, PORT: String(P7), DATA_DIR: D7, ADMIN_PASSWORD: PW, RENDER: '' }, stdio: 'ignore' });
+  try {
+    let h; for (let i = 0; i < 50; i++) { try { h = await fetch(`http://127.0.0.1:${P7}/api/health`); break; } catch { await wait(100); } }
+    assert.equal(h.status, 200, 'le serveur ne démarre pas ou la santé est en erreur');
+    const onDisk = JSON.parse(fs.readFileSync(path.join(D7, 'db.json'), 'utf8'));
+    assert.equal(onDisk.demandes[0].id, 'r1', 'base restaurée non réécrite sur disque');
+  } finally { s7.kill('SIGTERM'); }
+});
+
+test('A9 : sous une rafale de 20 000 envois, l’anti-spam reste rapide (pas d’accumulation)', async () => {
+  const P8 = PORT + 7, D8 = fs.mkdtempSync(path.join(os.tmpdir(), 'bal-noel-a9-'));
+  const s8 = spawn(process.execPath, ['server.js'], { cwd: ROOT, env: { ...process.env, PORT: String(P8), DATA_DIR: D8, ADMIN_PASSWORD: PW, RENDER: '' }, stdio: 'ignore' });
+  try {
+    for (let i = 0; i < 50; i++) { try { await fetch(`http://127.0.0.1:${P8}/api/health`); break; } catch { await wait(100); } }
+    const lot = async () => { const t = Date.now(); for (let k = 0; k < 20; k++) await Promise.all(Array.from({ length: 500 }, () => fetch(`http://127.0.0.1:${P8}/api/demandes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).catch(() => {}))); return Date.now() - t; };
+    const t1 = await lot(), t2 = await lot();
+    assert.ok(t2 < t1 * 2.5, `ralentissement : ${t1} ms puis ${t2} ms`);
+  } finally { s8.kill('SIGTERM'); }
 });
