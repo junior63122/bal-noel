@@ -26,6 +26,7 @@ const STARTED = Date.now();
 const METRICS = { demandes: 0, rejets: 0, erreurs: 0, ecrituresKO: 0, adminKO: 0, derniereErreur: null };
 
 const TABLE_IDS = new Set(TABLES.map((t) => t.id));
+const EN_VENTE = new Set(TABLES.filter((t) => ZONES.find((z) => z.id === t.zone).enVente).map((t) => t.id));
 const CAPACITE = new Map(TABLES.map((t) => [t.id, ZONES.find((z) => z.id === t.zone).capacite]));
 fs.mkdirSync(DATA_DIR, { recursive: true });
 
@@ -140,6 +141,7 @@ async function api(req, res, url) {
       contact: b.contact === 'sms' ? 'sms' : 'whatsapp', message: clean(b.message, 1000), statut: 'nouvelle',
     };
     if (!TABLE_IDS.has(d.table)) return send(res, 400, { error: 'Table inconnue.' });
+    if (!EN_VENTE.has(d.table)) { METRICS.rejets++; return send(res, 409, { error: 'Cette table n’est pas encore en vente.' }); }
     const digits = d.tel.replace(/\D/g, '');
     if (!d.prenom || !d.nom || digits.length < 8 || digits.length > 15 || /[^\d\s+().-]/.test(d.tel)) { METRICS.rejets++; return send(res, 400, { error: 'Nom, prénom et un numéro de téléphone valide sont obligatoires.' }); }
     if (d.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(d.email)) { METRICS.rejets++; return send(res, 400, { error: 'L’adresse e-mail semble incorrecte.' }); }

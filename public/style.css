@@ -664,3 +664,8 @@ body[data-view="hero"] { overflow: auto; }
 .globe-img { transform: translateX(-2.6%); }
 @media (max-width: 760px) { .trio { grid-template-columns: 1fr 1fr !important; } }
 @media (max-height: 520px) and (orientation: landscape) { .trio { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important; } }
+
+/* tables pas encore en vente (scène) */
+.tlabel.soon { color: #8e97ad; border-color: #4b5670; background: rgba(18,26,48,.85); }
+.labels.compact .tlabel.soon { background: #4b5670; box-shadow: none; }
+.zone .zp small { white-space: nowrap; }

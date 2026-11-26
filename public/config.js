@@ -16,17 +16,19 @@ export const EVENT = {
   lieuDetail: 'La Terrasse du Palais des Festivals, Cannes',
   tagline: 'LE BAL DE NOËL · CANNES',
   acomptePct: 20,
-  personnes: '10 ou 15 personnes',
+  personnes: 'prix par personne',
 };
 
 // Zones : nom, prix (nombre ou [min, max]), capacité, couleur de la pastille
+// Prix PAR PERSONNE. enVente: false = table visible sur le plan mais pas encore proposée à la vente.
+// capacite = nombre maximum de personnes par table (PROVISOIRE, à confirmer).
 export const ZONES = [
-  { id: 'front',   desc: 'face au DJ, au cœur de la scène', nom: 'Scène · Front DJ',       prix: 3500,         capacite: 15, couleurs: ['#e9d3a0'] },
-  { id: 'diag',    desc: 'en arc autour du DJ, sur la scène', nom: 'Scène · Diagonales',     prix: [2000, 2500], capacite: 10, couleurs: ['#c9a45c', '#9fbf98'] },
-  { id: 'balcon',  desc: 'surélevée, juste à côté du DJ', nom: 'Scène · Balcons +0,60',  prix: 1800,         capacite: 10, couleurs: ['#b8a3d9'] },
-  { id: 'fond1',   desc: 'premier rang, vue directe sur la piste', nom: 'VIP Fond · rang 1',      prix: 2000,         capacite: 15, couleurs: ['#e0997a'] },
-  { id: 'fond2',   desc: 'second rang, en surplomb de la salle', nom: 'VIP Fond · rang 2',      prix: 1500,         capacite: 10, couleurs: ['#d0829a'] },
-  { id: 'ailes',   desc: 'sur le côté, vue en diagonale sur la piste', nom: 'VIP Fond · ailes',       prix: 1200,         capacite: 10, couleurs: ['#93bccf'] },
+  { id: 'fond1',  desc: 'ligne avant, face au DJ, vue directe sur la piste', nom: 'VIP · ligne avant',  prixPers: 200, capacite: 6, enVente: true,  couleurs: ['#e0997a'] },
+  { id: 'fond2',  desc: 'ligne arrière, en surplomb de la salle',           nom: 'VIP · ligne arrière',  prixPers: 150, capacite: 6, enVente: true,  couleurs: ['#d0829a'] },
+  { id: 'ailes',  desc: 'lignes arrière, sur les côtés de la piste',        nom: 'VIP · ailes',     prixPers: 150, capacite: 6, enVente: true,  couleurs: ['#93bccf'] },
+  { id: 'front',  desc: 'face à la piste, devant la régie DJ',              nom: 'Scène · devant le DJ',         prixPers: null, capacite: 6, enVente: false, couleurs: ['#e9d3a0'] },
+  { id: 'diag',   desc: 'en arc autour du DJ, sur la scène',                nom: 'Scène · diagonales',           prixPers: null, capacite: 6, enVente: false, couleurs: ['#c9a45c'] },
+  { id: 'balcon', desc: 'surélevée, juste à côté du DJ',                    nom: 'Scène · balcons +0,60',        prixPers: null, capacite: 6, enVente: false, couleurs: ['#b8a3d9'] },
 ];
 
 // Tables : une table = un petit carré blanc devant la banquette sur le plan.
@@ -52,15 +54,20 @@ export const ROWS = [
   // Scène — face au DJ
   { zone: 'front', rot: 180, pts: [[588.3, 609], [604.3, 609], [620.3, 609], [637.3, 609], [653.3, 609], [669.7, 609]] },
   // Scène — diagonales (les 2 plus proches du DJ à 2 500 €)
-  { zone: 'diag', rot: 145.2, pts: [[540, 626.7], [554.3, 635], [568, 644], [581.7, 653.3], [595.3, 662]], prix: [2500, 2500, 2000, 2000, 2000] },
-  { zone: 'diag', rot: -145.2, pts: [[662.7, 662], [676, 653.3], [690, 644], [704, 635], [717.7, 626.7]], prix: [2000, 2000, 2000, 2500, 2500] },
+  { zone: 'diag', rot: 145.2, pts: [[540, 626.7], [554.3, 635], [568, 644], [581.7, 653.3], [595.3, 662]] },
+  { zone: 'diag', rot: -145.2, pts: [[662.7, 662], [676, 653.3], [690, 644], [704, 635], [717.7, 626.7]] },
 ];
 
 export const TABLES = [];
 ROWS.forEach((r, ri) => r.pts.forEach(([x, y], k) => {
-  TABLES.push({ id: String(TABLES.length + 1).padStart(2, '0'), zone: r.zone, x, y, rot: r.rot, row: ri, prix: r.prix ? r.prix[k] : undefined });
+  TABLES.push({ id: String(TABLES.length + 1).padStart(2, '0'), zone: r.zone, x, y, rot: r.rot, row: ri });
 }));
 
 export const zoneOf = (t) => ZONES.find((z) => z.id === t.zone);
-export const prixTable = (t) => t.prix ?? (Array.isArray(zoneOf(t).prix) ? zoneOf(t).prix[0] : zoneOf(t).prix);
+export const enVente = (t) => zoneOf(t).enVente;
+export const prixPers = (t) => zoneOf(t).prixPers;
+export const prixTable = (t) => prixPers(t); // compatibilité : prix par personne
+export const totalTable = (t, n) => (prixPers(t) || 0) * n;
+export const acompte = (t, n) => Math.round(totalTable(t, n) * EVENT.acomptePct / 100);
+export const prixLabel = (t) => (enVente(t) ? `${prixPers(t)} € / pers.` : 'Bientôt disponible');
 export const euros = (n) => n.toLocaleString('fr-FR').replace(/ | /g, ' ') + ' €';

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
-import { EVENT, ZONES, TABLES, ROWS, zoneOf, prixTable, euros } from './config.js';
+import { EVENT, ZONES, TABLES, ROWS, zoneOf, euros, enVente, prixPers, totalTable, acompte, prixLabel } from './config.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -21,7 +21,7 @@ fill('[data-lieu-up]', EVENT.lieu.toUpperCase());
 fill('[data-tagline]', EVENT.tagline);
 fill('[data-acompte]', EVENT.acomptePct);
 fill('[data-personnes]', EVENT.personnes);
-$('#meta-count').textContent = `${TABLES.length} tables · ${EVENT.personnes}`;
+$('#meta-count').textContent = `${TABLES.filter(enVente).length} tables en vente · prix par personne`;
 
 /* ================================================================ état (API ou démo) */
 let reserved = new Set();
@@ -516,7 +516,7 @@ TABLES.forEach((t) => {
   const b = document.createElement('button');
   b.type = 'button'; b.className = 'tlabel'; b.textContent = t.id;
   b.style.setProperty('--zc', zoneOf(t).couleurs.at(-1));
-  b.title = `Table ${t.id} · ${zoneOf(t).nom} · ${euros(prixTable(t))}`;
+  b.title = `Table ${t.id} · ${zoneOf(t).nom} · ${prixLabel(t)}`;
   b.setAttribute('aria-label', b.title);
   b.addEventListener('click', () => selectTable(t));
   b.addEventListener('pointerenter', () => highlight(t.id, true));
@@ -707,7 +707,7 @@ let current = null;
 const zonesEl = $('#zones');
 function renderZones() {
   const free = (z) => TABLES.filter((t) => t.zone === z.id && !reserved.has(t.id)).length;
-  const fmt = (p) => (Array.isArray(p) ? `${euros(p[0])} – ${euros(p[1])}` : euros(p));
+  const fmt = (z) => (z.enVente ? `${z.prixPers} € / pers.` : 'Bientôt');
   zonesEl.innerHTML = '';
   const all = document.createElement('li');
   all.innerHTML = `<button type="button" class="zone all ${activeZone ? '' : 'active'}"><span class="zn">Toute la salle</span><small>${TABLES.length} tables ↗</small></button>`;
@@ -718,7 +718,7 @@ function renderZones() {
     const li = document.createElement('li');
     li.innerHTML = `<button type="button" class="zone ${activeZone === z.id ? 'active' : ''} ${n ? '' : 'full'}">
       <span class="zn">${z.nom} <span class="sw">${z.couleurs.map((c) => `<i style="background:${c}"></i>`).join('')}</span></span>
-      <span class="zp"><strong>${fmt(z.prix)}</strong><small>${n} disponible${n > 1 ? 's' : ''} · ${z.capacite} pers.</small></span></button>`;
+      <span class="zp"><strong>${fmt(z)}</strong><small>${z.enVente ? `${n} disponible${n > 1 ? 's' : ''} · jusqu’à ${z.capacite} pers.` : 'pas encore en vente'}</small></span></button>`;
     li.firstChild.onclick = () => selectZone(z.id);
     zonesEl.appendChild(li);
   });
@@ -735,13 +735,15 @@ function refreshLabels() {
   for (const t of TABLES) {
     const b = LABEL.get(t.id), taken = reserved.has(t.id);
     b.classList.toggle('taken', taken);
-    b.setAttribute('aria-label', `Table ${t.id}, ${zoneOf(t).nom}, ${euros(prixTable(t))}, ${taken ? 'réservée' : 'disponible'}`);
+    b.classList.toggle('soon', !enVente(t));
+    b.setAttribute('aria-label', `Table ${t.id}, ${zoneOf(t).nom}, ${prixLabel(t)}, ${!enVente(t) ? 'pas encore en vente' : taken ? 'réservée' : 'disponible'}`);
     b.classList.toggle('hide', only && taken);
     b.classList.toggle('dim', !!activeZone && t.zone !== activeZone);
     const o = TABLE_OBJ.get(t.id);
     o.mats.forEach((m) => m.color.set(taken ? '#3a3234' : '#e6dccb'));
-    o.plate.material.color.set(taken ? '#3a3234' : zoneOf(t).couleurs.at(-1));
-    o.plate.material.emissiveIntensity = taken ? 0 : .25;
+    const off = taken || !enVente(t);
+    o.plate.material.color.set(off ? '#3a3f55' : zoneOf(t).couleurs.at(-1));
+    o.plate.material.emissiveIntensity = off ? 0 : .25;
   }
   renderStrip();
 }
@@ -755,16 +757,16 @@ function selectTable(t) {
   const o = TABLE_OBJ.get(t.id);
   ring.position.copy(o.base).setY(o.base.y + .03);
   ring.scale.set(.2, 1, .2); ring.visible = true;
-  const z = zoneOf(t), prix = prixTable(t), taken = reserved.has(t.id);
-  const badge = $('#badge'); badge.textContent = `Table ${t.id} · ${euros(prix)}`; badge.hidden = false;
+  const z = zoneOf(t), taken = reserved.has(t.id), soon = !enVente(t);
+  const badge = $('#badge'); badge.textContent = `Table ${t.id} · ${prixLabel(t)}`; badge.hidden = false;
   badge.classList.remove('pop'); void badge.offsetWidth; badge.classList.add('pop');
   $('#tp-title').textContent = `Table ${t.id}`;
   $('#tp-zone').textContent = `${z.nom} · ${z.desc}`;
-  $('#tp-price').textContent = euros(prix);
-  $('#tp-sub').textContent = `Prix total de la table · jusqu’à ${z.capacite} personnes · acompte ${EVENT.acomptePct} % : ${euros(Math.round(prix * EVENT.acomptePct / 100))}`;
-  $('#tp-status').className = 'tp-status ' + (taken ? 'taken' : 'free');
-  $('#tp-status').innerHTML = taken ? '<strong>Réservée</strong>Choisissez une autre table sur le plan ou dans la liste.' : '<strong>Disponible</strong>Envoyez votre demande : l’organisation vous recontacte rapidement.';
-  $('#tp-ask').disabled = taken;
+  $('#tp-price').textContent = soon ? 'Bientôt disponible' : `${euros(prixPers(t))} / personne`;
+  $('#tp-sub').textContent = soon ? 'Les tables de la scène ne sont pas encore proposées à la vente.' : `Jusqu’à ${z.capacite} personnes · exemple : ${euros(totalTable(t, z.capacite))} pour ${z.capacite} · acompte ${EVENT.acomptePct} %`;
+  $('#tp-status').className = 'tp-status ' + (taken || soon ? 'taken' : 'free');
+  $('#tp-status').innerHTML = soon ? '<strong>Pas encore en vente</strong>Revenez bientôt, ou choisissez une table VIP face au DJ.' : taken ? '<strong>Réservée</strong>Choisissez une autre table sur le plan ou dans la liste.' : '<strong>Disponible</strong>Envoyez votre demande : l’organisation vous recontacte rapidement.';
+  $('#tp-ask').disabled = taken || soon;
   const side = $('#side'); side.classList.add('closed', 'has-table'); $('#collapse').textContent = '+';
   const panel = $('#tpanel'); panel.hidden = false; panel.classList.remove('enter'); void panel.offsetWidth; panel.classList.add('enter');
   renderZones(); refreshLabels();
@@ -790,13 +792,12 @@ function renderStrip() {
   const el = $('#zone-strip');
   if (!activeZone) { el.hidden = true; return; }
   const z = ZONES.find((x) => x.id === activeZone), ts = TABLES.filter((t) => t.zone === activeZone);
-  const fmt = (p) => (Array.isArray(p) ? `${euros(p[0])} – ${euros(p[1])}` : euros(p));
   $('#zs-name').textContent = z.nom;
-  $('#zs-meta').textContent = `${ts.length} tables · ${fmt(z.prix)}`;
+  $('#zs-meta').textContent = `${ts.length} tables · ${z.enVente ? z.prixPers + ' € / pers.' : 'bientôt disponible'}`;
   $('#zs-list').innerHTML = ts.map((t) => {
-    const taken = reserved.has(t.id);
+    const taken = reserved.has(t.id) || !z.enVente;
     return `<button type="button" class="zs-card ${taken ? 'taken' : ''} ${current && current.id === t.id ? 'sel' : ''}" data-id="${t.id}" style="--zc:${z.couleurs.at(-1)}">
-      <b>Table ${t.id}</b><span>${euros(prixTable(t))}</span><small>${taken ? 'Réservée' : 'Disponible'}</small></button>`;
+      <b>Table ${t.id}</b><span>${z.enVente ? z.prixPers + ' € / pers.' : 'Bientôt'}</span><small>${!z.enVente ? 'Pas en vente' : taken ? 'Réservée' : 'Disponible'}</small></button>`;
   }).join('');
   $('#zs-list').querySelectorAll('button').forEach((b) => (b.onclick = () => selectTable(TABLES.find((t) => t.id === b.dataset.id))));
   el.hidden = false;
@@ -818,14 +819,13 @@ $('.side-head').onclick = toggleZones;
 const drawer = $('#drawer'), back = $('#drawer-back'), form = $('#form');
 function openDrawer(t) {
   current = t;
-  const z = zoneOf(t), prix = prixTable(t), taken = reserved.has(t.id);
+  const z = zoneOf(t), taken = reserved.has(t.id) || !enVente(t);
   LABEL.forEach((b) => b.classList.remove('sel')); LABEL.get(t.id).classList.add('sel');
   $('#d-zone').textContent = z.nom;
   $('#d-title').textContent = `Table ${t.id}`;
-  $('#d-price').textContent = euros(prix);
-  $('#d-cap').textContent = `${z.capacite} pers.`;
-  $('#d-dep').textContent = euros(Math.round(prix * EVENT.acomptePct / 100));
+  $('#d-price').textContent = `${euros(prixPers(t) || 0)}`;
   $('#d-pers').innerHTML = Array.from({ length: z.capacite }, (_, i) => `<option ${i + 1 === z.capacite ? 'selected' : ''}>${i + 1}</option>`).join('');
+  majTotal();
   $('#d-taken').hidden = !taken; form.hidden = taken;
   $('#d-error').hidden = true;
   $('#d-form-view').hidden = false; $('#d-ok-view').hidden = true;
@@ -833,6 +833,14 @@ function openDrawer(t) {
   drawer.classList.add('open'); drawer.setAttribute('aria-hidden', 'false'); back.hidden = false;
   setTimeout(() => (taken ? $('#drawer-close') : form.prenom).focus({ preventScroll: true }), 350);
 }
+// total et acompte recalculés selon le nombre de personnes choisi
+function majTotal() {
+  if (!current) return;
+  const n = Number($('#d-pers').value) || 1;
+  $('#d-cap').textContent = euros(totalTable(current, n));
+  $('#d-dep').textContent = euros(acompte(current, n));
+}
+$('#d-pers').addEventListener('change', majTotal);
 let lastFocus = null;
 function closeDrawer() {
   if (!drawer.classList.contains('open')) return;
@@ -865,10 +873,10 @@ form.addEventListener('submit', async (e) => {
   const btn = $('#d-submit'); btn.disabled = true;
   try {
     await submitDemande({ table: current.id, prenom: f.prenom, nom: f.nom, tel: f.tel, email: f.email, personnes: f.personnes, contact: f.contact, message: f.message, website: f.website });
-    const dep = euros(Math.round(prixTable(current) * EVENT.acomptePct / 100));
+    const n = Number(f.personnes) || 1, dep = euros(acompte(current, n));
     $('#d-ok-text').innerHTML = `Merci ${escapeHtml(f.prenom)} ! Votre demande pour la <strong>table ${current.id}</strong> (${zoneOf(current).nom}) est bien enregistrée.<br><br>
       L’organisation vous contacte par <strong>${f.contact === 'sms' ? 'SMS' : 'WhatsApp'}</strong> au ${escapeHtml(f.tel)} dans les heures qui suivent.
-      Un acompte de ${EVENT.acomptePct} % (${dep}) vous sera demandé après validation.`;
+      Pour ${n} personne${n > 1 ? 's' : ''} (${euros(totalTable(current, n))}), un acompte de ${EVENT.acomptePct} % (${dep}) vous sera demandé après validation.`;
     $('#d-form-view').hidden = true; $('#d-ok-view').hidden = false;
     form.reset();
   } catch (x) {

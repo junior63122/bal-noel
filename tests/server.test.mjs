@@ -64,7 +64,7 @@ test('données invalides refusées, et rien n’est enregistré', async () => {
   const cases = [
     [valid({ table: '99' }), 400], [valid({ table: '' }), 400], [valid({ prenom: '' }), 400], [valid({ nom: '   ' }), 400],
     [valid({ tel: '123' }), 400], [valid({ tel: '<script>alert(1)</script>' }), 400], [valid({ tel: '0'.repeat(20) }), 400],
-    [valid({ email: 'pas-un-email' }), 400], [valid({ personnes: 0 }), 400], [valid({ personnes: 99 }), 400], [valid({ personnes: 'abc' }), 400],
+    [valid({ email: 'pas-un-email' }), 400], [valid({ personnes: 0 }), 400], [valid({ personnes: 7 }), 400], [valid({ personnes: 99 }), 400], [valid({ personnes: 'abc' }), 400],
   ];
   for (const [body, code] of cases) assert.equal((await post('/api/demandes', body)).status, code, JSON.stringify(body));
   assert.equal((await post('/api/demandes', '{pas du json')).status, 400);
@@ -114,7 +114,7 @@ test('admin : mauvais mot de passe refusé, puis blocage après 10 essais', asyn
 });
 
 test('admin : statut inconnu refusé (pas d’injection dans le tableau de bord)', async () => {
-  const { id } = await (await post('/api/demandes', valid({ table: '50', tel: '06 50 50 50 50' }))).json();
+  const { id } = await (await post('/api/demandes', valid({ table: '15', tel: '06 50 50 50 50' }))).json();
   assert.equal((await admin('demande', { id, statut: '"><img src=x onerror=alert(1)>' })).status, 400);
   await wait(100);
   assert.equal(disk().demandes.find((d) => d.id === id).statut, 'nouvelle');
@@ -144,10 +144,17 @@ test('santé : /api/health relit réellement le disque', async () => {
 
 test('charge : 500 demandes simultanées, aucune perte, fichier valide', async () => {
   const before = disk().demandes.length;
-  const tables = Array.from({ length: 64 }, (_, i) => String(i + 1).padStart(2, '0')).filter((t) => t !== '05');
+  const tables = Array.from({ length: 44 }, (_, i) => String(i + 1).padStart(2, '0')).filter((t) => t !== '05');
   const rs = await Promise.all(Array.from({ length: 500 }, (_, i) => post('/api/demandes', valid({ table: tables[i % tables.length], tel: `06 4${String(i).padStart(3, '0')} 00 00` }), { 'x-forwarded-for': `100.64.${i >> 8}.${i & 255}` })));
   const ok = rs.filter((r) => r.status === 201).length;
   await wait(400);
   assert.equal(ok, 500);
   assert.equal(disk().demandes.length, before + 500);
+});
+
+test('tables de la scène (45 à 64) : pas encore en vente, aucune demande enregistrée', async () => {
+  const before = disk().demandes.length;
+  for (const t of ['45', '50', '64']) assert.equal((await post('/api/demandes', valid({ table: t, tel: `06 45 00 00 ${t}` }))).status, 409, t);
+  await wait(150);
+  assert.equal(disk().demandes.length, before);
 });

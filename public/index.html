@@ -105,7 +105,7 @@
         <button type="button" class="collapse" id="collapse" aria-label="Replier">−</button>
       </div>
       <div class="side-body">
-        <p class="side-sub">Prix par table · <span data-personnes></span> selon la zone</p>
+        <p class="side-sub">Prix par personne · acompte de <span data-acompte></span> % après validation</p>
         <ul class="zones" id="zones"></ul>
       </div>
       <div class="table-panel" id="tpanel" hidden role="region" aria-label="Table sélectionnée">
@@ -151,11 +151,11 @@
     <p class="eyebrow" id="d-zone"></p>
     <h3 id="d-title">Table 01</h3>
     <div class="d-facts">
-      <div><span>Prix</span><strong id="d-price"></strong></div>
-      <div><span>Capacité</span><strong id="d-cap"></strong></div>
+      <div><span>Par personne</span><strong id="d-price"></strong></div>
+      <div><span>Total</span><strong id="d-cap"></strong></div>
       <div><span>Acompte</span><strong id="d-dep"></strong></div>
     </div>
-    <p class="d-taken" id="d-taken" hidden>Cette table est déjà réservée. Choisissez une autre table disponible.</p>
+    <p class="d-taken" id="d-taken" hidden>Cette table n’est pas disponible. Choisissez une autre table.</p>
 
     <form id="form" novalidate>
       <div class="row2">

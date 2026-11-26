@@ -55,7 +55,7 @@ function profils(n) {
   return out;
 }
 
-const RESERVEES = ['03', '17', '30', '51'];
+const RESERVEES = ['03', '17', '30', '41'];
 async function adminData() { return (await fetch(BASE + '/api/admin/data', { headers: { 'x-admin-password': PW, 'x-forwarded-for': '127.9.9.9' } })).json(); }
 
 async function parcours(browser, p) {
@@ -76,8 +76,9 @@ async function parcours(browser, p) {
     await page.fill('[name=prenom]', prenom); await page.fill('[name=nom]', 'Test');
     await page.fill('[name=tel]', tel); await page.check('[name=cgv]'); steps.clics += 4;
   };
-  const libre = () => String(1 + (p.id * 7) % 64).padStart(2, '0');
-  let tid = libre(); while (RESERVEES.includes(tid)) tid = String((Number(tid) % 64) + 1).padStart(2, '0');
+  // seules les tables 01 à 44 sont en vente
+  const libre = () => String(1 + (p.id * 7) % 44).padStart(2, '0');
+  let tid = libre(); while (RESERVEES.includes(tid)) tid = String((Number(tid) % 44) + 1).padStart(2, '0');
   try {
     const t1 = Date.now();
     await page.goto(BASE + (p.comportement === 'lien-direct' ? '/#plan' : '/'), { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -95,12 +96,13 @@ async function parcours(browser, p) {
     log.push(['plan visible', Date.now() - t1]);
 
     switch (p.comportement) {
-      case 'zones': { steps.clics++; await page.locator('.zone').nth(1 + (p.id % 6)).click(); await page.waitForTimeout(1200);
+      case 'zones': { steps.clics++; await page.locator('.zone').nth(1 + (p.id % 3)).click(); await page.waitForTimeout(1200);
         const first = await page.locator('.zs-card:not(.taken)').first().getAttribute('data-id'); tid = first; await choisirTable(tid); break; }
-      case 'liste': { steps.clics++; await page.locator('.zone').nth(4).click(); await page.waitForTimeout(1000);
+      case 'liste': { steps.clics++; await page.locator('.zone').nth(2).click(); await page.waitForTimeout(1000);
         tid = await page.locator('.zs-card:not(.taken)').nth(p.id % 4).getAttribute('data-id'); steps.clics++; await page.locator(`.zs-card[data-id="${tid}"]`).click(); await page.waitForTimeout(1200); table = tid; break; }
       case 'reservee': { await choisirTable(pick(RESERVEES)); attendu = 'refus'; break; }
-      case 'filtre': { steps.clics++; await page.check('#only-free'); const hidden = await page.locator('.tlabel.hide').count(); if (hidden !== RESERVEES.length) throw new Error(`filtre : ${hidden} tables masquées au lieu de ${RESERVEES.length}`); await choisirTable(tid); break; }
+      case 'filtre': { steps.clics++; await page.check('#only-free'); const hidden = await page.locator('.tlabel.hide').count(); if (hidden !== RESERVEES.length) // les tables hors vente restent visibles (grisées)
+ throw new Error(`filtre : ${hidden} tables masquées au lieu de ${RESERVEES.length}`); await choisirTable(tid); break; }
       case 'hesitant': { for (const x of ['08', '25', '49']) { await choisirTable(x); await click('#tp-close'); await page.waitForTimeout(400); } await choisirTable(tid); break; }
       case 'vue-table': { await choisirTable(tid); await click('#tp-pov'); await page.waitForTimeout(1600); if (!(await page.isVisible('#pov-bar'))) throw new Error('vue depuis la table absente'); await click('#pov-exit'); await page.waitForTimeout(1200); break; }
       default: await choisirTable(tid);
