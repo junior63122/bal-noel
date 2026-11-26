@@ -11,15 +11,15 @@
   "attendu": "demande",
   "table": "z1-ar",
   "personnes": 2,
-  "duree": 40367,
+  "duree": 30578,
   "log": [
    [
     "accueil prêt",
-    18456
+    14617
    ],
    [
     "plan visible",
-    22680
+    17694
    ]
   ],
   "steps": {
@@ -41,15 +41,15 @@
   "attendu": "demande",
   "table": "z2-av",
   "personnes": 3,
-  "duree": 27593,
+  "duree": 23937,
   "log": [
    [
     "accueil prêt",
-    3881
+    3625
    ],
    [
     "plan visible",
-    9324
+    9069
    ]
   ],
   "steps": {
@@ -71,15 +71,15 @@
   "attendu": "demande",
   "table": "z3-av",
   "personnes": 4,
-  "duree": 24818,
+  "duree": 15881,
   "log": [
    [
     "accueil prêt",
-    3889
+    3625
    ],
    [
     "plan visible",
-    8987
+    7367
    ]
   ],
   "steps": {
@@ -101,15 +101,15 @@
   "attendu": "demande",
   "table": "z3-ar",
   "personnes": 5,
-  "duree": 33673,
+  "duree": 32743,
   "log": [
    [
     "accueil prêt",
-    17412
+    13968
    ],
    [
     "plan visible",
-    19155
+    18940
    ]
   ],
   "steps": {
@@ -131,15 +131,15 @@
   "attendu": "demande",
   "table": "z4-av",
   "personnes": 6,
-  "duree": 24585,
+  "duree": 16735,
   "log": [
    [
     "accueil prêt",
-    2314
+    2324
    ],
    [
     "plan visible",
-    9445
+    7677
    ]
   ],
   "steps": {
@@ -161,15 +161,15 @@
   "attendu": "demande",
   "table": "z4-ar",
   "personnes": 7,
-  "duree": 44047,
+  "duree": 49990,
   "log": [
    [
     "accueil prêt",
-    17422
+    17524
    ],
    [
     "plan visible",
-    20255
+    23935
    ]
   ],
   "steps": {
@@ -191,15 +191,15 @@
   "attendu": "demande",
   "table": "z1-av",
   "personnes": 8,
-  "duree": 33827,
+  "duree": 26922,
   "log": [
    [
     "accueil prêt",
-    3886
+    4039
    ],
    [
     "plan visible",
-    8709
+    9906
    ]
   ],
   "steps": {
@@ -221,15 +221,15 @@
   "attendu": "demande",
   "table": "z1-ar",
   "personnes": 9,
-  "duree": 30542,
+  "duree": 32226,
   "log": [
    [
     "accueil prêt",
-    3672
+    3540
    ],
    [
     "plan visible",
-    7048
+    8080
    ]
   ],
   "steps": {
@@ -251,15 +251,15 @@
   "attendu": "demande",
   "table": "z2-av",
   "personnes": 10,
-  "duree": 22745,
+  "duree": 34655,
   "log": [
    [
     "accueil prêt",
-    2335
+    6290
    ],
    [
     "plan visible",
-    6992
+    8967
    ]
   ],
   "steps": {
@@ -281,15 +281,15 @@
   "attendu": "demande",
   "table": "z3-av",
   "personnes": 11,
-  "duree": 25315,
+  "duree": 32744,
   "log": [
    [
     "accueil prêt",
-    3644
+    3630
    ],
    [
     "plan visible",
-    10865
+    16265
    ]
   ],
   "steps": {
@@ -311,15 +311,15 @@
   "attendu": "demande",
   "table": "z3-ar",
   "personnes": 12,
-  "duree": 29947,
+  "duree": 29810,
   "log": [
    [
     "accueil prêt",
-    2562
+    2265
    ],
    [
     "plan visible",
-    6699
+    11318
    ]
   ],
   "steps": {
@@ -341,15 +341,15 @@
   "attendu": "demande",
   "table": "z4-av",
   "personnes": 1,
-  "duree": 34835,
+  "duree": 30962,
   "log": [
    [
     "accueil prêt",
-    4703
+    5772
    ],
    [
     "plan visible",
-    10315
+    9087
    ]
   ],
   "steps": {
@@ -371,15 +371,15 @@
   "attendu": "demande",
   "table": "z4-ar",
   "personnes": 2,
-  "duree": 30284,
+  "duree": 26206,
   "log": [
    [
     "accueil prêt",
-    2374
+    2281
    ],
    [
     "plan visible",
-    12217
+    7745
    ]
   ],
   "steps": {
@@ -401,15 +401,15 @@
   "attendu": "demande",
   "table": "z1-av",
   "personnes": 3,
-  "duree": 29933,
+  "duree": 29818,
   "log": [
    [
     "accueil prêt",
-    2292
+    2287
    ],
    [
     "plan visible",
-    15367
+    15539
    ]
   ],
   "steps": {
@@ -431,15 +431,15 @@
   "attendu": "demande",
   "table": "z1-ar",
   "personnes": 4,
-  "duree": 26014,
+  "duree": 29956,
   "log": [
    [
     "accueil prêt",
-    2403
+    2891
    ],
    [
     "plan visible",
-    5272
+    9032
    ]
   ],
   "steps": {
@@ -461,15 +461,15 @@
   "attendu": "demande",
   "table": "z2-av",
   "personnes": 5,
-  "duree": 35325,
+  "duree": 34645,
   "log": [
    [
     "accueil prêt",
-    2327
+    2371
    ],
    [
     "plan visible",
-    10300
+    6973
    ]
   ],
   "steps": {
@@ -491,15 +491,15 @@
   "attendu": "demande",
   "table": "z3-av",
   "personnes": 6,
-  "duree": 32393,
+  "duree": 31543,
   "log": [
    [
     "accueil prêt",
-    4753
+    2361
    ],
    [
     "plan visible",
-    7769
+    16690
    ]
   ],
   "steps": {
@@ -521,15 +521,15 @@
   "attendu": "demande",
   "table": "z3-ar",
   "personnes": 7,
-  "duree": 42499,
+  "duree": 35371,
   "log": [
    [
     "accueil prêt",
-    8690
+    8342
    ],
    [
     "plan visible",
-    14308
+    13783
    ]
   ],
   "steps": {
@@ -551,15 +551,15 @@
   "attendu": "demande",
   "table": "z4-av",
   "personnes": 8,
-  "duree": 35275,
+  "duree": 29952,
   "log": [
    [
     "accueil prêt",
-    2287
+    2268
    ],
    [
     "plan visible",
-    9125
+    5135
    ]
   ],
   "steps": {
@@ -581,15 +581,15 @@
   "attendu": "demande",
   "table": "z4-ar",
   "personnes": 9,
-  "duree": 33205,
+  "duree": 34509,
   "log": [
    [
     "accueil prêt",
-    2394
+    2270
    ],
    [
     "plan visible",
-    4152
+    4931
    ]
   ],
   "steps": {
@@ -611,15 +611,15 @@
   "attendu": "demande",
   "table": "z1-av",
   "personnes": 10,
-  "duree": 31331,
+  "duree": 31159,
   "log": [
    [
     "accueil prêt",
-    16034
+    13080
    ],
    [
     "plan visible",
-    17794
+    21476
    ]
   ],
   "steps": {
@@ -641,15 +641,15 @@
   "attendu": "demande",
   "table": "z1-ar",
   "personnes": 11,
-  "duree": 15725,
+  "duree": 18380,
   "log": [
    [
     "accueil prêt",
-    2278
+    2248
    ],
    [
     "plan visible",
-    5007
+    4052
    ]
   ],
   "steps": {
@@ -671,15 +671,15 @@
   "attendu": "demande",
   "table": "z2-av",
   "personnes": 12,
-  "duree": 19164,
+  "duree": 22310,
   "log": [
    [
     "accueil prêt",
-    2281
+    2339
    ],
    [
     "plan visible",
-    9784
+    9877
    ]
   ],
   "steps": {
@@ -701,15 +701,15 @@
   "attendu": "demande",
   "table": "z3-av",
   "personnes": 1,
-  "duree": 18902,
+  "duree": 22057,
   "log": [
    [
     "accueil prêt",
-    2343
+    4557
    ],
    [
     "plan visible",
-    6918
+    7764
    ]
   ],
   "steps": {
@@ -731,15 +731,15 @@
   "attendu": "demande",
   "table": "z3-ar",
   "personnes": 2,
-  "duree": 22065,
+  "duree": 23803,
   "log": [
    [
     "accueil prêt",
-    5777
+    3662
    ],
    [
     "plan visible",
-    9866
+    6474
    ]
   ],
   "steps": {
@@ -761,15 +761,15 @@
   "attendu": "demande",
   "table": "z4-av",
   "personnes": 3,
-  "duree": 22088,
+  "duree": 26622,
   "log": [
    [
     "accueil prêt",
-    2304
+    2281
    ],
    [
     "plan visible",
-    10374
+    11131
    ]
   ],
   "steps": {
@@ -791,15 +791,15 @@
   "attendu": "demande",
   "table": "z4-ar",
   "personnes": 4,
-  "duree": 20866,
+  "duree": 29376,
   "log": [
    [
     "accueil prêt",
-    6728
+    8156
    ],
    [
     "plan visible",
-    9021
+    12282
    ]
   ],
   "steps": {
@@ -821,15 +821,15 @@
   "attendu": "demande",
   "table": "z1-av",
   "personnes": 5,
-  "duree": 18823,
+  "duree": 23441,
   "log": [
    [
     "accueil prêt",
-    3896
+    3680
    ],
    [
     "plan visible",
-    8756
+    6371
    ]
   ],
   "steps": {
@@ -851,15 +851,15 @@
   "attendu": "demande",
   "table": "z1-ar",
   "personnes": 6,
-  "duree": 21203,
+  "duree": 32314,
   "log": [
    [
     "accueil prêt",
-    4111
+    3543
    ],
    [
     "plan visible",
-    6400
+    5476
    ]
   ],
   "steps": {
@@ -881,15 +881,15 @@
   "attendu": "demande",
   "table": "z2-av",
   "personnes": 7,
-  "duree": 21002,
+  "duree": 22895,
   "log": [
    [
     "accueil prêt",
-    2385
+    2255
    ],
    [
     "plan visible",
-    7143
+    4277
    ]
   ],
   "steps": {
@@ -911,15 +911,15 @@
   "attendu": "demande",
   "table": "z3-av",
   "personnes": 8,
-  "duree": 36909,
+  "duree": 34171,
   "log": [
    [
     "accueil prêt",
-    2394
+    2977
    ],
    [
     "plan visible",
-    6694
+    5830
    ]
   ],
   "steps": {
@@ -941,15 +941,15 @@
   "attendu": "demande",
   "table": "z3-ar",
   "personnes": 9,
-  "duree": 30497,
+  "duree": 26479,
   "log": [
    [
     "accueil prêt",
-    4623
+    3632
    ],
    [
     "plan visible",
-    11576
+    9478
    ]
   ],
   "steps": {
@@ -971,15 +971,15 @@
   "attendu": "demande",
   "table": "z4-av",
   "personnes": 10,
-  "duree": 44505,
+  "duree": 38105,
   "log": [
    [
     "accueil prêt",
-    19956
+    16438
    ],
    [
     "plan visible",
-    26860
+    21967
    ]
   ],
   "steps": {
@@ -1001,15 +1001,15 @@
   "attendu": "demande",
   "table": "z4-ar",
   "personnes": 11,
-  "duree": 48732,
+  "duree": 45772,
   "log": [
    [
     "accueil prêt",
-    18835
+    17024
    ],
    [
     "plan visible",
-    26362
+    20237
    ]
   ],
   "steps": {
@@ -1031,15 +1031,15 @@
   "attendu": "demande",
   "table": "z1-av",
   "personnes": 12,
-  "duree": 33197,
+  "duree": 24885,
   "log": [
    [
     "accueil prêt",
-    2253
+    2252
    ],
    [
     "plan visible",
-    9657
+    9191
    ]
   ],
   "steps": {
@@ -1061,15 +1061,15 @@
   "attendu": "demande",
   "table": "z1-ar",
   "personnes": 1,
-  "duree": 56029,
+  "duree": 43426,
   "log": [
    [
     "accueil prêt",
-    17399
+    17530
    ],
    [
     "plan visible",
-    25529
+    24138
    ]
   ],
   "steps": {
@@ -1091,15 +1091,15 @@
   "attendu": "demande",
   "table": "z2-av",
   "personnes": 2,
-  "duree": 48637,
+  "duree": 58285,
   "log": [
    [
     "accueil prêt",
-    17399
+    19665
    ],
    [
     "plan visible",
-    21139
+    32059
    ]
   ],
   "steps": {
@@ -1121,15 +1121,15 @@
   "attendu": "demande",
   "table": "z3-av",
   "personnes": 3,
-  "duree": 31593,
+  "duree": 37033,
   "log": [
    [
     "accueil prêt",
-    3692
+    3660
    ],
    [
     "plan visible",
-    12323
+    6939
    ]
   ],
   "steps": {
@@ -1151,15 +1151,15 @@
   "attendu": "demande",
   "table": "z3-ar",
   "personnes": 4,
-  "duree": 39251,
+  "duree": 51176,
   "log": [
    [
     "accueil prêt",
-    2500
+    4714
    ],
    [
     "plan visible",
-    10131
+    18829
    ]
   ],
   "steps": {
@@ -1181,15 +1181,15 @@
   "attendu": "demande",
   "table": "z4-av",
   "personnes": 5,
-  "duree": 34172,
+  "duree": 34671,
   "log": [
    [
     "accueil prêt",
-    2282
+    5394
    ],
    [
     "plan visible",
-    4476
+    7411
    ]
   ],
   "steps": {
@@ -1211,15 +1211,15 @@
   "attendu": "demande",
   "table": "z4-ar",
   "personnes": 6,
-  "duree": 31921,
+  "duree": 33238,
   "log": [
    [
     "accueil prêt",
-    7579
+    3523
    ],
    [
     "plan visible",
-    10745
+    7206
    ]
   ],
   "steps": {
@@ -1241,15 +1241,15 @@
   "attendu": "demande",
   "table": "z1-av",
   "personnes": 7,
-  "duree": 37294,
+  "duree": 37179,
   "log": [
    [
     "accueil prêt",
-    18330
+    16626
    ],
    [
     "plan visible",
-    21435
+    24169
    ]
   ],
   "steps": {
@@ -1271,15 +1271,15 @@
   "attendu": "demande",
   "table": "z1-ar",
   "personnes": 8,
-  "duree": 23275,
+  "duree": 17219,
   "log": [
    [
     "accueil prêt",
-    3866
+    3648
    ],
    [
     "plan visible",
-    8157
+    7121
    ]
   ],
   "steps": {
@@ -1301,15 +1301,15 @@
   "attendu": "demande",
   "table": "z2-av",
   "personnes": 9,
-  "duree": 24545,
+  "duree": 24348,
   "log": [
    [
     "accueil prêt",
-    3875
+    3548
    ],
    [
     "plan visible",
-    9646
+    9776
    ]
   ],
   "steps": {
@@ -1331,15 +1331,15 @@
   "attendu": "demande",
   "table": "z3-av",
   "personnes": 10,
-  "duree": 20877,
+  "duree": 24913,
   "log": [
    [
     "accueil prêt",
-    3980
+    5030
    ],
    [
     "plan visible",
-    6880
+    8930
    ]
   ],
   "steps": {
@@ -1361,15 +1361,15 @@
   "attendu": "demande",
   "table": "z3-ar",
   "personnes": 11,
-  "duree": 32748,
+  "duree": 26938,
   "log": [
    [
     "accueil prêt",
-    3884
+    3947
    ],
    [
     "plan visible",
-    14081
+    11372
    ]
   ],
   "steps": {
@@ -1391,15 +1391,15 @@
   "attendu": "demande",
   "table": "z4-av",
   "personnes": 12,
-  "duree": 26912,
+  "duree": 24362,
   "log": [
    [
     "accueil prêt",
-    3546
+    2308
    ],
    [
     "plan visible",
-    6456
+    8125
    ]
   ],
   "steps": {
@@ -1421,15 +1421,15 @@
   "attendu": "demande",
   "table": "z4-ar",
   "personnes": 1,
-  "duree": 26116,
+  "duree": 32724,
   "log": [
    [
     "accueil prêt",
-    2281
+    2459
    ],
    [
     "plan visible",
-    4963
+    17722
    ]
   ],
   "steps": {
@@ -1451,15 +1451,15 @@
   "attendu": "demande",
   "table": "z1-av",
   "personnes": 2,
-  "duree": 38106,
+  "duree": 40098,
   "log": [
    [
     "accueil prêt",
-    14822
+    16571
    ],
    [
     "plan visible",
-    16617
+    18734
    ]
   ],
   "steps": {
@@ -1481,15 +1481,15 @@
   "attendu": "demande",
   "table": "z1-ar",
   "personnes": 3,
-  "duree": 15535,
+  "duree": 18120,
   "log": [
    [
     "accueil prêt",
-    2379
+    2233
    ],
    [
     "plan visible",
-    5428
+    8091
    ]
   ],
   "steps": {
@@ -1511,15 +1511,15 @@
   "attendu": "demande",
   "table": "z2-av",
   "personnes": 4,
-  "duree": 40975,
+  "duree": 41223,
   "log": [
    [
     "accueil prêt",
-    14866
+    13086
    ],
    [
     "plan visible",
-    17504
+    15723
    ]
   ],
   "steps": {
@@ -1541,15 +1541,15 @@
   "attendu": "demande",
   "table": "z3-av",
   "personnes": 5,
-  "duree": 42822,
+  "duree": 46378,
   "log": [
    [
     "accueil prêt",
-    19150
+    17072
    ],
    [
     "plan visible",
-    22045
+    19267
    ]
   ],
   "steps": {
@@ -1571,15 +1571,15 @@
   "attendu": "demande",
   "table": "z3-ar",
   "personnes": 6,
-  "duree": 33503,
+  "duree": 39248,
   "log": [
    [
     "accueil prêt",
-    2296
+    2327
    ],
    [
     "plan visible",
-    5266
+    11907
    ]
   ],
   "steps": {
@@ -1601,15 +1601,15 @@
   "attendu": "demande",
   "table": "z4-av",
   "personnes": 7,
-  "duree": 33018,
+  "duree": 37407,
   "log": [
    [
     "accueil prêt",
-    3895
+    3593
    ],
    [
     "plan visible",
-    5715
+    11902
    ]
   ],
   "steps": {
@@ -1631,15 +1631,15 @@
   "attendu": "demande",
   "table": "z4-ar",
   "personnes": 8,
-  "duree": 31020,
+  "duree": 35893,
   "log": [
    [
     "accueil prêt",
-    2363
+    3540
    ],
    [
     "plan visible",
-    5520
+    5761
    ]
   ],
   "steps": {
@@ -1661,15 +1661,15 @@
   "attendu": "demande",
   "table": "z1-av",
   "personnes": 9,
-  "duree": 44016,
+  "duree": 47587,
   "log": [
    [
     "accueil prêt",
-    2281
+    2929
    ],
    [
     "plan visible",
-    5966
+    13230
    ]
   ],
   "steps": {
@@ -1691,15 +1691,15 @@
   "attendu": "demande",
   "table": "z1-ar",
   "personnes": 10,
-  "duree": 50304,
+  "duree": 64472,
   "log": [
    [
     "accueil prêt",
-    23754
+    26079
    ],
    [
     "plan visible",
-    26232
+    28799
    ]
   ],
   "steps": {
@@ -1721,15 +1721,15 @@
   "attendu": "demande",
   "table": "z2-av",
   "personnes": 11,
-  "duree": 34284,
+  "duree": 36303,
   "log": [
    [
     "accueil prêt",
-    2270
+    2514
    ],
    [
     "plan visible",
-    5767
+    4270
    ]
   ],
   "steps": {
@@ -1751,15 +1751,15 @@
   "attendu": "demande",
   "table": "z3-av",
   "personnes": 12,
-  "duree": 41628,
+  "duree": 58784,
   "log": [
    [
     "accueil prêt",
-    2306
+    2509
    ],
    [
     "plan visible",
-    6965
+    6677
    ]
   ],
   "steps": {
@@ -1781,15 +1781,15 @@
   "attendu": "demande",
   "table": "z3-ar",
   "personnes": 1,
-  "duree": 37236,
+  "duree": 47988,
   "log": [
    [
     "accueil prêt",
-    2232
+    2447
    ],
    [
     "plan visible",
-    4209
+    4496
    ]
   ],
   "steps": {
