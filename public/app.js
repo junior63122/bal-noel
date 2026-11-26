@@ -239,14 +239,19 @@ const ROOM = PLAN.ROOM;
   ground.rotation.x = -Math.PI / 2; ground.position.y = -.02; scene.add(ground);
 }
 // murs : hauts au fond (côté VIP), bas côté entrée/scène pour garder la vue
+// le tracé du plan est la FACE INTÉRIEURE des murs : murs, rambardes et colonnes sont repoussés vers l'extérieur
+const ROOM_SENS = ROOM.reduce((s, p, i) => { const q = ROOM[(i + 1) % ROOM.length]; return s + p[0] * q[1] - q[0] * p[1]; }, 0) > 0 ? 1 : -1;
+const versInterieur = (p, q) => { const dx = q[0] - p[0], dz = q[1] - p[1], l = Math.hypot(dx, dz) || 1; return [-dz / l * ROOM_SENS, dx / l * ROOM_SENS]; };
 ROOM.forEach((p, i) => {
   const q = ROOM[(i + 1) % ROOM.length];
+  const nIn = versInterieur(p, q);
   const a = V(...p), b = V(...q);
   const len = a.distanceTo(b);
   const back = (p[1] + q[1]) / 2 < 1; // fond et côtés VIP : murs hauts ; côté scène et foyers : murets
   const h = back ? 6 : 1.4;
   const wall = new THREE.Mesh(new THREE.BoxGeometry(len, h, .35), back ? M.wall : M.wallLow);
   wall.position.copy(a).lerp(b, .5); wall.position.y = h / 2;
+  wall.position.x -= nIn[0] * .175; wall.position.z -= nIn[1] * .175;
   wall.rotation.y = -Math.atan2(b.z - a.z, b.x - a.x);
   scene.add(wall);
   const rail = new THREE.Mesh(new THREE.BoxGeometry(len, .06, .42), M.gold);
@@ -256,7 +261,7 @@ ROOM.forEach((p, i) => {
   for (let k = 0; k < nb; k++) {
     const o = new THREE.Object3D();
     o.position.copy(a).lerp(b, (k + .5) / nb); o.position.y = h - .35 - Math.sin(((k + .5) / nb * len / 1.8) % 1 * Math.PI) * .35;
-    o.rotation.y = wall.rotation.y; o.translateZ(back ? .3 : .25);
+    o.position.x += nIn[0] * .08; o.position.z += nIn[1] * .08;
     bulbSpots.push({ pos: o.position.clone(), color: BULB_COLORS[k % 4], r: .06 });
   }
   if (back) {
@@ -265,12 +270,13 @@ ROOM.forEach((p, i) => {
     for (let k = 0; k < n; k++) {
       const win = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 3.2), M.window);
       win.position.copy(a).lerp(b, (k + .5) / n); win.position.y = 2.6;
-      win.rotation.y = wall.rotation.y + Math.PI;
-      win.translateZ(.19); scene.add(win);
+      win.position.x += nIn[0] * .02; win.position.z += nIn[1] * .02;
+      win.rotation.y = wall.rotation.y + (ROOM_SENS > 0 ? 0 : Math.PI); scene.add(win);
     }
   }
   const col = new THREE.Mesh(new THREE.CylinderGeometry(.35, .4, back ? 6.6 : 1.8, 16), M.gold);
-  col.position.copy(a); col.position.y = (back ? 6.6 : 1.8) / 2; scene.add(col);
+  const nPrec = versInterieur(ROOM[(i - 1 + ROOM.length) % ROOM.length], p);
+  col.position.copy(a); col.position.x -= (nIn[0] + nPrec[0]) * .25; col.position.z -= (nIn[1] + nPrec[1]) * .25; col.position.y = (back ? 6.6 : 1.8) / 2; scene.add(col);
 });
 
 // estrades VIP +0,60
@@ -489,7 +495,7 @@ const TOP_MAT = new THREE.MeshStandardMaterial({ color: '#f6f1e8', roughness: .2
 // pour garder peu d'appels de dessin, même sur un petit téléphone
 const LINE_MAT = new Map(ZONES.map((l) => [l.id, M.sofa.clone()]));
 const PLATE_MAT = new Map(ZONES.map((l) => { const c = l.couleurs.at(-1); return [l.id, new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: .3, transparent: true, opacity: .6, roughness: .6 })]; }));
-const plateCarre = new THREE.PlaneGeometry(1, 1), plateRond = new THREE.CircleGeometry(.75, 32);
+const plateCarre = new THREE.PlaneGeometry(.82, .82), plateRond = new THREE.CircleGeometry(.62, 32); // dalle à peine plus grande que la table : ne passe pas sous les canapés
 const SOFA_BOX = new Map(); // ligne → [{ m: Matrix4, id }]
 const TABLE_INST = { carre: [], rond: [] }; // { m, id }
 const unitBox = new THREE.BoxGeometry(1, 1, 1);
