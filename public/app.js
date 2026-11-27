@@ -582,48 +582,79 @@ const INST_PICK = [];
   make(lowGeo, LOW_MAT, TABLE_INST.carre, up(.18)); make(lowTopGeo, TOP_MAT, TABLE_INST.carre, up(.38));
   make(roundGeo, LOW_MAT, TABLE_INST.rond, up(.25)); make(roundTopGeo, TOP_MAT, TABLE_INST.rond, up(.52));
 }
-// service à table : seau à champagne + bouteille + flûtes sur chaque table (InstancedMesh = 1 appel par type d'objet)
+// service à table, varié comme en festival : chaque table reçoit, à tour de rôle,
+//   champagne au seau + flûtes / vodka + carafes de soft + verres tumblers / whisky-rhum + carafes + tumblers.
+// Tout est dessiné en InstancedMesh (1 appel par type d'objet). Chaque objet est posé dans le repère
+// de la table, et les pièces d'une même bouteille (capsule, étiquette) suivent exactement son inclinaison.
 {
   const lathe = (pts, seg = 16) => new THREE.LatheGeometry(pts.map(([x, y]) => new THREE.Vector2(x, y)), seg);
-  const bucketGeo = lathe([[0, 0], [.085, 0], [.1, .16], [.105, .17], [0, .17]], 20);
-  const iceGeo = new THREE.CylinderGeometry(.094, .094, .01, 16);
-  const bottleGeo = lathe([[0, 0], [.04, 0], [.042, .02], [.042, .16], [.036, .2], [.016, .25], [.014, .31], [0, .31]], 14);
-  const foilGeo = lathe([[0, 0], [.017, 0], [.017, .055], [.012, .07], [0, .07]], 10);
-  const labelGeo = new THREE.CylinderGeometry(.0435, .0435, .05, 14, 1, true);
-  const fluteGeo = lathe([[0, 0], [.022, 0], [.022, .004], [.003, .008], [.003, .1], [.017, .12], [.021, .18], [.022, .2]], 12);
-  const wineGeo = lathe([[0, .13], [.016, .13], [.019, .17], [0, .17]], 10);
-  const mats = {
-    bucket: new THREE.MeshStandardMaterial({ color: '#ffe2a0', emissive: '#f0a83a', emissiveIntensity: 1.1, roughness: .3, transparent: true, opacity: .92 }), // seau lumineux LED, comme en club
-    ice: new THREE.MeshStandardMaterial({ color: '#eaf4ff', roughness: .25, transparent: true, opacity: .85 }),
-    bottle: new THREE.MeshStandardMaterial({ color: '#0f2a1c', metalness: .2, roughness: .15 }),
-    foil: new THREE.MeshStandardMaterial({ color: '#e8b04a', metalness: 1, roughness: .25 }),
-    label: new THREE.MeshStandardMaterial({ color: '#e8b04a', metalness: .8, roughness: .3 }),
-    flute: new THREE.MeshStandardMaterial({ color: '#dfeaff', metalness: .1, roughness: .05, transparent: true, opacity: .35, depthWrite: false }),
-    wine: new THREE.MeshStandardMaterial({ color: '#ffd86b', emissive: '#c98a1c', emissiveIntensity: .35, roughness: .2, transparent: true, opacity: .85 }),
+  const G = {
+    bucket: lathe([[0, 0], [.085, 0], [.1, .16], [.105, .17], [0, .17]], 20),
+    ice: new THREE.CylinderGeometry(.094, .094, .01, 16),
+    champ: lathe([[0, 0], [.04, 0], [.042, .02], [.042, .16], [.036, .2], [.016, .25], [.014, .31], [0, .31]], 14),
+    foil: lathe([[0, 0], [.0175, 0], [.0175, .055], [.012, .07], [0, .07]], 10),
+    label: new THREE.CylinderGeometry(.0435, .0435, .05, 14, 1, true),
+    vodka: lathe([[0, 0], [.038, 0], [.04, .015], [.04, .24], [.03, .27], [.015, .29], [.015, .33], [0, .33]], 14),
+    cap: new THREE.CylinderGeometry(.017, .017, .03, 10),
+    whisky: new THREE.BoxGeometry(.085, .2, .06).translate(0, .1, 0),
+    whiskyNeck: lathe([[0, 0], [.02, 0], [.016, .05], [.016, .07], [0, .07]], 10),
+    carafe: lathe([[0, 0], [.045, 0], [.05, .03], [.045, .14], [.03, .17], [.033, .19], [0, .19]], 16),
+    jus: lathe([[0, 0], [.043, 0], [.048, .03], [.044, .12], [0, .12]], 16),
+    flute: lathe([[0, 0], [.022, 0], [.022, .004], [.003, .008], [.003, .1], [.017, .12], [.021, .18], [.022, .2]], 12),
+    fluteVin: lathe([[0, .13], [.016, .13], [.019, .17], [0, .17]], 10),
+    tumbler: lathe([[0, 0], [.03, 0], [.033, .1], [0, .1]], 14),
+    tumblerJus: lathe([[0, .004], [.028, .004], [.03, .07], [0, .07]], 12),
   };
-  // positions locales sur la table (dessus à y = 0) : seau au centre, 4 flûtes autour
-  const items = [
-    ['bucket', bucketGeo, [[0, 0, 0]]], ['ice', iceGeo, [[0, .165, 0]]],
-    ['bottle', bottleGeo, [[0, .06, 0]], .38], ['foil', foilGeo, [[0, .06 + .245, 0]], .38], ['label', labelGeo, [[0, .06 + .09, 0]], .38],
-    ['flute', fluteGeo, [[.15, 0, .13], [-.15, 0, .13], [.16, 0, -.1], [-.16, 0, -.1]]],
-    ['wine', wineGeo, [[.15, 0, .13], [-.15, 0, .13], [.16, 0, -.1], [-.16, 0, -.1]]],
-  ];
-  const m = new THREE.Matrix4(), local = new THREE.Matrix4(), tilt = new THREE.Quaternion().setFromEuler(new THREE.Euler(.38, 0, .12));
-  for (const [key, geo, spots, lean] of items) {
-    const im = new THREE.InstancedMesh(geo, mats[key], TABLES.length * spots.length);
-    let k = 0;
-    TABLES.forEach((t) => {
-      const o = TABLE_OBJ.get(t.id); o.group.updateMatrixWorld(true);
-      for (const [x, y, z] of spots) {
-        // la bouteille est inclinée dans le seau, comme au service
-        local.compose(new THREE.Vector3(x * 1.3, o.top + y * 1.3, z * 1.3), lean ? tilt : new THREE.Quaternion(), new THREE.Vector3(1.3, 1.3, 1.3));
-        m.multiplyMatrices(o.group.matrixWorld, local); im.setMatrixAt(k++, m);
-      }
-    });
-    im.raycast = () => {}; // ne gêne pas le clic sur les tables
+  const verre = (c, o) => new THREE.MeshStandardMaterial({ color: c, metalness: .1, roughness: .05, transparent: true, opacity: o, depthWrite: false });
+  const MAT = {
+    bucket: new THREE.MeshStandardMaterial({ color: '#ffe2a0', emissive: '#f0a83a', emissiveIntensity: 1.1, roughness: .3 }), // seau lumineux LED
+    ice: new THREE.MeshStandardMaterial({ color: '#eaf4ff', roughness: .25 }),
+    champ: new THREE.MeshStandardMaterial({ color: '#0f2a1c', metalness: .2, roughness: .15 }),
+    foil: new THREE.MeshStandardMaterial({ color: '#e8b04a', metalness: 1, roughness: .25 }),
+    label: new THREE.MeshStandardMaterial({ color: '#f4efe2', roughness: .5 }),
+    vodka: new THREE.MeshStandardMaterial({ color: '#dfe9f5', emissive: '#7fb6ff', emissiveIntensity: .35, roughness: .2, transparent: true, opacity: .8 }),
+    cap: new THREE.MeshStandardMaterial({ color: '#1b2a4a', metalness: .6, roughness: .3 }),
+    whisky: new THREE.MeshStandardMaterial({ color: '#a8561a', emissive: '#5a2a08', emissiveIntensity: .4, roughness: .15, transparent: true, opacity: .9 }),
+    whiskyNeck: new THREE.MeshStandardMaterial({ color: '#111', roughness: .4 }),
+    carafe: verre('#e8f1ff', .3),
+    jusOrange: new THREE.MeshStandardMaterial({ color: '#ff9a1f', emissive: '#c45a00', emissiveIntensity: .35, roughness: .3 }),
+    jusRouge: new THREE.MeshStandardMaterial({ color: '#c8203a', emissive: '#6a0a18', emissiveIntensity: .35, roughness: .3 }),
+    flute: verre('#dfeaff', .35),
+    fluteVin: new THREE.MeshStandardMaterial({ color: '#ffd86b', emissive: '#c98a1c', emissiveIntensity: .35, roughness: .2 }),
+    tumbler: verre('#e6f0ff', .32),
+    tumblerJus: new THREE.MeshStandardMaterial({ color: '#ffb347', emissive: '#a0520a', emissiveIntensity: .3, roughness: .3 }),
+  };
+  const L = {}; // clé → liste de matrices dans le monde
+  const put = (k, m) => (L[k] ||= []).push(m.clone());
+  const tmpM = new THREE.Matrix4(), q0 = new THREE.Quaternion(), un = new THREE.Vector3(1, 1, 1);
+  const at = (x, y, z, q = q0) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), q, un);
+  const verres = [[.2, .2], [-.2, .2], [.2, -.2], [-.2, -.2]]; // aux coins du plateau (0,72 m)
+  TABLES.forEach((t, i) => {
+    const o = TABLE_OBJ.get(t.id); o.group.updateMatrixWorld(true);
+    const W = (local) => tmpM.multiplyMatrices(o.group.matrixWorld, local);
+    const y = o.top, type = i % 3;
+    if (type === 0) { // champagne au seau, bouteille inclinée : capsule et étiquette dans le même repère que la bouteille
+      put('bucket', W(at(0, y, 0))); put('ice', W(at(0, y + .165, 0)));
+      const b = at(0, y + .05, 0, new THREE.Quaternion().setFromEuler(new THREE.Euler(.38, 0, .12)));
+      put('champ', W(b)); put('foil', W(b.clone().multiply(at(0, .245, 0)))); put('label', W(b.clone().multiply(at(0, .1, 0))));
+      verres.forEach(([x, z]) => { put('flute', W(at(x, y, z))); put('fluteVin', W(at(x, y, z))); });
+    } else {
+      if (type === 1) { put('vodka', W(at(-.06, y, 0))); put('cap', W(at(-.06, y + .345, 0))); }
+      else { put('whisky', W(at(-.06, y, 0))); put('whiskyNeck', W(at(-.06, y + .2, 0))); }
+      put('carafe', W(at(.09, y, -.06))); put('jusOrange', W(at(.09, y, -.06)));
+      put('carafe', W(at(.09, y, .08))); put('jusRouge', W(at(.09, y, .08)));
+      verres.forEach(([x, z]) => { put('tumbler', W(at(x, y, z))); put('tumblerJus', W(at(x, y, z))); });
+    }
+  });
+  const geoDe = { jusOrange: G.jus, jusRouge: G.jus };
+  for (const [k, list] of Object.entries(L)) {
+    const im = new THREE.InstancedMesh(geoDe[k] || G[k], MAT[k], list.length);
+    list.forEach((m, j) => im.setMatrixAt(j, m));
+    im.raycast = () => {}; // ne gêne pas le clic
     scene.add(im);
   }
 }
+
 
 // neige dans la salle
 const SNOW_N = 450;
@@ -789,6 +820,16 @@ function placeLabels() {
       : m.kind === 'l' ? (gauche ? `translate(${x}px, ${y}px) translate(calc(-100% + 8px), -50%)` : `translate(${x}px, ${y}px) translate(-8px, -50%)`) : `translate(${x}px, ${y}px) translate(-50%, -50%)`;
     m.el.style.zIndex = String((m.kind === 'l' ? 2000 : m.kind === 'g' ? 1500 : 0) + 1000 - Math.round(tmp.z * 1000));
   }
+  // anti-chevauchement des cartes de zone : la carte la plus haute à l'écran monte jusqu'à ne plus toucher l'autre
+  const cartes = MARKS.filter((m) => m.kind === 'g' && m.el.style.visibility !== 'hidden' && m.el.querySelector('.tige')); // cartes pas encore remplies : ignorées
+  cartes.forEach((m) => { m.el.querySelector('.tige').style.height = ''; }); // la carte est ancrée par le bas : allonger la tige la fait monter
+  for (let k = 0; k < 3; k++) for (const a of cartes) for (const b of cartes) {
+    if (a === b) continue;
+    const ra = a.el.firstElementChild?.getBoundingClientRect(), rb = b.el.firstElementChild?.getBoundingClientRect();
+    if (!ra || !rb || ra.right < rb.left || rb.right < ra.left || ra.bottom < rb.top || rb.bottom < ra.top) continue;
+    const haut = ra.top < rb.top ? a : b, bas = haut === a ? rb : ra, rh = haut === a ? ra : rb;
+    haut.el.querySelector('.tige').style.height = `${haut.el.querySelector('.tige').offsetHeight + (rh.bottom - bas.top + 6)}px`;
+  }
 }
 
 /* ================================================================ caméra */
@@ -835,7 +876,7 @@ function enterPov(t) {
   const look = V(0, 0, .8).lerp(V(PLAN.DJ[0], PLAN.DJ[1], 1.5), t.zone !== 'scene' ? .15 : 0);
   // regard depuis la table vers la piste ; on recule à peine pour voir ses propres canapés
   const dir = look.clone().sub(eye).setY(0).normalize();
-  eye.addScaledVector(dir, -.9);
+  eye.addScaledVector(dir, onStageT ? -.9 : -1.9); if (!onStageT) eye.y += .35;
   pov = true; ring.visible = false;
   document.body.classList.add('pov-mode'); applyViewOffset();
   controls.enabled = false;
