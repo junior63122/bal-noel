@@ -292,6 +292,7 @@ const ROOM = PLAN.ROOM;
 const BRUME = '#22314f';
 scene.background = new THREE.Color(BRUME);
 scene.fog = new THREE.Fog(BRUME, 55, 150);
+const solA = (x, z) => { const d = Math.hypot(x, z), o = Math.sin(x * .09) * Math.cos(z * .07) * .9 + Math.sin(x * .023 + z * .031) * 1.6; return d < 42 ? -.05 : -.05 + Math.min(1, (d - 42) / 25) * (o + 1.2); };
 {
   // sol enneigé : légères congères, éclairé par la lune
   const g = new THREE.PlaneGeometry(420, 420, 90, 90); g.rotateX(-Math.PI / 2);
@@ -326,8 +327,9 @@ scene.fog = new THREE.Fog(BRUME, 55, 150);
   disque.scale.set(46, 46, 1); disque.position.set(-70, 70, -150); scene.add(disque);
 }
 // tempête de neige 3D : les flocons tombent dans le shader (aucun calcul par image côté JavaScript)
+let TEMPETE_GEO;
 const TEMPETE = (() => {
-  const N = innerWidth < 640 ? 2200 : 4200, pos = new Float32Array(N * 3), vit = new Float32Array(N);
+  const N = innerWidth < 640 ? 1300 : 2600, pos = new Float32Array(N * 3), vit = new Float32Array(N);
   for (let i = 0; i < N; i++) { pos[i * 3] = (Math.random() - .5) * 170; pos[i * 3 + 1] = Math.random() * 40; pos[i * 3 + 2] = (Math.random() - .5) * 150; vit[i] = .6 + Math.random() * 1.4; }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('vit', new THREE.BufferAttribute(vit, 1));
   const mat = new THREE.ShaderMaterial({
@@ -340,58 +342,98 @@ const TEMPETE = (() => {
         p.x = mod(p.x + t * 2.4 + sin(t * .7 + position.z) * 1.5 + 85.0, 170.0) - 85.0; // vent
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
         gl_Position = projectionMatrix * mv;
-        gl_PointSize = clamp(2300.0 * (0.05 + vit * .03) / -mv.z, 1.6, 11.0);
+        gl_PointSize = clamp(2300.0 * (0.05 + vit * .03) / -mv.z, 1.6, 7.0);
         vA = clamp(1.0 - (-mv.z - 50.0) / 140.0, 0.25, 1.0);
       }`,
     fragmentShader: `varying float vA;
       void main() { float d = length(gl_PointCoord - .5); if (d > .5) discard; gl_FragColor = vec4(1.0, 1.0, 1.0, vA * smoothstep(.5, .1, d) * .9); }`,
   });
   const pts = new THREE.Points(g, mat); pts.frustumCulled = false; pts.raycast = () => {}; scene.add(pts);
+  TEMPETE_GEO = g;
   return mat;
 })();
-// traîneau en silhouette dorée (4 rennes et le traîneau) avec une fine poussière d'or ; passe toutes les ~45 s au-dessus de la piste
-const TRAINEAU = (() => {
-  const tex = canvasTex(1024, 256, (c, w, h) => {
-    c.fillStyle = '#ffe3a8'; c.strokeStyle = '#ffe3a8'; c.lineCap = 'round'; c.lineJoin = 'round'; c.shadowColor = 'rgba(255,200,110,.9)'; c.shadowBlur = 14; // silhouette dorée lumineuse
-    const renne = (x, y, s) => {
-      c.save(); c.translate(x, y); c.scale(s, s);
-      c.beginPath(); c.ellipse(0, 0, 34, 13, -.12, 0, 7); c.fill();                 // corps
-      c.lineWidth = 7; c.beginPath(); c.moveTo(26, -6); c.lineTo(40, -26); c.stroke(); // cou
-      c.beginPath(); c.ellipse(47, -30, 11, 7, .3, 0, 7); c.fill();                  // tête
-      c.lineWidth = 3; c.beginPath(); c.moveTo(42, -36); c.lineTo(36, -56); c.moveTo(39, -46); c.lineTo(28, -52); c.moveTo(46, -36); c.lineTo(50, -58); c.moveTo(48, -48); c.lineTo(58, -54); c.stroke(); // bois
-      c.lineWidth = 5; c.beginPath(); // pattes en extension (saut)
-      c.moveTo(22, 6); c.lineTo(46, 20); c.moveTo(16, 8); c.lineTo(36, 26); c.moveTo(-22, 6); c.lineTo(-46, 16); c.moveTo(-26, 4); c.lineTo(-52, 6); c.stroke();
-      c.beginPath(); c.moveTo(-32, -4); c.lineTo(-40, -12); c.stroke();             // queue
-      c.restore();
-    };
-    renne(820, 120, 1); renne(740, 104, .95); renne(650, 126, 1); renne(570, 110, .95);
-    c.lineWidth = 2; c.beginPath(); c.moveTo(560, 116); c.quadraticCurveTo(470, 150, 380, 140); c.stroke(); // rênes
-    // traîneau : caisse galbée, patin recourbé, silhouette du conducteur
-    c.beginPath(); c.moveTo(250, 160); c.quadraticCurveTo(245, 110, 290, 112); c.lineTo(370, 118); c.quadraticCurveTo(392, 120, 386, 150); c.quadraticCurveTo(330, 172, 250, 160); c.fill();
-    c.lineWidth = 5; c.beginPath(); c.moveTo(225, 150); c.quadraticCurveTo(232, 182, 270, 182); c.lineTo(392, 182); c.quadraticCurveTo(420, 180, 414, 160); c.stroke();
-    c.beginPath(); c.moveTo(290, 160); c.lineTo(290, 182); c.moveTo(360, 158); c.lineTo(360, 182); c.stroke();
-    c.beginPath(); c.ellipse(330, 96, 20, 24, 0, 0, 7); c.fill(); c.beginPath(); c.arc(334, 66, 12, 0, 7); c.fill();       // conducteur
-    c.beginPath(); c.ellipse(280, 102, 24, 18, -.4, 0, 7); c.fill();                                                        // sac
-  });
-  tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping; tex.repeat.set(1, 1);
-  const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, fog: false, opacity: .9 }));
-  spr.scale.set(16, 4, 1); scene.add(spr);
-  // poussière dorée derrière
-  const N = 60, pos = new Float32Array(N * 3);
-  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  const dust = new THREE.Points(g, new THREE.PointsMaterial({ color: '#ffd98a', size: .35, transparent: true, opacity: .7, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
-  dust.frustumCulled = false; scene.add(dust);
-  const trace = [];
-  return (t) => {
-    const P = 46, k = (t % P) / P, actif = k < .42, u = k / .42; // traverse pendant ~19 s, puis pause
-    spr.visible = dust.visible = actif;
-    if (!actif) { trace.length = 0; return; }
-    const x = -70 + u * 140, z = 3 - Math.sin(u * Math.PI) * 5, y = 11 + Math.sin(u * Math.PI) * 2.5; // au-dessus de la piste, zone dégagée de l'écran
-    spr.position.set(x, y, z); spr.material.opacity = .9 * Math.min(1, u * 8, (1 - u) * 8);
-    trace.unshift([x - 7, y - .4, z]); if (trace.length > N) trace.pop();
-    trace.forEach(([a, b, c2], i) => pos.set([a - i * .35 + Math.sin(i * 1.3) * .3, b - i * .06 + Math.cos(i * 1.7) * .3, c2], i * 3));
-    g.setDrawRange(0, trace.length); g.attributes.position.needsUpdate = true;
+// ---------------------------------------------------------------- vie dans la neige
+// traces d'animaux sauvages (lapin, renne, loup) imprimées dans la neige autour de la terrasse,
+// et un lapin blanc en 3D qui se promène en bondissant. Rien n'entre dans la salle.
+const hors = (x, z) => Math.abs(x) > 34 || z < -22 || z > 24; // hors de la salle et de ses abords
+const LAPIN = (() => {
+  // empreintes : texture d'un creux ovale bleuté (ombre douce), une seule matière pour toutes les traces
+  const tex = canvasTex(64, 64, (c, w) => { const g = c.createRadialGradient(w / 2, w / 2, 2, w / 2, w / 2, w / 2); g.addColorStop(0, 'rgba(30,44,84,.95)'); g.addColorStop(.55, 'rgba(50,68,115,.6)'); g.addColorStop(1, 'rgba(90,110,160,0)'); c.fillStyle = g; c.fillRect(0, 0, w, w); });
+  const pas = [];
+  const sentier = (x0, z0, cap, n, step, courbe, motif) => {
+    let x = x0, z = z0, a = cap;
+    for (let i = 0; i < n; i++) {
+      a += Math.sin(i * .35) * courbe; x += Math.cos(a) * step; z += Math.sin(a) * step;
+      if (!hors(x, z)) continue;
+      motif(x, z, a, i);
+    }
   };
+  const marque = (x, z, a, sx, sz) => pas.push({ x, z, a, sx: sx * 1.7, sz: sz * 1.7 }); // un peu agrandies pour être lisibles de haut
+  const cote = (x, z, a, d) => [x - Math.sin(a) * d, z + Math.cos(a) * d];
+  // lapin : 2 petites pattes avant l'une derrière l'autre, 2 longues pattes arrière côte à côte
+  const lapin = (x, z, a) => {
+    marque(...cote(x, z, a, 0), a, .14, .1); marque(x - Math.cos(a) * .22, z - Math.sin(a) * .22, a, .14, .1);
+    for (const s of [-.11, .11]) { const [px, pz] = cote(x + Math.cos(a) * .32, z + Math.sin(a) * .32, a, s); marque(px, pz, a, .28, .12); }
+  };
+  // renne : sabots fendus par paires, en ligne
+  const renne = (x, z, a, i) => { const [px, pz] = cote(x, z, a, i % 2 ? .18 : -.18); marque(px, pz, a, .2, .15); marque(px + Math.cos(a) * .05, pz + Math.sin(a) * .05, a, .2, .15); };
+  // loup : pas alignés presque en file
+  const loup = (x, z, a, i) => { const [px, pz] = cote(x, z, a, i % 2 ? .07 : -.07); marque(px, pz, a, .16, .15); };
+  sentier(-60, 30, -.4, 70, 1.1, .05, lapin); sentier(52, -40, 2.4, 60, 1.2, .06, lapin); sentier(-40, -40, .9, 40, 1.0, .08, lapin);
+  sentier(-38, 30, .1, 70, 1.1, .04, lapin); sentier(36, -24, 1.7, 40, 1.1, .06, lapin);
+  sentier(-75, -10, .15, 90, 1.6, .02, renne); sentier(70, 35, 3.5, 80, 1.6, .025, renne);
+  sentier(30, 60, -1.4, 80, 1.3, .03, loup); sentier(-70, 50, -.6, 60, 1.4, .04, loup); sentier(-55, -5, 1.3, 50, 1.3, .03, loup);
+  const im = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }), pas.length);
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0);
+  pas.forEach((p, i) => im.setMatrixAt(i, m.compose(new THREE.Vector3(p.x, solA(p.x, p.z) + .03, p.z), q.setFromAxisAngle(up, -p.a), new THREE.Vector3(p.sx, 1, p.sz))));
+  im.raycast = () => {}; scene.add(im);
+
+  // lapin blanc 3D (sphères adoucies), oreilles roses à l'intérieur
+  const blanc = new THREE.MeshStandardMaterial({ color: '#f6f8fc', roughness: .9 });
+  const rose = new THREE.MeshStandardMaterial({ color: '#f2b8c4', roughness: .9 });
+  const noir = new THREE.MeshStandardMaterial({ color: '#111', roughness: .3 });
+  const L = new THREE.Group(), corps = new THREE.Group(); L.add(corps);
+  const sph = (r, mat, x, y, z, sx = 1, sy = 1, sz = 1) => { const o = new THREE.Mesh(new THREE.SphereGeometry(r, 18, 14), mat); o.position.set(x, y, z); o.scale.set(sx, sy, sz); corps.add(o); return o; };
+  sph(.24, blanc, 0, .25, 0, 1.25, 1, .95);               // corps
+  sph(.15, blanc, .27, .45, 0, 1.05, 1, .95);             // tête
+  sph(.06, blanc, -.31, .32, 0);                          // queue pompon
+  sph(.06, blanc, .2, .06, .1, 1.6, .6, .8); sph(.06, blanc, .2, .06, -.1, 1.6, .6, .8);     // pattes avant
+  sph(.1, blanc, -.12, .08, .14, 1.8, .7, .9); sph(.1, blanc, -.12, .08, -.14, 1.8, .7, .9); // pattes arrière
+  sph(.025, noir, .39, .5, .07); sph(.025, noir, .39, .5, -.07);                          // yeux
+  sph(.02, rose, .42, .44, 0);                                                            // museau
+  for (const s of [-1, 1]) { const o = new THREE.Group(); o.position.set(.22, .58, s * .06); o.rotation.set(s * .18, 0, -.25);
+    const e = new THREE.Mesh(new THREE.SphereGeometry(.05, 12, 10), blanc); e.scale.set(1, 3.4, .55); e.position.y = .15; o.add(e);
+    const i = new THREE.Mesh(new THREE.SphereGeometry(.035, 10, 8), rose); i.scale.set(1, 3.6, .3); i.position.set(.012, .15, 0); o.add(i); corps.add(o); }
+  L.scale.setScalar(2.4); scene.add(L);
+  // promenade : boucle tranquille devant la scène, bonds courts, pauses où il dresse la tête
+  const chemin = (u) => { const a = u * Math.PI * 2; return [Math.cos(a) * 18 + Math.sin(a * 2) * 3, 27 + Math.sin(a) * 3]; }; // juste devant la scène, dehors
+  let u = 0;
+  return (t, dt) => {
+    const cycle = t % 9, pause = cycle > 6.5;  // 6,5 s de bonds, 2,5 s d'arrêt
+    if (!pause) u = (u + dt * .012) % 1;
+    const [x, z] = chemin(u), [x2, z2] = chemin((u + .002) % 1);
+    L.position.set(x, solA(x, z), z); L.rotation.y = -Math.atan2(z2 - z, x2 - x);
+    const saut = pause ? 0 : Math.abs(Math.sin(t * 6.5));
+    corps.position.y = saut * .28; corps.rotation.z = pause ? .12 + Math.sin(t * 3) * .03 : (saut - .5) * .3;
+  };
+})();
+// halo festival : la terrasse illumine la brume (visible de loin, à travers le brouillard)
+const ILLUMINATION = (() => {
+  const halo = canvasTex(256, 256, (c, w) => { const g = c.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2); g.addColorStop(0, 'rgba(255,205,130,.55)'); g.addColorStop(.35, 'rgba(255,170,90,.22)'); g.addColorStop(1, 'rgba(255,170,90,0)'); c.fillStyle = g; c.fillRect(0, 0, w, w); });
+  const lueur = new THREE.Sprite(new THREE.SpriteMaterial({ map: halo, transparent: true, depthWrite: false, fog: false, blending: THREE.AdditiveBlending }));
+  lueur.scale.set(70, 40, 1); lueur.position.set(0, 14, -4); lueur.material.opacity = .45; lueur.material.depthTest = false; lueur.renderOrder = -1; scene.add(lueur); // halo dans le ciel, derrière la salle
+  // faisceaux de projecteurs qui montent vers le ciel depuis les coins de la terrasse et balaient lentement
+  const geo = new THREE.CylinderGeometry(.25, 2.6, 55, 10, 1, true).translate(0, 30, 0);
+  const couleurs = ['#ffd27a', '#9fc4ff', '#c9a8ff', '#ffd27a'];
+  const pieds = [[-27, 4], [-9, -17], [9, -17], [27, 4]];
+  const faisceaux = pieds.map(([x, z], k) => {
+    const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: couleurs[k], transparent: true, opacity: .07, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.FrontSide, fog: false, toneMapped: false }));
+    m.position.set(x, 0, z); m.raycast = () => {}; scene.add(m); return { m, k };
+  });
+  // petites lumières chaudes autour de la piste (reflets au sol)
+  const flaque = new THREE.Mesh(new THREE.CircleGeometry(14, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: halo, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: .35 }));
+  flaque.position.y = .03; scene.add(flaque);
+  return (t) => { for (const f of faisceaux) { f.m.rotation.z = Math.sin(t * .25 + f.k * 1.3) * .35; f.m.rotation.x = Math.cos(t * .2 + f.k) * .25; } };
 })();
 
 // murs : hauts au fond (côté VIP), bas côté entrée/scène pour garder la vue
@@ -1150,6 +1192,7 @@ function resize() {
 }
 new ResizeObserver(resize).observe(stage); resize();
 const clock = new THREE.Clock();
+let allege = false; const mesures = [];
 let stageVisible = false;
 new IntersectionObserver((e) => (stageVisible = e[0].isIntersecting), { rootMargin: '100px' }).observe(stage);
 renderer.setAnimationLoop(() => {
@@ -1164,7 +1207,12 @@ renderer.setAnimationLoop(() => {
     for (let i = 0; i < bulbSpots.length; i++) bulbs.setColorAt(i, tmpColor.copy(bulbSpots[i].base).multiplyScalar(.55 + .45 * Math.sin(t * 1.6 + i * 1.7)));
     bulbs.instanceColor.needsUpdate = true;
   }
-  TEMPETE.uniforms.t.value = t; TRAINEAU(t);
+  TEMPETE.uniforms.t.value = t; LAPIN(t, dt); ILLUMINATION(t);
+  // qualité adaptative : si l'appareil peine (moyenne > 40 ms par image sur 2 s), on allège une fois pour toutes
+  if (!allege) { mesures.push(dt); if (mesures.length > 60) { const m = mesures.reduce((x, y) => x + y, 0) / mesures.length; mesures.length = 0;
+    if (m > .04) { allege = true; renderer.setPixelRatio(1); resize(); TEMPETE_GEO.setDrawRange(0, Math.floor(TEMPETE_GEO.attributes.position.count / 2)); } } }
+  // brouillard relatif à la distance : la salle reste toujours nette, les alentours se perdent dans la tempête
+  { const d = camera.position.distanceTo(controls.target); scene.fog.near = d * .75; scene.fog.far = d * 2.4 + 30; }
   if (fly) {
     const k = Math.min(1, (performance.now() - fly.start) / fly.ms), e = easeIO(k);
     camera.position.lerpVectors(fly.p0, fly.p1, e); controls.target.lerpVectors(fly.t0, fly.t1, e);
