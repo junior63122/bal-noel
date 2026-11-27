@@ -116,8 +116,11 @@ if (!reduceMotion) {
     return c;
   })();
   let W, H, list = [];
-  const neuf = (y) => { const gros = Math.random() < .14; return { x: Math.random() * W, y, gros, r: gros ? 7 + Math.random() * 6 : .8 + Math.random() * 1.6, v: (gros ? .35 : .45) + Math.random() * .6, o: Math.random() * 6, a: .35 + Math.random() * .45, rot: Math.random() * 6 }; };
-  const taille = () => { W = cv.width = innerWidth; H = cv.height = innerHeight; list = Array.from({ length: mobile ? 26 : 48 }, () => neuf(Math.random() * H)); };
+  const neuf = (y) => {
+    const z = Math.random(), gros = z > .93, flou = !gros && z > .86;  // profondeur : lointain → premier plan
+    return { x: Math.random() * W, y, gros, flou, r: gros ? 7 + Math.random() * 6 : flou ? 4 + Math.random() * 4 : .6 + z * 1.8, v: .3 + z * 1.1, o: Math.random() * 6, a: flou ? .18 : .3 + z * .5, rot: Math.random() * 6 };
+  };
+  const taille = () => { W = cv.width = innerWidth; H = cv.height = innerHeight; list = Array.from({ length: mobile ? 60 : 120 }, () => neuf(Math.random() * H)); };
   taille(); addEventListener('resize', taille, { passive: true });
   let pair = 0;
   const tick = (t) => {
@@ -129,6 +132,7 @@ if (!reduceMotion) {
       if (f.y > H + 16) Object.assign(f, neuf(-16));
       ctx.globalAlpha = f.a;
       if (f.gros) { ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(f.rot); ctx.drawImage(flocon, -f.r, -f.r, f.r * 2, f.r * 2); ctx.restore(); }
+      else if (f.flou) { const g = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r); g.addColorStop(0, '#fff'); g.addColorStop(1, 'rgba(255,255,255,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 7); ctx.fill(); }
       else { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 7); ctx.fill(); }
     }
     ctx.globalAlpha = 1;
@@ -210,8 +214,6 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color('#0a1430');
-scene.fog = new THREE.Fog('#0a1430', 110, 230);
 
 const camera = new THREE.PerspectiveCamera(42, 1, .1, 400);
 const HOME = { pos: new THREE.Vector3(0, 47, 38), target: new THREE.Vector3(0, 0, 1.5) };
@@ -283,10 +285,115 @@ const ROOM = PLAN.ROOM;
 {
   const floor = new THREE.Mesh(new THREE.ShapeGeometry(shapeFrom(ROOM)), M.floor);
   floor.rotation.x = -Math.PI / 2; scene.add(floor);
-  // grand sol extérieur sombre
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshBasicMaterial({ color: '#0c1730' }));
-  ground.rotation.x = -Math.PI / 2; ground.position.y = -.02; scene.add(ground);
 }
+// ---------------------------------------------------------------- décor d'hiver autour de la salle
+// nuit d'hiver : sol enneigé ondulé, forêt de sapins en silhouette noyée dans la brume, tempête de neige,
+// lune voilée, et un traîneau en ombre chinoise qui traverse le ciel de temps en temps. Sobre, pas de couleurs vives.
+const BRUME = '#22314f';
+scene.background = new THREE.Color(BRUME);
+scene.fog = new THREE.Fog(BRUME, 55, 150);
+{
+  // sol enneigé : légères congères, éclairé par la lune
+  const g = new THREE.PlaneGeometry(420, 420, 90, 90); g.rotateX(-Math.PI / 2);
+  const p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), z = p.getZ(i), d = Math.hypot(x, z);
+    const ondule = Math.sin(x * .09) * Math.cos(z * .07) * .9 + Math.sin(x * .023 + z * .031) * 1.6;
+    p.setY(i, d < 42 ? -.05 : -.05 + Math.min(1, (d - 42) / 25) * (ondule + 1.2)); // plat sous la salle, congères au-delà
+  }
+  g.computeVertexNormals();
+  const neige = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: '#7e8fb2', roughness: .95, metalness: 0 }));
+  scene.add(neige);
+  // forêt : sapins en silhouette (3 étages + pointe enneigée), en couronne autour de la terrasse
+  const etage = new THREE.ConeGeometry(1, 1, 7);
+  const sapin = new THREE.InstancedMesh(etage, new THREE.MeshStandardMaterial({ color: '#13261f', roughness: 1 }), 3 * 170);
+  const cime = new THREE.InstancedMesh(etage, new THREE.MeshStandardMaterial({ color: '#dfe7f4', roughness: 1 }), 170);
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sc = new THREE.Vector3();
+  let k = 0, rnd = 7;
+  const alea = () => ((rnd = (rnd * 16807) % 2147483647) / 2147483647);
+  for (let i = 0; i < 170; i++) {
+    const a = alea() * Math.PI * 2, r = 40 + alea() * 70, x = Math.cos(a) * r, z = Math.sin(a) * r * .85;
+    if (Math.abs(x) < 36 && z > -24 && z < 26) { i--; continue; } // jamais dans la salle ni collé aux murs
+    const h = 7 + alea() * 9, w = h * .32;
+    for (let e = 0; e < 3; e++) { m.compose(v.set(x, h * (.28 + e * .24), z), q, sc.set(w * (1 - e * .25), h * .42, w * (1 - e * .25))); sapin.setMatrixAt(k++, m); }
+    m.compose(v.set(x, h * .86, z), q, sc.set(w * .32, h * .2, w * .32)); cime.setMatrixAt(i, m);
+  }
+  [sapin, cime].forEach((o) => { o.raycast = () => {}; scene.add(o); });
+  // clair de lune froid
+  const lune = new THREE.DirectionalLight('#b9cdf2', .9); lune.position.set(-60, 80, -120); scene.add(lune);
+  const halo = canvasTex(256, 256, (c, w) => { const gr = c.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2); gr.addColorStop(0, 'rgba(255,250,235,1)'); gr.addColorStop(.18, 'rgba(240,240,230,.95)'); gr.addColorStop(.22, 'rgba(200,215,240,.35)'); gr.addColorStop(1, 'rgba(200,215,240,0)'); c.fillStyle = gr; c.fillRect(0, 0, w, w); });
+  const disque = new THREE.Sprite(new THREE.SpriteMaterial({ map: halo, fog: false, depthWrite: false, transparent: true }));
+  disque.scale.set(46, 46, 1); disque.position.set(-70, 70, -150); scene.add(disque);
+}
+// tempête de neige 3D : les flocons tombent dans le shader (aucun calcul par image côté JavaScript)
+const TEMPETE = (() => {
+  const N = innerWidth < 640 ? 2200 : 4200, pos = new Float32Array(N * 3), vit = new Float32Array(N);
+  for (let i = 0; i < N; i++) { pos[i * 3] = (Math.random() - .5) * 170; pos[i * 3 + 1] = Math.random() * 40; pos[i * 3 + 2] = (Math.random() - .5) * 150; vit[i] = .6 + Math.random() * 1.4; }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('vit', new THREE.BufferAttribute(vit, 1));
+  const mat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false,
+    uniforms: { t: { value: 0 }, brume: { value: new THREE.Color(BRUME) } },
+    vertexShader: `attribute float vit; uniform float t; varying float vA;
+      void main() {
+        vec3 p = position;
+        p.y = mod(p.y - t * vit * 2.2, 40.0);
+        p.x = mod(p.x + t * 2.4 + sin(t * .7 + position.z) * 1.5 + 85.0, 170.0) - 85.0; // vent
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        gl_Position = projectionMatrix * mv;
+        gl_PointSize = clamp(2300.0 * (0.05 + vit * .03) / -mv.z, 1.6, 11.0);
+        vA = clamp(1.0 - (-mv.z - 50.0) / 140.0, 0.25, 1.0);
+      }`,
+    fragmentShader: `varying float vA;
+      void main() { float d = length(gl_PointCoord - .5); if (d > .5) discard; gl_FragColor = vec4(1.0, 1.0, 1.0, vA * smoothstep(.5, .1, d) * .9); }`,
+  });
+  const pts = new THREE.Points(g, mat); pts.frustumCulled = false; pts.raycast = () => {}; scene.add(pts);
+  return mat;
+})();
+// traîneau en silhouette dorée (4 rennes et le traîneau) avec une fine poussière d'or ; passe toutes les ~45 s au-dessus de la piste
+const TRAINEAU = (() => {
+  const tex = canvasTex(1024, 256, (c, w, h) => {
+    c.fillStyle = '#ffe3a8'; c.strokeStyle = '#ffe3a8'; c.lineCap = 'round'; c.lineJoin = 'round'; c.shadowColor = 'rgba(255,200,110,.9)'; c.shadowBlur = 14; // silhouette dorée lumineuse
+    const renne = (x, y, s) => {
+      c.save(); c.translate(x, y); c.scale(s, s);
+      c.beginPath(); c.ellipse(0, 0, 34, 13, -.12, 0, 7); c.fill();                 // corps
+      c.lineWidth = 7; c.beginPath(); c.moveTo(26, -6); c.lineTo(40, -26); c.stroke(); // cou
+      c.beginPath(); c.ellipse(47, -30, 11, 7, .3, 0, 7); c.fill();                  // tête
+      c.lineWidth = 3; c.beginPath(); c.moveTo(42, -36); c.lineTo(36, -56); c.moveTo(39, -46); c.lineTo(28, -52); c.moveTo(46, -36); c.lineTo(50, -58); c.moveTo(48, -48); c.lineTo(58, -54); c.stroke(); // bois
+      c.lineWidth = 5; c.beginPath(); // pattes en extension (saut)
+      c.moveTo(22, 6); c.lineTo(46, 20); c.moveTo(16, 8); c.lineTo(36, 26); c.moveTo(-22, 6); c.lineTo(-46, 16); c.moveTo(-26, 4); c.lineTo(-52, 6); c.stroke();
+      c.beginPath(); c.moveTo(-32, -4); c.lineTo(-40, -12); c.stroke();             // queue
+      c.restore();
+    };
+    renne(820, 120, 1); renne(740, 104, .95); renne(650, 126, 1); renne(570, 110, .95);
+    c.lineWidth = 2; c.beginPath(); c.moveTo(560, 116); c.quadraticCurveTo(470, 150, 380, 140); c.stroke(); // rênes
+    // traîneau : caisse galbée, patin recourbé, silhouette du conducteur
+    c.beginPath(); c.moveTo(250, 160); c.quadraticCurveTo(245, 110, 290, 112); c.lineTo(370, 118); c.quadraticCurveTo(392, 120, 386, 150); c.quadraticCurveTo(330, 172, 250, 160); c.fill();
+    c.lineWidth = 5; c.beginPath(); c.moveTo(225, 150); c.quadraticCurveTo(232, 182, 270, 182); c.lineTo(392, 182); c.quadraticCurveTo(420, 180, 414, 160); c.stroke();
+    c.beginPath(); c.moveTo(290, 160); c.lineTo(290, 182); c.moveTo(360, 158); c.lineTo(360, 182); c.stroke();
+    c.beginPath(); c.ellipse(330, 96, 20, 24, 0, 0, 7); c.fill(); c.beginPath(); c.arc(334, 66, 12, 0, 7); c.fill();       // conducteur
+    c.beginPath(); c.ellipse(280, 102, 24, 18, -.4, 0, 7); c.fill();                                                        // sac
+  });
+  tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping; tex.repeat.set(1, 1);
+  const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, fog: false, opacity: .9 }));
+  spr.scale.set(16, 4, 1); scene.add(spr);
+  // poussière dorée derrière
+  const N = 60, pos = new Float32Array(N * 3);
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const dust = new THREE.Points(g, new THREE.PointsMaterial({ color: '#ffd98a', size: .35, transparent: true, opacity: .7, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
+  dust.frustumCulled = false; scene.add(dust);
+  const trace = [];
+  return (t) => {
+    const P = 46, k = (t % P) / P, actif = k < .42, u = k / .42; // traverse pendant ~19 s, puis pause
+    spr.visible = dust.visible = actif;
+    if (!actif) { trace.length = 0; return; }
+    const x = -70 + u * 140, z = 3 - Math.sin(u * Math.PI) * 5, y = 11 + Math.sin(u * Math.PI) * 2.5; // au-dessus de la piste, zone dégagée de l'écran
+    spr.position.set(x, y, z); spr.material.opacity = .9 * Math.min(1, u * 8, (1 - u) * 8);
+    trace.unshift([x - 7, y - .4, z]); if (trace.length > N) trace.pop();
+    trace.forEach(([a, b, c2], i) => pos.set([a - i * .35 + Math.sin(i * 1.3) * .3, b - i * .06 + Math.cos(i * 1.7) * .3, c2], i * 3));
+    g.setDrawRange(0, trace.length); g.attributes.position.needsUpdate = true;
+  };
+})();
+
 // murs : hauts au fond (côté VIP), bas côté entrée/scène pour garder la vue
 // le tracé du plan est la FACE INTÉRIEURE des murs : murs, rambardes et colonnes sont repoussés vers l'extérieur
 const ROOM_SENS = ROOM.reduce((s, p, i) => { const q = ROOM[(i + 1) % ROOM.length]; return s + p[0] * q[1] - q[0] * p[1]; }, 0) > 0 ? 1 : -1;
@@ -735,14 +842,7 @@ const SERVICE = new THREE.Group(); scene.add(SERVICE);
 
 
 
-// neige dans la salle
-const SNOW_N = 450;
-const snowGeo = new THREE.BufferGeometry();
-const sp = new Float32Array(SNOW_N * 3);
-for (let i = 0; i < SNOW_N; i++) { sp[i * 3] = (Math.random() - .5) * 62; sp[i * 3 + 1] = Math.random() * 18; sp[i * 3 + 2] = (Math.random() - .5) * 38 + 1; }
-snowGeo.setAttribute('position', new THREE.BufferAttribute(sp, 3));
-const snowPts = new THREE.Points(snowGeo, new THREE.PointsMaterial({ color: '#ffffff', size: .12, transparent: true, opacity: .8, depthWrite: false }));
-scene.add(snowPts);
+const snowPts = { visible: true }; // (remplacée par la tempête de neige du décor)
 
 /* ================================================================ repères de zones et de lignes */
 // Le client ne choisit pas sa table : on affiche un repère par zone (1 à 4, scène),
@@ -1064,9 +1164,7 @@ renderer.setAnimationLoop(() => {
     for (let i = 0; i < bulbSpots.length; i++) bulbs.setColorAt(i, tmpColor.copy(bulbSpots[i].base).multiplyScalar(.55 + .45 * Math.sin(t * 1.6 + i * 1.7)));
     bulbs.instanceColor.needsUpdate = true;
   }
-  const p = snowGeo.attributes.position;
-  for (let i = 0; i < SNOW_N; i++) { let y = p.getY(i) - dt * (.6 + (i % 5) * .15); if (y < 0) y = 18; p.setY(i, y); p.setX(i, p.getX(i) + Math.sin(t + i) * .003); }
-  p.needsUpdate = true;
+  TEMPETE.uniforms.t.value = t; TRAINEAU(t);
   if (fly) {
     const k = Math.min(1, (performance.now() - fly.start) / fly.ms), e = easeIO(k);
     camera.position.lerpVectors(fly.p0, fly.p1, e); controls.target.lerpVectors(fly.t0, fly.t1, e);
