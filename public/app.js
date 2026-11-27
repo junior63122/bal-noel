@@ -225,7 +225,7 @@ controls.enableDamping = true;
 controls.dampingFactor = .08;
 controls.zoomToCursor = true;
 controls.minDistance = 3.5;
-controls.maxDistance = 170;
+controls.maxDistance = 85; // pas de recul au point de voir les bords du décor
 controls.maxPolarAngle = 1.32;
 controls.screenSpacePanning = false;
 
@@ -354,7 +354,7 @@ const TEMPETE = (() => {
 })();
 // ---------------------------------------------------------------- vie dans la neige
 // traces d'animaux sauvages (lapin, renne, loup) imprimées dans la neige autour de la terrasse,
-// et un lapin blanc en 3D qui se promène en bondissant. Rien n'entre dans la salle.
+// Rien n'entre dans la salle.
 const hors = (x, z) => Math.abs(x) > 34 || z < -22 || z > 24; // hors de la salle et de ses abords
 const LAPIN = (() => {
   // empreintes : texture d'un creux ovale bleuté (ombre douce), une seule matière pour toutes les traces
@@ -388,34 +388,7 @@ const LAPIN = (() => {
   pas.forEach((p, i) => im.setMatrixAt(i, m.compose(new THREE.Vector3(p.x, solA(p.x, p.z) + .03, p.z), q.setFromAxisAngle(up, -p.a), new THREE.Vector3(p.sx, 1, p.sz))));
   im.raycast = () => {}; scene.add(im);
 
-  // lapin blanc 3D (sphères adoucies), oreilles roses à l'intérieur
-  const blanc = new THREE.MeshStandardMaterial({ color: '#f6f8fc', roughness: .9 });
-  const rose = new THREE.MeshStandardMaterial({ color: '#f2b8c4', roughness: .9 });
-  const noir = new THREE.MeshStandardMaterial({ color: '#111', roughness: .3 });
-  const L = new THREE.Group(), corps = new THREE.Group(); L.add(corps);
-  const sph = (r, mat, x, y, z, sx = 1, sy = 1, sz = 1) => { const o = new THREE.Mesh(new THREE.SphereGeometry(r, 18, 14), mat); o.position.set(x, y, z); o.scale.set(sx, sy, sz); corps.add(o); return o; };
-  sph(.24, blanc, 0, .25, 0, 1.25, 1, .95);               // corps
-  sph(.15, blanc, .27, .45, 0, 1.05, 1, .95);             // tête
-  sph(.06, blanc, -.31, .32, 0);                          // queue pompon
-  sph(.06, blanc, .2, .06, .1, 1.6, .6, .8); sph(.06, blanc, .2, .06, -.1, 1.6, .6, .8);     // pattes avant
-  sph(.1, blanc, -.12, .08, .14, 1.8, .7, .9); sph(.1, blanc, -.12, .08, -.14, 1.8, .7, .9); // pattes arrière
-  sph(.025, noir, .39, .5, .07); sph(.025, noir, .39, .5, -.07);                          // yeux
-  sph(.02, rose, .42, .44, 0);                                                            // museau
-  for (const s of [-1, 1]) { const o = new THREE.Group(); o.position.set(.22, .58, s * .06); o.rotation.set(s * .18, 0, -.25);
-    const e = new THREE.Mesh(new THREE.SphereGeometry(.05, 12, 10), blanc); e.scale.set(1, 3.4, .55); e.position.y = .15; o.add(e);
-    const i = new THREE.Mesh(new THREE.SphereGeometry(.035, 10, 8), rose); i.scale.set(1, 3.6, .3); i.position.set(.012, .15, 0); o.add(i); corps.add(o); }
-  L.scale.setScalar(2.4); scene.add(L);
-  // promenade : boucle tranquille devant la scène, bonds courts, pauses où il dresse la tête
-  const chemin = (u) => { const a = u * Math.PI * 2; return [Math.cos(a) * 18 + Math.sin(a * 2) * 3, 27 + Math.sin(a) * 3]; }; // juste devant la scène, dehors
-  let u = 0;
-  return (t, dt) => {
-    const cycle = t % 9, pause = cycle > 6.5;  // 6,5 s de bonds, 2,5 s d'arrêt
-    if (!pause) u = (u + dt * .012) % 1;
-    const [x, z] = chemin(u), [x2, z2] = chemin((u + .002) % 1);
-    L.position.set(x, solA(x, z), z); L.rotation.y = -Math.atan2(z2 - z, x2 - x);
-    const saut = pause ? 0 : Math.abs(Math.sin(t * 6.5));
-    corps.position.y = saut * .28; corps.rotation.z = pause ? .12 + Math.sin(t * 3) * .03 : (saut - .5) * .3;
-  };
+  return () => {}; // (lapin 3D retiré)
 })();
 // halo festival : la terrasse illumine la brume (visible de loin, à travers le brouillard)
 const ILLUMINATION = (() => {
@@ -1212,7 +1185,7 @@ renderer.setAnimationLoop(() => {
   if (!allege) { mesures.push(dt); if (mesures.length > 60) { const m = mesures.reduce((x, y) => x + y, 0) / mesures.length; mesures.length = 0;
     if (m > .04) { allege = true; renderer.setPixelRatio(1); resize(); TEMPETE_GEO.setDrawRange(0, Math.floor(TEMPETE_GEO.attributes.position.count / 2)); } } }
   // brouillard relatif à la distance : la salle reste toujours nette, les alentours se perdent dans la tempête
-  { const d = camera.position.distanceTo(controls.target); scene.fog.near = d * .75; scene.fog.far = d * 2.4 + 30; }
+  { const d = camera.position.distanceTo(controls.target); scene.fog.near = d + 10; scene.fog.far = d + 48; } // tempête : on ne voit jamais loin au-delà de la salle
   if (fly) {
     const k = Math.min(1, (performance.now() - fly.start) / fly.ms), e = easeIO(k);
     camera.position.lerpVectors(fly.p0, fly.p1, e); controls.target.lerpVectors(fly.t0, fly.t1, e);
