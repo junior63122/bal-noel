@@ -519,9 +519,41 @@ const PLATE_MAT = new Map(ZONES.map((l) => { const c = l.couleurs.at(-1); return
 const plateCarre = new THREE.PlaneGeometry(.82, .82), plateRond = new THREE.CircleGeometry(.62, 32); // dalle à peine plus grande que la table : ne passe pas sous les canapés
 const SOFA_BOX = new Map(); // ligne → [{ m: Matrix4, id }]
 const TABLE_INST = { carre: [], rond: [] }; // { m, id }
-const unitBox = new THREE.BoxGeometry(1, 1, 1);
+// boîte aux arêtes arrondies seulement sur les axes demandés : les modules d'un même canapé se touchent
+// par leurs faces plates (aucun interstice), seuls le dessus et l'avant sont moelleux
+function boiteRonde(w, h, d, r, ax = 'xyz') {
+  const n = (a) => (ax.includes(a) ? 3 : 1);
+  const g = new THREE.BoxGeometry(w, h, d, n('x'), n('y'), n('z')), p = g.attributes.position, no = g.attributes.normal, v = new THREE.Vector3(), c = new THREE.Vector3();
+  const lim = (a, half) => (ax.includes(a) ? half - r : half);
+  const ix = lim('x', w / 2), iy = lim('y', h / 2), iz = lim('z', d / 2);
+  for (let i = 0; i < p.count; i++) {
+    v.fromBufferAttribute(p, i);
+    c.set(THREE.MathUtils.clamp(v.x, -ix, ix), THREE.MathUtils.clamp(v.y, -iy, iy), THREE.MathUtils.clamp(v.z, -iz, iz));
+    const o = v.clone().sub(c), l = o.length();
+    if (l < 1e-6) continue; // face plate (côté collé au module voisin) : normale d'origine
+    o.divideScalar(l); no.setXYZ(i, o.x, o.y, o.z);
+    if (l > r) { p.setXYZ(i, c.x + o.x * l, c.y + o.y * l, c.z + o.z * l); continue; }
+    p.setXYZ(i, c.x + o.x * r, c.y + o.y * r, c.z + o.z * r);
+  }
+  return g;
+}
+// formes de référence (mises à l'échelle de chaque module)
+const SOFA_GEO = {
+  coussin: [boiteRonde(.52, .4, .53, .07, 'yz'), [.52, .4, .53]],   // dessus et avant arrondis, côtés plats
+  dosZ: [boiteRonde(.52, .46, .18, .07, 'yz'), [.52, .46, .18]],    // dossier le long de x : haut arrondi
+  dosX: [boiteRonde(.18, .46, .53, .07, 'xy'), [.18, .46, .53]],    // dossier le long de z : haut arrondi
+};
+const SOCLE_MAT = new THREE.MeshStandardMaterial({ color: '#2a1d16', roughness: .6 });
 const _q = new THREE.Quaternion(), _up = new THREE.Vector3(0, 1, 0);
-const boxAt = (ligne, id, pos, rot, sx, sy, sz) => { (SOFA_BOX.get(ligne) || SOFA_BOX.set(ligne, []).get(ligne)).push({ m: new THREE.Matrix4().compose(pos, _q.setFromAxisAngle(_up, rot).clone(), new THREE.Vector3(sx, sy, sz)), id }); };
+const pousse = (cle, id, pos, rot, sx, sy, sz) => { const [, n] = SOFA_GEO[cle.split('|')[1]]; (SOFA_BOX.get(cle) || SOFA_BOX.set(cle, []).get(cle)).push({ m: new THREE.Matrix4().compose(pos, _q.setFromAxisAngle(_up, rot).clone(), new THREE.Vector3(sx / n[0], sy / n[1], sz / n[2])), id }); };
+// assise (hauteur ≤ 0,42) → bloc d'assise arrondi dessus/avant ; sinon dossier arrondi (orienté selon son côté fin)
+const boxAt = (ligne, id, pos, rot, sx, sy, sz) => {
+  if (sy <= .42) {
+    // les modules sont relevés avec 3 cm de joint : on les rend jointifs
+    pousse(ligne + '|coussin', id, pos, rot, sx + .03, sy, sz + .03); // assise d'un seul bloc, dessus et avant arrondis
+  } else if (sx < sz) pousse(ligne + '|dosX', id, pos, rot, sx + .02, sy + .02, sz + .03);
+  else pousse(ligne + '|dosZ', id, pos, rot, sx + .03, sy + .02, sz + .02);
+};
 function arc(cx, cz, r, a0, a1, n) { const pts = []; for (let i = 0; i <= n; i++) { const a = THREE.MathUtils.degToRad(a0 + (a1 - a0) * i / n); pts.push([cx + Math.cos(a) * r, cz + Math.sin(a) * r]); } return pts; }
 SALONS.forEach((s, si) => {
   const ts = TABLES.filter((t) => t.salon === si);
@@ -577,16 +609,15 @@ const INST_PICK = [];
     list.forEach((b, i) => im.setMatrixAt(i, local ? m.multiplyMatrices(b.m, local) : b.m));
     im.userData.ids = list.map((b) => b.id); scene.add(im); INST_PICK.push(im); return im;
   };
-  SOFA_BOX.forEach((list, ligne) => make(unitBox, LINE_MAT.get(ligne), list));
+  SOFA_BOX.forEach((list, cle) => { const [ligne, k] = cle.split('|'); make(SOFA_GEO[k][0], k === 'socle' ? SOCLE_MAT : LINE_MAT.get(ligne), list); });
   const up = (y) => new THREE.Matrix4().makeTranslation(0, y, 0);
   make(lowGeo, LOW_MAT, TABLE_INST.carre, up(.18)); make(lowTopGeo, TOP_MAT, TABLE_INST.carre, up(.38));
   make(roundGeo, LOW_MAT, TABLE_INST.rond, up(.25)); make(roundTopGeo, TOP_MAT, TABLE_INST.rond, up(.52));
 }
 // service à table façon club : CHAQUE table a sa vasque (bac ovale transparent, glace pilée, liseré LED bleu)
-// garnie de bouteilles inclinées — vodka givrée, champagne, whisky — avec des fontaines (sparklers) dorées,
-// et 4 verres autour. Mélange différent d'une table à l'autre. Tout en InstancedMesh (1 appel par type d'objet) ;
-// chaque pièce d'une bouteille (capsule, étiquette, sparkler) est posée dans le repère de SA bouteille.
-const ETINCELLES = [], SERVICE = new THREE.Group(); scene.add(SERVICE);
+// garnie de bouteilles légèrement inclinées — vodka givrée, champagne, whisky — et 8 verres autour (pas de fontaines : interdites). Mélange différent d'une table à l'autre. Tout en InstancedMesh (1 appel par type d'objet) ;
+// chaque pièce d'une bouteille (capsule, étiquette) est posée dans le repère de SA bouteille.
+const SERVICE = new THREE.Group(); scene.add(SERVICE);
 {
   const lathe = (pts, seg = 16) => new THREE.LatheGeometry(pts.map(([x, y]) => new THREE.Vector2(x, y)), seg);
   const ovale = (g) => g.scale(1.5, 1, 1);
@@ -603,8 +634,6 @@ const ETINCELLES = [], SERVICE = new THREE.Group(); scene.add(SERVICE);
     whisky: new THREE.BoxGeometry(.075, .19, .055).translate(0, .095, 0),
     whiskyNeck: lathe([[0, 0], [.018, 0], [.015, .05], [.015, .075], [0, .075]], 6).translate(0, .19, 0),
     whiskyLabel: new THREE.BoxGeometry(.077, .07, .057).translate(0, .09, 0),
-    sparkler: new THREE.CylinderGeometry(.009, .009, .2, 6).translate(0, .1, 0),
-    etincelle: new THREE.SphereGeometry(.03, 8, 6),
     verre: lathe([[0, 0], [.03, 0], [.033, .1], [0, .1]], 8),
     boisson: lathe([[0, .004], [.028, .004], [.03, .07], [0, .07]], 8),
   };
@@ -621,20 +650,19 @@ const ETINCELLES = [], SERVICE = new THREE.Group(); scene.add(SERVICE);
     whisky: new THREE.MeshStandardMaterial({ color: '#9a4a12', emissive: '#4a1e04', emissiveIntensity: .4, roughness: .15 }),
     whiskyNeck: new THREE.MeshStandardMaterial({ color: '#141414', roughness: .4 }),
     whiskyLabel: new THREE.MeshStandardMaterial({ color: '#151515', roughness: .5 }),
-    sparkler: new THREE.MeshStandardMaterial({ color: '#d9a640', metalness: .9, roughness: .3 }),
-    etincelle: new THREE.MeshBasicMaterial({ color: '#fff4c8', transparent: true, opacity: .95, toneMapped: false, blending: THREE.AdditiveBlending, depthWrite: false }),
     verre: new THREE.MeshStandardMaterial({ color: '#e6f0ff', metalness: .1, roughness: .05, transparent: true, opacity: .3, depthWrite: false }),
     boisson: new THREE.MeshStandardMaterial({ color: '#ffc861', emissive: '#a0660a', emissiveIntensity: .3, roughness: .3 }),
   };
   const PIECES = { vodka: ['vodka', 'vodkaCap', 'vodkaBande'], champ: ['champ', 'foil', 'champLabel'], whisky: ['whisky', 'whiskyNeck', 'whiskyLabel'] };
-  const HAUT = { vodka: .35, champ: .31, whisky: .27 };
   const L = {};
   const put = (k, m) => (L[k] ||= []).push(m.clone());
   const un = new THREE.Vector3(1, 1, 1), tmp = new THREE.Matrix4();
   const at = (x, y, z, q = new THREE.Quaternion()) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), q, un);
   // emplacements dans la vasque : x le long de l'ovale, bouteilles penchées vers l'extérieur comme dans un bac à glace
-  const SLOTS = [[-.15, .03, -.42, .1], [-.06, -.05, -.2, -.25], [.02, .05, .12, .28], [.1, -.04, .28, -.2], [.17, .03, .45, .12]];
-  const MIX = [['vodka', 'champ', 'whisky', 'vodka', 'champ'], ['champ', 'vodka', 'vodka', 'whisky', 'vodka'], ['whisky', 'vodka', 'champ', 'champ', 'vodka']];
+  // 4 bouteilles par vasque : pied dans la glace, légère inclinaison vers l'extérieur (≤ 0,3 rad).
+  // Vérifié : à hauteur du rebord, chaque bouteille reste à plus de 8 cm de la paroi, et les pieds sont espacés de plus de 8 cm.
+  const SLOTS = [[-.1, .02, -.3, .08], [-.04, -.05, -.12, -.22], [.03, .05, .1, .25], [.1, -.02, .3, -.12]];
+  const MIX = [['vodka', 'champ', 'whisky', 'vodka'], ['champ', 'vodka', 'vodka', 'whisky'], ['whisky', 'vodka', 'champ', 'champ']];
   TABLES.forEach((t, i) => {
     const o = TABLE_OBJ.get(t.id); o.group.updateMatrixWorld(true);
     const W = (m) => tmp.multiplyMatrices(o.group.matrixWorld, m);
@@ -645,21 +673,23 @@ const ETINCELLES = [], SERVICE = new THREE.Group(); scene.add(SERVICE);
       const type = mix[k];
       const B = at(x, y + .05, z, new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, 0, -rz)));
       for (const p of PIECES[type]) put(p, W(B));
-      if ((k + i) % 3 === 1) { // fontaine dorée plantée dans le goulot
-        const S = B.clone().multiply(at(0, HAUT[type] - .02, 0));
-        put('sparkler', W(S));
-        const e = W(S.clone().multiply(at(0, .21, 0)));
-        put('etincelle', e);
-      }
     });
-    [[.22, .27], [-.22, .27], [.22, -.27], [-.22, -.27]].forEach(([x, z]) => { put('verre', W(at(x, y, z))); put('boisson', W(at(x, y, z))); });
+    // présentation club : 2 piles de 4 verres retournés aux coins + 3 verres servis posés un peu au hasard
+    // (positions hors de la vasque et du bord de table ; léger décalage différent à chaque table)
+    const hasard = (k) => ((Math.sin(i * 12.9898 + k * 78.233) * 43758.5453) % 1) * .025;
+    const retourne = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI);
+    const coins = i % 2 ? [[.27, .27], [-.27, -.27]] : [[-.27, .27], [.27, -.27]];
+    coins.forEach(([x, z]) => { for (let n = 0; n < 4; n++) put('verre', W(at(x, y + .1 + n * .032, z, retourne))); });
+    (i % 2 ? [[0, .27], [-.24, .26], [.3, -.04]] : [[0, -.27], [.24, .26], [-.3, .05]]).forEach(([x, z], k) => {
+      const px = x + hasard(k), pz = z + hasard(k + 7);
+      put('verre', W(at(px, y, pz))); put('boisson', W(at(px, y, pz)));
+    });
   });
   for (const [k, list] of Object.entries(L)) {
     const im = new THREE.InstancedMesh(G[k], MAT[k], list.length);
     list.forEach((m, j) => im.setMatrixAt(j, m));
     im.raycast = () => {};
     SERVICE.add(im);
-    if (k === 'etincelle') ETINCELLES.push(im);
   }
 }
 
@@ -987,7 +1017,6 @@ renderer.setAnimationLoop(() => {
   if ((!stageVisible || document.hidden) && !fly) return; // rien à dessiner hors écran
   piste.rotation.y += dt * .25;
   SERVICE.visible = camera.position.distanceTo(controls.target) < 30;
-  for (const e of ETINCELLES) { e.material.opacity = .55 + .45 * Math.abs(Math.sin(t * 23)); } // fontaines qui crépitent
   for (const f of FAISCEAUX) { f.m.rotation.x = 1.05 + Math.sin(t * .5 + f.k) * .28; f.m.rotation.z = Math.sin(t * .37 + f.k * 1.7) * .55; }
   bigStar.rotation.y += dt * .6; bigStar.position.y = 8.5 + Math.sin(t * 1.2) * .25;
   floaters.forEach((f) => (f.ball.position.y = f.h + Math.sin(t * 1.3 + f.k) * .15));
