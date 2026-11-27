@@ -996,3 +996,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--gold) !important
 }
 .lmark.pin2 .court { display: none; }
 @media (max-width: 640px) { .lmark.pin2 .court { display: inline; } }
+/* panneau de la ligne : places restantes, jauge, atouts */
+.tp-status.free strong { display: block; font-size: 15px; }
+.jauge { display: block; height: 6px; margin: 9px 0 10px; border-radius: 6px; background: rgba(255,255,255,.12); overflow: hidden; }
+.jauge i { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, #22c55e, #f2b84b); }
+.atouts { margin: 0; padding: 0; list-style: none; display: grid; gap: 5px; font-size: 13.5px; color: #dbe4f7; }
+.atouts li { display: flex; gap: 8px; align-items: baseline; }
+.atouts li::before { content: "✓"; color: #f2b84b; font-weight: 800; }
+@media (max-width: 640px) { .stage #badge { top: 66px !important; left: 12px !important; right: auto !important; max-width: calc(100% - 24px); font-size: 13px !important; } }

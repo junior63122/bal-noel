@@ -216,7 +216,7 @@ const M = {
   wallLow: new THREE.MeshStandardMaterial({ color: '#24090f', roughness: .6 }),
   snow: new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: .9 }),
   trunk: new THREE.MeshStandardMaterial({ color: '#5a3418', roughness: .9 }),
-  window: new THREE.MeshStandardMaterial({ color: '#1a2a3a', emissive: '#ffb45a', emissiveIntensity: .55, roughness: .3 }),
+  window: null, // défini plus bas (texture de niche dorée)
   sofa: new THREE.MeshStandardMaterial({ color: '#e6dccb', roughness: .9 }),
   table: new THREE.MeshStandardMaterial({ color: '#c9a25a', roughness: .3, metalness: .8 }),
   dark: new THREE.MeshStandardMaterial({ color: '#141414', roughness: .6 }),
@@ -225,6 +225,15 @@ const M = {
   tree: new THREE.MeshStandardMaterial({ color: '#173a2b', roughness: .85 }),
 };
 
+// niche murale : arche fine dorée, fond velours, halo chaud en bas (remplace les aplats jaunes)
+M.window = new THREE.MeshStandardMaterial({ transparent: true, roughness: .6, emissive: '#ffffff', emissiveIntensity: .9, map: canvasTex(256, 512, (c, w, h) => {
+  c.clearRect(0, 0, w, h);
+  const arche = () => { c.beginPath(); c.moveTo(18, h - 10); c.lineTo(18, w / 2 + 10); c.arc(w / 2, w / 2 + 10, w / 2 - 18, Math.PI, 0); c.lineTo(w - 18, h - 10); c.closePath(); };
+  arche(); const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#2a0910'); g.addColorStop(.7, '#4a1418'); g.addColorStop(1, '#b8682a'); c.fillStyle = g; c.fill();
+  c.lineWidth = 7; c.strokeStyle = '#d4a64a'; arche(); c.stroke();
+  c.lineWidth = 2; c.strokeStyle = 'rgba(255,220,150,.6)'; c.beginPath(); c.arc(w / 2, w / 2 + 10, w / 2 - 34, Math.PI, 0); c.stroke();
+}) });
+M.window.emissiveMap = M.window.map;
 // toutes les ampoules (murs + sapins) sont dessinées en un seul appel (InstancedMesh)
 const bulbSpots = [];
 const BULB_COLORS = ['#ffe3a8', '#fff1d6', '#ffd889', '#fff1d6'];
@@ -268,7 +277,7 @@ ROOM.forEach((p, i) => {
     // arcades lumineuses
     const n = Math.max(1, Math.floor(len / 3.2));
     for (let k = 0; k < n; k++) {
-      const win = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 3.2), M.window);
+      const win = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 3), M.window);
       win.position.copy(a).lerp(b, (k + .5) / n); win.position.y = 2.6;
       win.position.x += nIn[0] * .02; win.position.z += nIn[1] * .02;
       win.rotation.y = wall.rotation.y + (ROOM_SENS > 0 ? 0 : Math.PI); scene.add(win);
@@ -394,6 +403,18 @@ const floaters = [];
   const riser = new THREE.Mesh(new THREE.BoxGeometry(4.4, H, 2.4), [M.gold, M.gold, M.carpet, M.gold, M.gold, M.gold]);
   riser.position.copy(V(PLAN.DJ[0], PLAN.DJ[1], H / 2)); scene.add(riser);
   dj.position.copy(V(PLAN.DJ[0], PLAN.DJ[1], H)); scene.add(dj);
+}
+
+// faisceaux lumineux partant du treillis du DJ et balayant la piste
+const FAISCEAUX = [];
+{
+  const geo = new THREE.ConeGeometry(1.6, 15, 24, 1, true).translate(0, -7.5, 0); // pointe en haut, à l'origine
+  const couleurs = ['#ffd27a', '#9fd0ff', '#ffd27a', '#ff9fb8', '#9fd0ff', '#ffd27a'];
+  couleurs.forEach((c, k) => {
+    const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: .07, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }));
+    m.position.copy(V(PLAN.DJ[0] - 2.2 + k * .88, PLAN.DJ[1] - .9, H + 3.6)); m.raycast = () => {}; scene.add(m);
+    FAISCEAUX.push({ m, k });
+  });
 }
 
 // bars : comptoir en U de 5,30 × 3 m (ouvert vers l'extérieur de la salle) et arrière-bar de 2 × 0,5 m au centre.
@@ -660,25 +681,28 @@ function enveloppe(P) { // enveloppe convexe (chaîne monotone)
   return lo.slice(0, -1).concat(hi.slice(0, -1));
 }
 const ZONE_CONTOUR = new Map(GROUPES.map((g, i) => [g.id, contour(PLAN.PLATFORMS[i], H)]));
-const LIGNE_CONTOUR = new Map();
+// chaque ligne = UNE bande continue (tous ses salons réunis, calculée sur le plan : PLAN.LIGNES_ZONE).
+// Le client choisit une ligne, pas une table : on éclaire la bande entière, jamais table par table.
+const LIGNE_BANDE = new Map();
 ZONES.filter((l) => l.enVente).forEach((l) => {
-  const g = new THREE.Group(); scene.add(g); g.visible = false;
-  SALONS.forEach((s, si) => {
-    if (s.ligne !== l.id) return;
-    const P = [];
-    for (const [x, z, w, d, a, , li] of PLAN.SOFAS) if (li === si) {
-      const ux = Math.cos(a), uz = Math.sin(a);
-      for (const [sx, sz] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) P.push([x + sx * w / 2 * ux - sz * d / 2 * uz + sx * ux * .2, z + sx * w / 2 * uz + sz * d / 2 * ux + sz * ux * .2]);
-    }
-    s.tables.forEach(([x, z]) => P.push([x - .6, z - .6], [x + .6, z + .6], [x - .6, z + .6], [x + .6, z - .6]));
-    const c = contour(enveloppe(P), H + .02); scene.remove(c); c.visible = true; g.add(c);
-  });
-  LIGNE_CONTOUR.set(l.id, g);
+  const pts = PLAN.LIGNES_ZONE[l.id]; if (!pts) return;
+  const mat = new THREE.MeshBasicMaterial({ color: l.couleurs[0], transparent: true, opacity: 0, depthWrite: false, toneMapped: false });
+  const fill = new THREE.Mesh(new THREE.ShapeGeometry(shapeFrom(pts)), mat);
+  fill.rotation.x = -Math.PI / 2; fill.position.y = H + .02; fill.renderOrder = 3; fill.userData.ligne = l.id; fill.visible = false; scene.add(fill);
+  LIGNE_BANDE.set(l.id, { fill, mat, bord: contour(pts, H + .01) });
 });
 let survolZone = null, survolLigne = null;
 function majContours() {
   ZONE_CONTOUR.forEach((c, id) => (c.visible = !current && (id === activeGroupe || id === survolZone)));
-  LIGNE_CONTOUR.forEach((c, id) => (c.visible = (current && current.id === id) || id === survolLigne));
+  // zone ouverte : ses deux lignes apparaissent en bandes (avant dorée, arrière bleue) ; survol ou choix = bande vive + contour blanc
+  LIGNE_BANDE.forEach((b, id) => {
+    const l = ligneById(id), dansZone = activeGroupe === l.groupe, choisie = current?.id === id, survol = survolLigne === id;
+    const complet = restant(id) <= 0;
+    b.fill.visible = dansZone;
+    b.mat.color.set(complet ? '#4b5670' : l.couleurs[0]);
+    b.mat.opacity = !dansZone ? 0 : choisie ? .62 : current ? .06 : survol ? .5 : .3;
+    b.bord.visible = dansZone && (choisie || (survol && !current));
+  });
 }
 
 // --- étiquettes de prix façon billetterie : carte + tige + pastille d'état -------------------------------
@@ -701,11 +725,6 @@ ZONES.filter((l) => l.enVente).forEach((l) => {
   b.addEventListener('pointerleave', () => glow(l.id, false));
   labels.appendChild(b); MARKS.push({ el: b, pos: centre(tablesDe(l.id), 1.1), kind: 'l', id: l.id, groupe: l.groupe, l });
 });
-// une pastille par table de la zone ouverte (verte : disponible, rouge : complet, jaune : pas en vente)
-TABLES.forEach((t) => {
-  const e = document.createElement('span'); e.className = 'tdot'; e.setAttribute('aria-hidden', 'true');
-  labels.appendChild(e); MARKS.push({ el: e, pos: TABLE_OBJ.get(t.id).base.clone().setY(TABLE_OBJ.get(t.id).base.y + .75), kind: 't', groupe: zoneOf(t).groupe, l: zoneOf(t) });
-});
 // repère DJ
 {
   const e = document.createElement('span'); e.className = 'djmark'; e.textContent = 'DJ'; e.setAttribute('aria-hidden', 'true');
@@ -724,18 +743,24 @@ function majMarques() {
       const et = etatLigne(m.l), r = Math.max(0, restant(m.l.id));
       m.el.dataset.etat = et;
       m.el.innerHTML = `<span class="pastille"></span><span class="trait"></span><span class="pill"><span class="lg">Ligne ${m.l.type === 'avant' ? 'avant' : 'arrière'}</span><span class="court">${m.l.type === 'avant' ? 'Avant' : 'Arrière'}</span> · <b>${m.l.prixPers} €</b><span class="ext">/pers. | ${et === 'full' ? 'complet' : placesTxt(r)}</span></span>`;
-    } else if (m.kind === 't') m.el.dataset.etat = etatLigne(m.l);
+    }
   }
   // largeur mesurée une fois ici (et pas à chaque image) ; repositionnement forcé
   for (const m of MARKS) if (m.kind === 'l') m.w = m.el.offsetWidth;
   marquesSales = true;
 }
 // surbrillance d'une ligne entière (canapés + contour blanc)
+function teinte(m, id, survol) {
+  const l = ligneById(id), choisie = current?.id === id;
+  if (choisie) { m.emissive.set(l.couleurs[0]); m.emissiveIntensity = .6; }
+  else if (survol) { m.emissive.set(l.couleurs[0]); m.emissiveIntensity = .28; }
+  else { m.emissive.set('#000'); m.emissiveIntensity = 0; }
+}
 function glow(ligneId, on) {
   if (!ligneId) return;
   for (const t of tablesDe(ligneId)) {
     const o = TABLE_OBJ.get(t.id);
-    o.mats.forEach((m) => { m.emissive.set(on ? '#ffd98a' : '#000'); m.emissiveIntensity = on ? .25 : 0; });
+    o.mats.forEach((m) => teinte(m, ligneId, on));
   }
   survolLigne = on && ligneById(ligneId)?.enVente ? ligneId : survolLigne === ligneId ? null : survolLigne; majContours();
 }
@@ -855,21 +880,34 @@ function pick(e) {
   ray.setFromCamera(ndc, camera);
   const hit = ray.intersectObjects(pickables, false)[0];
   const id = hit && (hit.object.userData.ids ? hit.object.userData.ids[hit.instanceId] : hit.object.userData.tableId);
-  return id ? TABLES.find((t) => t.id === id) : null;
+  if (id) return { ligne: TABLES.find((t) => t.id === id).zone };
+  const b = ray.intersectObjects([...LIGNE_BANDE.values()].filter((x) => x.fill.visible).map((x) => x.fill), false)[0];
+  return b ? { ligne: b.object.userData.ligne } : null;
+}
+// point du sol visé (estrades comprises), pour savoir si l'on clique dans la zone ouverte ou à côté
+const sol = new THREE.Plane(new THREE.Vector3(0, 1, 0), -H), visé = new THREE.Vector3();
+function dansZoneOuverte() {
+  if (!activeGroupe || !ray.ray.intersectPlane(sol, visé)) return false;
+  const P = PLAN.PLATFORMS[GROUPES.findIndex((g) => g.id === activeGroupe)];
+  return !!P && inPoly(visé.x, visé.z, P);
 }
 let down = null, hovered = null;
 canvas.addEventListener('pointerdown', (e) => (down = { x: e.clientX, y: e.clientY }));
 canvas.addEventListener('pointerup', (e) => {
   if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6 || pov) return;
-  const t = pick(e); if (!t) return; const l = zoneOf(t); l.enVente ? selectLigne(l.id) : selectGroupe(l.groupe);
+  const t = pick(e);
+  if (t) { const l = ligneById(t.ligne); return l.enVente ? selectLigne(l.id) : selectGroupe(l.groupe); }
+  // clic dans le vide : hors de la zone ouverte on revient à toute la salle ; dans la zone, on annule juste la ligne
+  if (!activeGroupe) return;
+  if (dansZoneOuverte()) { if (current) selectGroupe(activeGroupe); } else selectGroupe(null);
 });
 canvas.addEventListener('pointermove', (e) => {
   if (e.buttons || pov) return;
   const t = pick(e);
-  const l = t ? t.zone : null;
-  if (!activeGroupe) { const gz = t ? zoneOf(t).groupe : null; if (gz !== survolZone) { survolZone = gz; majContours(); } }
+  const l = t ? t.ligne : null;
+  if (!activeGroupe) { const gz = l ? ligneById(l).groupe : null; if (gz !== survolZone) { survolZone = gz; majContours(); } }
   else { if (hovered && hovered !== l) glow(hovered, false); if (l) glow(l, true); }
-  hovered = l; canvas.style.cursor = t ? 'pointer' : '';
+  hovered = l; canvas.style.cursor = t ? 'pointer' : activeGroupe && !dansZoneOuverte() ? 'zoom-out' : '';
 });
 
 // arrivée dans la salle : survol de la caméra la première fois que le plan est visible
@@ -898,6 +936,7 @@ renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), .05), t = clock.elapsedTime;
   if ((!stageVisible || document.hidden) && !fly) return; // rien à dessiner hors écran
   piste.rotation.y += dt * .25;
+  for (const f of FAISCEAUX) { f.m.rotation.x = 1.05 + Math.sin(t * .5 + f.k) * .28; f.m.rotation.z = Math.sin(t * .37 + f.k * 1.7) * .55; }
   bigStar.rotation.y += dt * .6; bigStar.position.y = 8.5 + Math.sin(t * 1.2) * .25;
   floaters.forEach((f) => (f.ball.position.y = f.h + Math.sin(t * 1.3 + f.k) * .15));
   if ((frameNo++ & 3) === 0) { // scintillement des guirlandes, 15 fois par seconde suffit
@@ -960,8 +999,9 @@ function refreshLabels() {
     const p = PLATE_MAT.get(l.id);
     p.color.set(off ? '#3a3f55' : l.couleurs[0]); p.emissive.set(off ? '#000' : l.couleurs[0]);
     p.emissiveIntensity = off ? 0 : mine ? (current ? .9 : .4) : .05;
-    p.opacity = mine ? .75 : .25;
+    p.opacity = 0; p.visible = false; // la couleur est portée par la bande de la ligne, pas table par table
     LINE_MAT.get(l.id).color.set(mine || !activeGroupe ? '#e6dccb' : '#7d7a78');
+    teinte(LINE_MAT.get(l.id), l.id, false);
   }
 }
 $('#only-free')?.closest('label')?.remove();
@@ -1024,7 +1064,12 @@ function selectLigne(id) {
   $('#tp-back').onclick = () => selectGroupe(l.groupe);
   $('#tp-status').hidden = false;
   $('#tp-status').className = 'tp-status ' + (r ? 'free' : 'taken');
-  $('#tp-status').innerHTML = r ? '<strong>Places disponibles</strong>' : '<strong>Complet</strong> Essayez l’autre ligne ou une autre zone.';
+  // places réelles (serveur) : on dit simplement ce qu'il reste, avec une jauge
+  const tot = placesDe(l.id), pc = Math.round(100 * (tot - r) / tot);
+  $('#tp-status').innerHTML = r
+    ? `<strong>${r <= tot * .3 ? 'Plus que ' : ''}${r} place${r > 1 ? 's' : ''} sur ${tot}</strong><span class="jauge"><i style="width:${Math.max(4, pc)}%"></i></span>
+       <ul class="atouts">${l.type === 'avant' ? '<li>Premier rang, au bord de la piste</li><li>Vue directe sur le DJ</li>' : '<li>Juste derrière la ligne avant</li><li>Vue sur la piste et le DJ</li>'}<li>Table attribuée par l’organisation</li></ul>`
+    : '<strong>Complet</strong> Essayez l’autre ligne ou une autre zone.';
   $('#tp-actions').hidden = false; $('#tp-ask').disabled = !r;
   setTimeout(() => (r ? $('#tp-ask') : $('#tp-back'))?.focus({ preventScroll: true }), 60);
   try { sessionStorage.setItem('bal-noel-ligne', l.id); } catch {}
