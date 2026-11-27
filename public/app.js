@@ -103,6 +103,46 @@ function snowTick(t) {
 }
 if (!reduceMotion) requestAnimationFrame(snowTick);
 
+// neige sur tout le site (accueil, plan, panneau) : calque fixe au-dessus du contenu, sous le formulaire,
+// qui ne capte aucun clic. Petits points + quelques vrais flocons à 6 branches, léger vent.
+// Allégée : ~30 images/s, peu de flocons sur téléphone, arrêtée si l'onglet est masqué ou si l'utilisateur limite les animations.
+if (!reduceMotion) {
+  const cv = document.createElement('canvas'); cv.className = 'snow-all'; cv.setAttribute('aria-hidden', 'true'); document.body.appendChild(cv);
+  const ctx = cv.getContext('2d'), mobile = innerWidth < 640;
+  const flocon = (() => { // sprite d'un flocon à 6 branches, dessiné une fois
+    const c = document.createElement('canvas'); c.width = c.height = 32; const g = c.getContext('2d');
+    g.translate(16, 16); g.strokeStyle = '#fff'; g.lineWidth = 1.6; g.lineCap = 'round';
+    for (let k = 0; k < 6; k++) { g.rotate(Math.PI / 3); g.beginPath(); g.moveTo(0, 0); g.lineTo(0, -13); g.moveTo(0, -7); g.lineTo(-4, -11); g.moveTo(0, -7); g.lineTo(4, -11); g.stroke(); }
+    return c;
+  })();
+  let W, H, list = [];
+  const neuf = (y) => { const gros = Math.random() < .14; return { x: Math.random() * W, y, gros, r: gros ? 7 + Math.random() * 6 : .8 + Math.random() * 1.6, v: (gros ? .35 : .45) + Math.random() * .6, o: Math.random() * 6, a: .35 + Math.random() * .45, rot: Math.random() * 6 }; };
+  const taille = () => { W = cv.width = innerWidth; H = cv.height = innerHeight; list = Array.from({ length: mobile ? 26 : 48 }, () => neuf(Math.random() * H)); };
+  taille(); addEventListener('resize', taille, { passive: true });
+  let pair = 0;
+  const tick = (t) => {
+    requestAnimationFrame(tick);
+    if (document.hidden || (pair ^= 1)) return; // une image sur deux
+    ctx.clearRect(0, 0, W, H);
+    for (const f of list) {
+      f.y += f.v * 2; f.x += Math.sin(t / 1600 + f.o) * .5 + .15; f.rot += .006;
+      if (f.y > H + 16) Object.assign(f, neuf(-16));
+      ctx.globalAlpha = f.a;
+      if (f.gros) { ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(f.rot); ctx.drawImage(flocon, -f.r, -f.r, f.r * 2, f.r * 2); ctx.restore(); }
+      else { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 7); ctx.fill(); }
+    }
+    ctx.globalAlpha = 1;
+  };
+  requestAnimationFrame(tick);
+}
+
+// compte à rebours avant la soirée (vraie date de l'événement) : « Plus que 30 jours »
+{
+  const j = Math.ceil((Date.parse(EVENT.debut) - Date.now()) / 864e5);
+  const txt = j > 1 ? `Plus que ${j} jours avant le Bal` : j === 1 ? 'C’est demain !' : j === 0 ? 'C’est ce soir !' : '';
+  document.querySelectorAll('[data-rebours]').forEach((e) => { e.textContent = txt; e.hidden = !txt; });
+}
+
 // ouverture : entièrement en CSS (opacity/transform) ; on enlève juste le calque à la fin
 setTimeout(() => { const i = $('#intro'); if (i) i.hidden = true; }, document.documentElement.classList.contains('quick') ? 1200 : 2100);
 try { sessionStorage.setItem('bal-noel-intro', '1'); } catch {}

@@ -1021,3 +1021,28 @@ input:focus, select:focus, textarea:focus { border-color: var(--gold) !important
 .zmark.pin[data-g="z2"] .tige, .zmark.pin[data-g="z3"] .tige { height: 78px !important; }
 @media (max-width: 640px) { .zmark.pin[data-g="z2"] .tige, .zmark.pin[data-g="z3"] .tige { height: 50px !important; } }
 @media (min-width: 641px) { .legende { top: auto !important; bottom: 16px !important; left: 50% !important; right: auto !important; transform: translateX(-50%); } }
+
+/* ---------------------------------------------------------------- touches de Noël */
+/* neige sur tout le site : au-dessus du contenu, sous le formulaire (z 40), sans capter les clics */
+.snow-all { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 30; }
+.hero-snow { display: none; } /* remplacée par la neige globale */
+
+/* guirlande d'ampoules sous l'en-tête : un fil et des ampoules chaudes qui scintillent doucement */
+.topbar { position: relative; }
+.guirlande { position: absolute; left: 0; right: 0; bottom: -9px; height: 16px; pointer-events: none; z-index: 2;
+  background:
+    radial-gradient(circle at 50% 70%, #ffd98a 0 3.2px, rgba(255,200,90,.45) 4px, transparent 8px) 0 0 / 46px 16px repeat-x,
+    radial-gradient(circle at 50% 70%, #ffe9c4 0 3.2px, rgba(255,235,190,.4) 4px, transparent 8px) 23px 0 / 46px 16px repeat-x;
+  -webkit-mask: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  animation: scintille 2.6s ease-in-out infinite alternate; }
+.guirlande::before { content: ""; position: absolute; left: 0; right: 0; top: 4px; height: 6px;
+  background: radial-gradient(ellipse 23px 6px at 23px 0, transparent 5px, rgba(201,164,92,.55) 5.5px, transparent 6.5px) 0 0 / 46px 6px repeat-x; }
+@keyframes scintille { from { opacity: .7; filter: brightness(.9); } to { opacity: 1; filter: brightness(1.25); } }
+@media (prefers-reduced-motion: reduce) { .guirlande { animation: none; } }
+
+/* compte à rebours */
+.rebours { margin: 6px 0 0; display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 999px;
+  font: 600 14px/1 var(--sans); color: #ffe6b0; background: rgba(242,184,75,.12); border: 1px solid rgba(242,184,75,.45); }
+.rebours::before { content: "❄"; color: #cfe3ff; font-size: 13px; }
+.rebours-mini { margin: 0 0 6px; font: 700 13px/1 var(--sans); color: #f2b84b; letter-spacing: .01em; }
+.rebours-mini::before { content: "❄ "; color: #cfe3ff; }
