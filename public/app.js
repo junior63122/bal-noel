@@ -582,78 +582,87 @@ const INST_PICK = [];
   make(lowGeo, LOW_MAT, TABLE_INST.carre, up(.18)); make(lowTopGeo, TOP_MAT, TABLE_INST.carre, up(.38));
   make(roundGeo, LOW_MAT, TABLE_INST.rond, up(.25)); make(roundTopGeo, TOP_MAT, TABLE_INST.rond, up(.52));
 }
-// service à table, varié comme en festival : chaque table reçoit, à tour de rôle,
-//   champagne au seau + flûtes / vodka + carafes de soft + verres tumblers / whisky-rhum + carafes + tumblers.
-// Tout est dessiné en InstancedMesh (1 appel par type d'objet). Chaque objet est posé dans le repère
-// de la table, et les pièces d'une même bouteille (capsule, étiquette) suivent exactement son inclinaison.
+// service à table façon club : CHAQUE table a sa vasque (bac ovale transparent, glace pilée, liseré LED bleu)
+// garnie de bouteilles inclinées — vodka givrée, champagne, whisky — avec des fontaines (sparklers) dorées,
+// et 4 verres autour. Mélange différent d'une table à l'autre. Tout en InstancedMesh (1 appel par type d'objet) ;
+// chaque pièce d'une bouteille (capsule, étiquette, sparkler) est posée dans le repère de SA bouteille.
+const ETINCELLES = [], SERVICE = new THREE.Group(); scene.add(SERVICE);
 {
   const lathe = (pts, seg = 16) => new THREE.LatheGeometry(pts.map(([x, y]) => new THREE.Vector2(x, y)), seg);
+  const ovale = (g) => g.scale(1.5, 1, 1);
   const G = {
-    bucket: lathe([[0, 0], [.085, 0], [.1, .16], [.105, .17], [0, .17]], 20),
-    ice: new THREE.CylinderGeometry(.094, .094, .01, 16),
-    champ: lathe([[0, 0], [.04, 0], [.042, .02], [.042, .16], [.036, .2], [.016, .25], [.014, .31], [0, .31]], 14),
-    foil: lathe([[0, 0], [.0175, 0], [.0175, .055], [.012, .07], [0, .07]], 10),
-    label: new THREE.CylinderGeometry(.0435, .0435, .05, 14, 1, true),
-    vodka: lathe([[0, 0], [.038, 0], [.04, .015], [.04, .24], [.03, .27], [.015, .29], [.015, .33], [0, .33]], 14),
-    cap: new THREE.CylinderGeometry(.017, .017, .03, 10),
-    whisky: new THREE.BoxGeometry(.085, .2, .06).translate(0, .1, 0),
-    whiskyNeck: lathe([[0, 0], [.02, 0], [.016, .05], [.016, .07], [0, .07]], 10),
-    carafe: lathe([[0, 0], [.045, 0], [.05, .03], [.045, .14], [.03, .17], [.033, .19], [0, .19]], 16),
-    jus: lathe([[0, 0], [.043, 0], [.048, .03], [.044, .12], [0, .12]], 16),
-    flute: lathe([[0, 0], [.022, 0], [.022, .004], [.003, .008], [.003, .1], [.017, .12], [.021, .18], [.022, .2]], 12),
-    fluteVin: lathe([[0, .13], [.016, .13], [.019, .17], [0, .17]], 10),
-    tumbler: lathe([[0, 0], [.03, 0], [.033, .1], [0, .1]], 14),
-    tumblerJus: lathe([[0, .004], [.028, .004], [.03, .07], [0, .07]], 12),
+    vasque: ovale(lathe([[0, 0], [.11, 0], [.15, .1], [.165, .19], [.16, .195]], 20)),
+    glace: ovale(new THREE.CylinderGeometry(.155, .12, .13, 16).translate(0, .065, 0)),
+    led: ovale(new THREE.TorusGeometry(.163, .006, 4, 28).rotateX(Math.PI / 2).translate(0, .193, 0)),
+    vodka: lathe([[0, 0], [.036, 0], [.038, .015], [.038, .22], [.028, .25], [.014, .27], [.014, .31], [0, .31]], 8),
+    vodkaCap: new THREE.CylinderGeometry(.016, .016, .05, 10).translate(0, .325, 0),
+    vodkaBande: new THREE.CylinderGeometry(.0385, .0385, .035, 8, 1, true).translate(0, .12, 0),
+    champ: lathe([[0, 0], [.038, 0], [.04, .02], [.04, .16], [.034, .2], [.015, .25], [.013, .3], [0, .3]], 8),
+    foil: lathe([[0, 0], [.017, 0], [.017, .06], [.012, .075], [0, .075]], 6).translate(0, .235, 0),
+    champLabel: new THREE.CylinderGeometry(.0405, .0405, .055, 8, 1, true).translate(0, .09, 0),
+    whisky: new THREE.BoxGeometry(.075, .19, .055).translate(0, .095, 0),
+    whiskyNeck: lathe([[0, 0], [.018, 0], [.015, .05], [.015, .075], [0, .075]], 6).translate(0, .19, 0),
+    whiskyLabel: new THREE.BoxGeometry(.077, .07, .057).translate(0, .09, 0),
+    sparkler: new THREE.CylinderGeometry(.009, .009, .2, 6).translate(0, .1, 0),
+    etincelle: new THREE.SphereGeometry(.03, 8, 6),
+    verre: lathe([[0, 0], [.03, 0], [.033, .1], [0, .1]], 8),
+    boisson: lathe([[0, .004], [.028, .004], [.03, .07], [0, .07]], 8),
   };
-  const verre = (c, o) => new THREE.MeshStandardMaterial({ color: c, metalness: .1, roughness: .05, transparent: true, opacity: o, depthWrite: false });
   const MAT = {
-    bucket: new THREE.MeshStandardMaterial({ color: '#ffe2a0', emissive: '#f0a83a', emissiveIntensity: 1.1, roughness: .3 }), // seau lumineux LED
-    ice: new THREE.MeshStandardMaterial({ color: '#eaf4ff', roughness: .25 }),
-    champ: new THREE.MeshStandardMaterial({ color: '#0f2a1c', metalness: .2, roughness: .15 }),
+    vasque: new THREE.MeshStandardMaterial({ color: '#dfeaff', roughness: .05, metalness: .1, transparent: true, opacity: .32, depthWrite: false, side: THREE.DoubleSide }),
+    glace: new THREE.MeshStandardMaterial({ color: '#f2f8ff', emissive: '#9cc4ff', emissiveIntensity: .35, roughness: .35 }),
+    led: new THREE.MeshBasicMaterial({ color: '#3f7bff', toneMapped: false }),
+    vodka: new THREE.MeshStandardMaterial({ color: '#f4f7fb', emissive: '#cfe0ff', emissiveIntensity: .25, roughness: .55 }), // verre givré
+    vodkaCap: new THREE.MeshStandardMaterial({ color: '#1d4fa8', metalness: .5, roughness: .3 }),
+    vodkaBande: new THREE.MeshStandardMaterial({ color: '#2a5fc0', roughness: .4 }),
+    champ: new THREE.MeshStandardMaterial({ color: '#123a24', metalness: .25, roughness: .15 }),
     foil: new THREE.MeshStandardMaterial({ color: '#e8b04a', metalness: 1, roughness: .25 }),
-    label: new THREE.MeshStandardMaterial({ color: '#f4efe2', roughness: .5 }),
-    vodka: new THREE.MeshStandardMaterial({ color: '#dfe9f5', emissive: '#7fb6ff', emissiveIntensity: .35, roughness: .2, transparent: true, opacity: .8 }),
-    cap: new THREE.MeshStandardMaterial({ color: '#1b2a4a', metalness: .6, roughness: .3 }),
-    whisky: new THREE.MeshStandardMaterial({ color: '#a8561a', emissive: '#5a2a08', emissiveIntensity: .4, roughness: .15, transparent: true, opacity: .9 }),
-    whiskyNeck: new THREE.MeshStandardMaterial({ color: '#111', roughness: .4 }),
-    carafe: verre('#e8f1ff', .3),
-    jusOrange: new THREE.MeshStandardMaterial({ color: '#ff9a1f', emissive: '#c45a00', emissiveIntensity: .35, roughness: .3 }),
-    jusRouge: new THREE.MeshStandardMaterial({ color: '#c8203a', emissive: '#6a0a18', emissiveIntensity: .35, roughness: .3 }),
-    flute: verre('#dfeaff', .35),
-    fluteVin: new THREE.MeshStandardMaterial({ color: '#ffd86b', emissive: '#c98a1c', emissiveIntensity: .35, roughness: .2 }),
-    tumbler: verre('#e6f0ff', .32),
-    tumblerJus: new THREE.MeshStandardMaterial({ color: '#ffb347', emissive: '#a0520a', emissiveIntensity: .3, roughness: .3 }),
+    champLabel: new THREE.MeshStandardMaterial({ color: '#f4efe2', roughness: .5 }),
+    whisky: new THREE.MeshStandardMaterial({ color: '#9a4a12', emissive: '#4a1e04', emissiveIntensity: .4, roughness: .15 }),
+    whiskyNeck: new THREE.MeshStandardMaterial({ color: '#141414', roughness: .4 }),
+    whiskyLabel: new THREE.MeshStandardMaterial({ color: '#151515', roughness: .5 }),
+    sparkler: new THREE.MeshStandardMaterial({ color: '#d9a640', metalness: .9, roughness: .3 }),
+    etincelle: new THREE.MeshBasicMaterial({ color: '#fff4c8', transparent: true, opacity: .95, toneMapped: false, blending: THREE.AdditiveBlending, depthWrite: false }),
+    verre: new THREE.MeshStandardMaterial({ color: '#e6f0ff', metalness: .1, roughness: .05, transparent: true, opacity: .3, depthWrite: false }),
+    boisson: new THREE.MeshStandardMaterial({ color: '#ffc861', emissive: '#a0660a', emissiveIntensity: .3, roughness: .3 }),
   };
-  const L = {}; // clé → liste de matrices dans le monde
+  const PIECES = { vodka: ['vodka', 'vodkaCap', 'vodkaBande'], champ: ['champ', 'foil', 'champLabel'], whisky: ['whisky', 'whiskyNeck', 'whiskyLabel'] };
+  const HAUT = { vodka: .35, champ: .31, whisky: .27 };
+  const L = {};
   const put = (k, m) => (L[k] ||= []).push(m.clone());
-  const tmpM = new THREE.Matrix4(), q0 = new THREE.Quaternion(), un = new THREE.Vector3(1, 1, 1);
-  const at = (x, y, z, q = q0) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), q, un);
-  const verres = [[.2, .2], [-.2, .2], [.2, -.2], [-.2, -.2]]; // aux coins du plateau (0,72 m)
+  const un = new THREE.Vector3(1, 1, 1), tmp = new THREE.Matrix4();
+  const at = (x, y, z, q = new THREE.Quaternion()) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), q, un);
+  // emplacements dans la vasque : x le long de l'ovale, bouteilles penchées vers l'extérieur comme dans un bac à glace
+  const SLOTS = [[-.15, .03, -.42, .1], [-.06, -.05, -.2, -.25], [.02, .05, .12, .28], [.1, -.04, .28, -.2], [.17, .03, .45, .12]];
+  const MIX = [['vodka', 'champ', 'whisky', 'vodka', 'champ'], ['champ', 'vodka', 'vodka', 'whisky', 'vodka'], ['whisky', 'vodka', 'champ', 'champ', 'vodka']];
   TABLES.forEach((t, i) => {
     const o = TABLE_OBJ.get(t.id); o.group.updateMatrixWorld(true);
-    const W = (local) => tmpM.multiplyMatrices(o.group.matrixWorld, local);
-    const y = o.top, type = i % 3;
-    if (type === 0) { // champagne au seau, bouteille inclinée : capsule et étiquette dans le même repère que la bouteille
-      put('bucket', W(at(0, y, 0))); put('ice', W(at(0, y + .165, 0)));
-      const b = at(0, y + .05, 0, new THREE.Quaternion().setFromEuler(new THREE.Euler(.38, 0, .12)));
-      put('champ', W(b)); put('foil', W(b.clone().multiply(at(0, .245, 0)))); put('label', W(b.clone().multiply(at(0, .1, 0))));
-      verres.forEach(([x, z]) => { put('flute', W(at(x, y, z))); put('fluteVin', W(at(x, y, z))); });
-    } else {
-      if (type === 1) { put('vodka', W(at(-.06, y, 0))); put('cap', W(at(-.06, y + .345, 0))); }
-      else { put('whisky', W(at(-.06, y, 0))); put('whiskyNeck', W(at(-.06, y + .2, 0))); }
-      put('carafe', W(at(.09, y, -.06))); put('jusOrange', W(at(.09, y, -.06)));
-      put('carafe', W(at(.09, y, .08))); put('jusRouge', W(at(.09, y, .08)));
-      verres.forEach(([x, z]) => { put('tumbler', W(at(x, y, z))); put('tumblerJus', W(at(x, y, z))); });
-    }
+    const W = (m) => tmp.multiplyMatrices(o.group.matrixWorld, m);
+    const y = o.top;
+    put('vasque', W(at(0, y, 0))); put('glace', W(at(0, y, 0))); put('led', W(at(0, y, 0)));
+    const mix = MIX[i % 3];
+    SLOTS.forEach(([x, z, rz, rx], k) => {
+      const type = mix[k];
+      const B = at(x, y + .05, z, new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, 0, -rz)));
+      for (const p of PIECES[type]) put(p, W(B));
+      if ((k + i) % 3 === 1) { // fontaine dorée plantée dans le goulot
+        const S = B.clone().multiply(at(0, HAUT[type] - .02, 0));
+        put('sparkler', W(S));
+        const e = W(S.clone().multiply(at(0, .21, 0)));
+        put('etincelle', e);
+      }
+    });
+    [[.22, .27], [-.22, .27], [.22, -.27], [-.22, -.27]].forEach(([x, z]) => { put('verre', W(at(x, y, z))); put('boisson', W(at(x, y, z))); });
   });
-  const geoDe = { jusOrange: G.jus, jusRouge: G.jus };
   for (const [k, list] of Object.entries(L)) {
-    const im = new THREE.InstancedMesh(geoDe[k] || G[k], MAT[k], list.length);
+    const im = new THREE.InstancedMesh(G[k], MAT[k], list.length);
     list.forEach((m, j) => im.setMatrixAt(j, m));
-    im.raycast = () => {}; // ne gêne pas le clic
-    scene.add(im);
+    im.raycast = () => {};
+    SERVICE.add(im);
+    if (k === 'etincelle') ETINCELLES.push(im);
   }
 }
+
 
 
 // neige dans la salle
@@ -773,7 +782,7 @@ function majMarques() {
     } else if (m.kind === 'l') {
       const et = etatLigne(m.l), r = Math.max(0, restant(m.l.id));
       m.el.dataset.etat = et;
-      m.el.innerHTML = `<span class="pastille"></span><span class="trait"></span><span class="pill"><span class="lg">Ligne ${m.l.type === 'avant' ? 'avant' : 'arrière'}</span><span class="court">${m.l.type === 'avant' ? 'Avant' : 'Arrière'}</span> · <b>${m.l.prixPers} €</b><span class="ext">/pers. | ${et === 'full' ? 'complet' : placesTxt(r)}</span></span>`;
+      m.el.innerHTML = `<span class="pastille"></span><span class="trait"></span><span class="pill"><span class="lg">Ligne ${m.l.type === 'avant' ? 'avant' : 'arrière'}</span><span class="court">${m.l.type === 'avant' ? 'Avant' : 'Arrière'}</span> · <b>${m.l.prixPers} €</b><span class="ext">/pers. | ${et === 'full' ? 'complet' : placesTxt(r) + ' restante' + (r > 1 ? 's' : '')}</span></span>`;
     }
   }
   // largeur mesurée une fois ici (et pas à chaque image) ; repositionnement forcé
@@ -977,6 +986,8 @@ renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), .05), t = clock.elapsedTime;
   if ((!stageVisible || document.hidden) && !fly) return; // rien à dessiner hors écran
   piste.rotation.y += dt * .25;
+  SERVICE.visible = camera.position.distanceTo(controls.target) < 30;
+  for (const e of ETINCELLES) { e.material.opacity = .55 + .45 * Math.abs(Math.sin(t * 23)); } // fontaines qui crépitent
   for (const f of FAISCEAUX) { f.m.rotation.x = 1.05 + Math.sin(t * .5 + f.k) * .28; f.m.rotation.z = Math.sin(t * .37 + f.k * 1.7) * .55; }
   bigStar.rotation.y += dt * .6; bigStar.position.y = 8.5 + Math.sin(t * 1.2) * .25;
   floaters.forEach((f) => (f.ball.position.y = f.h + Math.sin(t * 1.3 + f.k) * .15));
@@ -1105,10 +1116,10 @@ function selectLigne(id) {
   $('#tp-back').onclick = () => selectGroupe(l.groupe);
   $('#tp-status').hidden = false;
   $('#tp-status').className = 'tp-status ' + (r ? 'free' : 'taken');
-  // places réelles (serveur) : on dit simplement ce qu'il reste, avec une jauge
-  const tot = placesDe(l.id), pc = Math.round(100 * (tot - r) / tot);
+  // places réelles (serveur) : on dit simplement ce qu'il reste (jamais le total, pour ne pas donner l'impression d'une salle vide)
+  const tot = placesDe(l.id); // le total n'est jamais affiché : seulement ce qui reste
   $('#tp-status').innerHTML = r
-    ? `<strong>${r <= tot * .3 ? 'Plus que ' : ''}${r} place${r > 1 ? 's' : ''} sur ${tot}</strong><span class="jauge"><i style="width:${Math.max(4, pc)}%"></i></span>
+    ? `<strong>${r <= tot * .3 ? 'Plus que ' : ''}${r} place${r > 1 ? 's' : ''} restante${r > 1 ? 's' : ''}</strong>
        <ul class="atouts">${l.type === 'avant' ? '<li>Premier rang, au bord de la piste</li><li>Vue directe sur le DJ</li>' : '<li>Juste derrière la ligne avant</li><li>Vue sur la piste et le DJ</li>'}<li>Table attribuée par l’organisation</li></ul>`
     : '<strong>Complet</strong> Essayez l’autre ligne ou une autre zone.';
   $('#tp-actions').hidden = false; $('#tp-ask').disabled = !r;
